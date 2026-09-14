@@ -51,10 +51,20 @@
   filter: brightness(1.15);
 }
 
+.cellInteractive {
+  cursor: pointer;
+}
+
 .cellHead {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.dateGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .dateNumber {
@@ -70,8 +80,21 @@
   opacity: 0.4;
 }
 
-.cellToday {
-  box-shadow: inset 0 2px 0 var(--accent-cool);
+/* Today: a small marker next to the date number only — never a cell-wide
+   edge, which reads as a selection outline and was mistaken for one. */
+.todayDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-cool);
+  flex: 0 0 auto;
+}
+
+/* Selected day: the restrained full-cell outline, per VISUAL_FOUNDATION.md
+   §10 (border-strong, not accent-cool — keeps selection visually distinct
+   from the today marker's color, not just its shape/position). */
+.cellSelected {
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 .noteDot {

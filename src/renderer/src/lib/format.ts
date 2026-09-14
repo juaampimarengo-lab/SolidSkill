@@ -12,6 +12,19 @@ export function formatUsdCompact(value: number): string {
   return `${sign}$${abs}`
 }
 
+// Compact "K" notation for header-level aggregates (monthly/weekly totals)
+// where a full-precision figure would be too wide for an inline summary.
+export function formatUsdCompactK(value: number): string {
+  const sign = value > 0 ? '+' : value < 0 ? '-' : ''
+  const abs = Math.abs(value)
+  if (abs >= 1000) {
+    const scaled = abs / 1000
+    const decimals = Number.isInteger(scaled) ? 0 : 2
+    return `${sign}$${scaled.toFixed(decimals)}K`
+  }
+  return `${sign}$${abs.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+}
+
 export function formatPrice(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

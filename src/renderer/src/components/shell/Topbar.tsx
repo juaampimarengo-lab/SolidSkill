@@ -2,15 +2,16 @@ import { useState, type JSX } from 'react'
 import { ChevronDown, Eye, EyeOff } from 'lucide-react'
 import styles from './Topbar.module.css'
 
-const representations = ['$', '%', 'R', 'PTS'] as const
-type Representation = (typeof representations)[number]
+export const representations = ['$', '%', 'R', 'PTS'] as const
+export type Representation = (typeof representations)[number]
 
 interface TopbarProps {
   pageTitle: string
+  representation: Representation
+  onChangeRepresentation: (representation: Representation) => void
 }
 
-export function Topbar({ pageTitle }: TopbarProps): JSX.Element {
-  const [representation, setRepresentation] = useState<Representation>('$')
+export function Topbar({ pageTitle, representation, onChangeRepresentation }: TopbarProps): JSX.Element {
   const [privacyOn, setPrivacyOn] = useState(false)
 
   return (
@@ -39,7 +40,7 @@ export function Topbar({ pageTitle }: TopbarProps): JSX.Element {
               role="tab"
               aria-selected={representation === token}
               className={representation === token ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
-              onClick={() => setRepresentation(token)}
+              onClick={() => onChangeRepresentation(token)}
             >
               {token}
             </button>

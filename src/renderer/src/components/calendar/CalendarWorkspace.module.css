@@ -1,0 +1,283 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-spacing);
+  height: 100%;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.monthLabel {
+  min-width: 168px;
+  text-align: center;
+  font-size: var(--text-section-title-size);
+  line-height: var(--text-section-title-lh);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.thisMonthButton {
+  height: var(--button-height-sm);
+  padding: 0 10px;
+  margin-left: 4px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm-size);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.thisMonthButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.monthlyStats {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.statsLabel {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.statsValue {
+  font-size: var(--text-kpi-value-sm-size);
+  line-height: var(--text-kpi-value-sm-lh);
+  font-weight: 500;
+}
+
+.statsDivider {
+  color: var(--text-muted);
+}
+
+.statsDays {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm-size);
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------ grid */
+
+.grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) 132px;
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.weekdayHeader {
+  background: var(--surface-primary);
+  padding: 6px 10px;
+  font-size: var(--text-micro-size);
+  line-height: var(--text-micro-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.weekSummaryHeader {
+  background: var(--surface-primary);
+}
+
+/* --------------------------------------------------------------- day cell */
+
+.dayCell {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 96px;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--surface-secondary);
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: default;
+  position: relative;
+  transition: filter var(--motion-hover);
+}
+
+.dayCellInteractive {
+  cursor: pointer;
+}
+
+.dayCellInteractive:hover {
+  filter: brightness(1.14);
+}
+
+.dayCellHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.dateGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dateNumber {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+}
+
+.dayCellOutside {
+  opacity: 0.4;
+}
+
+.dayCellOutside .dateNumber {
+  color: var(--text-disabled);
+}
+
+.journalIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Today: a small marker next to the date number only — a full cell-wide
+   edge was being mistaken for the selected-day outline during review. */
+.todayDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-cool);
+  flex: 0 0 auto;
+}
+
+/* Selected day: the restrained full-cell outline (unchanged — already
+   distinct from the today marker by color and by point-vs-cell-wide
+   shape, so the two compose cleanly when a day is both). */
+.dayCellSelected {
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.cellPositive {
+  background: var(--positive-subtle);
+}
+
+.cellNegative {
+  background: var(--negative-subtle);
+}
+
+.cellBreakEven {
+  background: color-mix(in srgb, var(--break-even) 16%, var(--surface-secondary));
+}
+
+.dayCellBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultValue {
+  font-size: var(--text-kpi-value-sm-size);
+  line-height: var(--text-kpi-value-sm-lh);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tradeCount {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.winRate {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------ week summary */
+
+.weekSummaryCell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 96px;
+  padding: 8px 12px;
+  background: var(--surface-primary);
+}
+
+.weekLabel {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.weekResult {
+  font-size: var(--text-kpi-value-sm-size);
+  line-height: var(--text-kpi-value-sm-lh);
+  font-weight: 500;
+}
+
+.weekDays {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
