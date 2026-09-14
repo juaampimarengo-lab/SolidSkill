@@ -5,6 +5,14 @@ Skill. It does not define implementation details (no component library
 decisions, no CSS framework setup) — those come when scaffolding begins. It
 defines the rules that any future implementation must follow.
 
+Concrete values (type scale, color hex tokens, geometry, density,
+per-surface visual grammar for navigation/tables/widgets/charts/calendar/
+Strategy Builder, and the anti-AI checklist) are defined in
+`VISUAL_FOUNDATION.md`. This document stays the principles-level source of
+truth; `VISUAL_FOUNDATION.md` is the concrete reference implementation work
+must match. Where the two ever appear to conflict, treat it as a doc-drift
+bug to fix, not as license to pick either freely.
+
 ## Positioning
 
 Solid Skill is a dense, professional, premium financial application. It
@@ -66,7 +74,14 @@ it is wrong, regardless of how functional it is.
     rule respected, passed evaluation). Never decorative.
   - **Coral/red** — meaningful negative states only (e.g., losing trade,
     rule violated, failed evaluation). Never decorative.
-  - **Amber** — warnings, break-even, caution states. Never decorative.
+  - **Amber** — warnings and caution states only (e.g., approaching a
+    drawdown limit). Never decorative. Break-even is a neutral gray, not
+    amber — amber must not carry two different meanings.
+  - **A restrained cool accent** — reserved for interaction/state signaling
+    only: focus indicator, selected state, active navigation state, active
+    filter/tab, and informational semantic state. Never decorative, never
+    used to build a "blue SaaS" visual theme, and never allowed to compete
+    visually with the positive/negative/warning outcome colors.
 - No arbitrary accent colors invented per-screen. If a new state needs a
   color, it needs a token and a rationale, not a one-off hex value.
 - Muted secondary typography color for supporting text/labels; strong,
@@ -83,15 +98,18 @@ gradient. The token layer is what makes the anti-generic-AI rules
 enforceable over time rather than a one-time review outcome — new work
 should structurally be unable to introduce arbitrary colors.
 
-Token categories to plan for once implementation begins (naming to be
-finalized during scaffolding, principle fixed now):
+Token categories to plan for once implementation begins (concrete values
+and names fixed in `VISUAL_FOUNDATION.md`; token *implementation mechanism*
+— CSS variables vs. a JS theme object vs. Tailwind config — remains a
+scaffolding-time decision):
 - Background/surface levels (base, elevated, overlay).
 - Border/divider strength levels.
 - Text emphasis levels (primary, secondary, muted, disabled).
 - Semantic state colors (positive, negative, warning, neutral/info).
 - Spacing scale tuned for density, not for generous consumer-app whitespace.
 - Restrained border-radius scale — sharp/precise, not the oversized rounded
-  corners common to generic dashboard templates.
+  corners common to generic dashboard templates. `VISUAL_FOUNDATION.md`
+  fixes an 8px ceiling for the entire application.
 - Shadow scale that is subtle throughout; no heavy drop shadows, no glow.
 
 ## Density and layout
