@@ -1,0 +1,71 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Numeric / financial values: IBM Plex Mono, tabular numerals. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.num--positive {
+  color: var(--positive);
+}
+
+.num--negative {
+  color: var(--negative);
+}
+
+.num--neutral {
+  color: var(--break-even);
+}
+
+/* Scrollbars: quiet, matching the dark neutral surface language. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--bg-app);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-cool);
+  outline-offset: 1px;
+}

@@ -1,0 +1,122 @@
+/*
+  Solid Skill design tokens.
+  Values are the locked reference implementation from docs/VISUAL_FOUNDATION.md.
+  Components must consume these tokens — no arbitrary hex/px values inline.
+*/
+
+:root {
+  /* Font families */
+  --font-ui: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Surface & structure */
+  --bg-app: #0b0c0e;
+  --bg-sidebar: #0d0e10;
+  --bg-topbar: #0d0e10;
+  --surface-primary: #131417;
+  --surface-secondary: #17181c;
+  --surface-elevated: #1c1e22;
+  --surface-hover: #1a1b1f;
+  --border-subtle: #232529;
+  --border-strong: #33363c;
+
+  /* Text */
+  --text-primary: #e7e8ea;
+  --text-secondary: #a6a9b0;
+  --text-muted: #6b6e76;
+  --text-disabled: #4a4c52;
+
+  /* Semantic state */
+  --positive: #3dd68c;
+  --positive-subtle: #1b3b2c;
+  --negative: #e5615a;
+  --negative-subtle: #3b211f;
+  --warning: #d9a441;
+  --warning-subtle: #3a3020;
+  --break-even: #8a8d95;
+  --accent-cool: #4c8dff;
+  --selection: #22303f;
+
+  /* Geometry */
+  --sidebar-width: 232px;
+  --sidebar-width-collapsed: 56px;
+  --topbar-height: 48px;
+  --page-gutter: 24px;
+  --page-gutter-compact: 16px;
+  --section-spacing: 20px;
+  --widget-padding: 14px;
+  --widget-gap: 12px;
+
+  --table-row-height: 36px;
+  --table-row-height-compact: 30px;
+  --table-header-height: 32px;
+
+  --input-height: 32px;
+  --button-height-sm: 28px;
+  --button-height-md: 32px;
+  --button-height-lg: 36px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-dropdown: 6px;
+  --radius-modal: 8px;
+
+  --chart-padding-top: 12px;
+  --chart-padding-right: 12px;
+  --chart-padding-bottom: 8px;
+  --chart-padding-left: 40px;
+
+  /* Typography scale */
+  --text-micro-size: 11px;
+  --text-micro-lh: 1.3;
+  --text-micro-ls: 0.02em;
+
+  --text-caption-size: 12px;
+  --text-caption-lh: 1.35;
+  --text-caption-ls: 0.01em;
+
+  --text-label-size: 12px;
+  --text-label-lh: 1.3;
+  --text-label-ls: 0.01em;
+
+  --text-body-sm-size: 13px;
+  --text-body-sm-lh: 1.45;
+
+  --text-body-size: 14px;
+  --text-body-lh: 1.5;
+
+  --text-nav-size: 13px;
+  --text-nav-lh: 1.3;
+
+  --text-widget-title-size: 13px;
+  --text-widget-title-lh: 1.3;
+  --text-widget-title-ls: 0.01em;
+
+  --text-section-title-size: 15px;
+  --text-section-title-lh: 1.3;
+
+  --text-page-title-size: 20px;
+  --text-page-title-lh: 1.25;
+  --text-page-title-ls: -0.01em;
+
+  --text-table-cell-size: 13px;
+  --text-table-cell-lh: 1.3;
+
+  --text-kpi-value-size: 22px;
+  --text-kpi-value-lh: 1.2;
+  --text-kpi-value-ls: -0.01em;
+
+  --text-kpi-value-sm-size: 16px;
+  --text-kpi-value-sm-lh: 1.2;
+  --text-kpi-value-sm-ls: -0.005em;
+
+  --text-kpi-value-lg-size: 28px;
+  --text-kpi-value-lg-lh: 1.15;
+  --text-kpi-value-lg-ls: -0.01em;
+
+  /* Motion */
+  --motion-hover: 90ms ease-out;
+  --motion-fade: 100ms ease-out;
+  --motion-panel: 180ms ease-out;
+}

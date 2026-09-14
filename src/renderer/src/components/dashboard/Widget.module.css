@@ -1,0 +1,29 @@
+/* Shared widget shell rules, imported (via composes) rather than a generic
+   <Widget> component — every dashboard block still owns its own markup and
+   semantics, this file just centralizes the one repeated surface rule. */
+
+.widget {
+  background: var(--surface-primary);
+  border-radius: var(--radius-md);
+  padding: var(--widget-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Grid items default to min-width: auto, which sizes to their content's
+     intrinsic (unbreakable) width and can blow past the track assigned by
+     .rowSplit's minmax() columns, overflowing into the neighboring widget.
+     min-width: 0 lets the track's computed width win instead; overflow:
+     hidden is the backstop so any remaining internal overflow is contained
+     within this widget's own box, never bleeding into a sibling. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.title {
+  font-size: var(--text-widget-title-size);
+  line-height: var(--text-widget-title-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-widget-title-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

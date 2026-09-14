@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+dist-electron/
+release/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Local database files (never created at this checkpoint, ignored preemptively)
+*.sqlite
+*.sqlite3
+*.db

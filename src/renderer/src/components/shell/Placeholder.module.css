@@ -1,0 +1,5 @@
+.copy {
+  color: var(--text-muted);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+}

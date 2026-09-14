@@ -1,0 +1,33 @@
+.widget {
+  composes: widget from './Widget.module.css';
+}
+
+.title {
+  composes: title from './Widget.module.css';
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 16px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: var(--text-label-size);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.value {
+  font-size: var(--text-kpi-value-sm-size);
+  line-height: var(--text-kpi-value-sm-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-kpi-value-sm-ls);
+  color: var(--text-primary);
+}

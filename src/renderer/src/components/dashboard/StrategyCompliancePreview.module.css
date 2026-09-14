@@ -1,0 +1,58 @@
+.widget {
+  composes: widget from './Widget.module.css';
+}
+
+.title {
+  composes: title from './Widget.module.css';
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 30px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-body-sm-size);
+  color: var(--text-primary);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-caption-size);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statePass {
+  color: var(--positive);
+}
+
+.stateFail {
+  color: var(--negative);
+}
+
+.stateNa {
+  color: var(--text-muted);
+}
