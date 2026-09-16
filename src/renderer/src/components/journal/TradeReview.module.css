@@ -1,0 +1,348 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--widget-padding);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.instrument {
+  font-size: var(--text-section-title-size);
+  line-height: var(--text-section-title-lh);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.direction {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+}
+
+.headerMeta {
+  margin-top: 2px;
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.closeButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.resultLine {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px var(--widget-padding);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.resultValue {
+  font-size: var(--text-kpi-value-size);
+  line-height: var(--text-kpi-value-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-kpi-value-ls);
+}
+
+.resultR {
+  font-size: var(--text-body-sm-size);
+  color: var(--text-secondary);
+}
+
+.tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  padding: 6px var(--widget-padding) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tab {
+  height: 30px;
+  padding: 0 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--motion-hover), border-color var(--motion-hover);
+}
+
+.tab:hover {
+  color: var(--text-secondary);
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-cool);
+}
+
+.content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--widget-padding);
+}
+
+/* ------------------------------------------------------------- overview */
+
+.group + .group {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.groupTitle {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.fieldRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.fieldValue {
+  font-size: var(--text-body-sm-size);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ executions */
+
+.execSummary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: var(--surface-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+}
+
+.execSummaryLabel {
+  color: var(--text-muted);
+}
+
+.execSummaryValue {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.execTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.execTh {
+  height: 28px;
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 6px;
+}
+
+.execThLeft {
+  text-align: left;
+}
+
+.execThRight {
+  text-align: right;
+}
+
+.execRow td {
+  height: 30px;
+  font-size: var(--text-table-cell-size);
+  color: var(--text-primary);
+  padding: 0 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.execRow:last-child td {
+  border-bottom: none;
+}
+
+.execTdLeft {
+  text-align: left;
+}
+
+.execTdRight {
+  text-align: right;
+}
+
+.sideBuy {
+  color: var(--text-secondary);
+}
+
+.sideSell {
+  color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------------- strategy */
+
+.strategyHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.strategyName {
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.versionBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  background: var(--surface-secondary);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro-size);
+  color: var(--text-muted);
+}
+
+.versionNote {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.complianceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.complianceValue {
+  font-size: var(--text-kpi-value-sm-size);
+  line-height: var(--text-kpi-value-sm-lh);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.complianceLabel {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.ruleList {
+  display: flex;
+  flex-direction: column;
+}
+
+.ruleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ruleRow:last-child {
+  border-bottom: none;
+}
+
+.ruleName {
+  font-size: var(--text-body-sm-size);
+  color: var(--text-primary);
+}
+
+.ruleState {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-caption-size);
+  font-weight: 500;
+}
+
+.rulePass {
+  color: var(--positive);
+}
+
+.ruleFail {
+  color: var(--negative);
+}
+
+.ruleNa {
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------- notes */
+
+.noteBlock + .noteBlock {
+  margin-top: 16px;
+}
+
+.noteTitle {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.noteText {
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-lh);
+  color: var(--text-secondary);
+}

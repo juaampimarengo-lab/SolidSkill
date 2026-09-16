@@ -1,0 +1,136 @@
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.th {
+  position: sticky;
+  top: 0;
+  height: var(--table-header-height);
+  background: var(--surface-primary);
+  font-size: var(--text-micro-size);
+  line-height: var(--text-micro-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.thLeft {
+  text-align: left;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.row {
+  height: var(--table-row-height);
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+
+.row td {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.row:last-child td {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: var(--surface-hover);
+}
+
+.rowSelected,
+.rowSelected:hover {
+  background: var(--selection);
+  box-shadow: inset 2px 0 0 var(--accent-cool);
+}
+
+.td {
+  font-size: var(--text-table-cell-size);
+  line-height: var(--text-table-cell-lh);
+  color: var(--text-primary);
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.tdLeft {
+  text-align: left;
+}
+
+.tdRight {
+  text-align: right;
+}
+
+.tdMuted {
+  color: var(--text-muted);
+}
+
+.tdStrategy {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.directionLong {
+  color: var(--text-secondary);
+}
+
+.directionShort {
+  color: var(--text-secondary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+}
+
+.badgePositive {
+  background: var(--positive-subtle);
+  color: var(--positive);
+}
+
+.badgeNegative {
+  background: var(--negative-subtle);
+  color: var(--negative);
+}
+
+.badgeWarning {
+  background: var(--warning-subtle);
+  color: var(--warning);
+}
+
+.footer {
+  flex: 0 0 var(--table-row-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-body-sm-size);
+}

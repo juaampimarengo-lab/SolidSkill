@@ -3,6 +3,7 @@ import { AppShell } from '@renderer/components/shell/AppShell'
 import type { Representation } from '@renderer/components/shell/Topbar'
 import { Dashboard } from '@renderer/components/dashboard/Dashboard'
 import { CalendarWorkspace } from '@renderer/components/calendar/CalendarWorkspace'
+import { JournalWorkspace } from '@renderer/components/journal/JournalWorkspace'
 import { Placeholder } from '@renderer/components/shell/Placeholder'
 
 function App(): JSX.Element {
@@ -21,7 +22,8 @@ function App(): JSX.Element {
     >
       {active === 'Dashboard' && <Dashboard />}
       {active === 'Calendar' && <CalendarWorkspace />}
-      {active !== 'Dashboard' && active !== 'Calendar' && <Placeholder />}
+      {active === 'Journal' && <JournalWorkspace />}
+      {active !== 'Dashboard' && active !== 'Calendar' && active !== 'Journal' && <Placeholder />}
     </AppShell>
   )
 }
