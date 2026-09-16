@@ -68,12 +68,33 @@ on — flag it for follow-up rather than treating it as fact.
 
 - [VERIFIED] TradeZella provides a trade journal / trade log where
   individual trades are recorded and can be annotated.
+- [VERIFIED] TradeZella's Trade Page has a left/trade-details area (Stats,
+  R-Multiple, Tags, Strategy association, Executions, Attachments) and a
+  right/analysis area (trade chart with visible entries/exits, Trade Notes,
+  Day Notes, running P&L).
+- [VERIFIED] TradeZella documents individual buy/sell executions per trade
+  with viewable/editable detail, multiple profit targets and multiple stop
+  losses with quantities attached to partial PT/SL levels, Trade Risk,
+  Initial Target, Planned R-Multiple, Realized R-Multiple, custom
+  tags/categories, custom strategies, and screenshots/attachments.
+- [VERIFIED] TradeZella's Trade Log/Daily Journal documentation describes
+  daily stats (Net P&L, Total Trades, Win Rate, Winners, Losers, Volume,
+  Profit Factor, Commissions, Gross P&L), notes, detailed trade rows,
+  customizable trade columns, and tags.
 - [OBSERVED] Trade detail views commonly show entry/exit data, P&L,
   screenshots, and free-text notes attached to a trade.
 - [SOLID SKILL DECISION] Solid Skill's Trades/Journal area (per
   `PRODUCT.md`) additionally ties each trade to Strategy Engine evaluation
   output (Trade Rule Results) — a concept `STRATEGY_ENGINE.md` defines and
   that is not being asserted as a TradeZella feature.
+- [SOLID SKILL DECISION] Solid Skill's Journal/Trade Review model
+  (`JOURNAL_SPEC.md`) explicitly distinguishes Order, Execution/Fill,
+  Position, and Trade (`TRADE_MODEL_CONCEPTS.md`), and requires that a
+  trade's direction be reconstructed from the position lifecycle rather
+  than inferred from its closing execution's side. This distinction is not
+  claimed as TradeZella product knowledge — it is a Solid Skill
+  normalization requirement driven by needing to support both Tradovate
+  (fill-level) and MT5 (deal-level) data sources correctly.
 
 ## 4. Strategies
 
