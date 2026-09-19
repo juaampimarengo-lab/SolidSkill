@@ -1,0 +1,55 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.svg {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+.line {
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.markerBuy {
+  fill: var(--accent-cool);
+  stroke: var(--bg-app);
+  stroke-width: 1;
+}
+
+.markerSell {
+  fill: var(--warning);
+  stroke: var(--bg-app);
+  stroke-width: 1;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legendDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.disclaimer {
+  margin-left: auto;
+  font-style: italic;
+}

@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { recentTrades } from '@renderer/data/dummyData'
+import { recentTrades } from '@renderer/lib/trades'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
 import styles from './JournalPreview.module.css'
 
@@ -9,7 +9,13 @@ const complianceModifier: Record<string, string> = {
   Partial: styles.badgeWarning
 }
 
-export function JournalPreview(): JSX.Element {
+interface JournalPreviewProps {
+  onOpenTradeReview: (tradeId: string) => void
+}
+
+export function JournalPreview({ onOpenTradeReview }: JournalPreviewProps): JSX.Element {
+  const trades = recentTrades(6)
+
   return (
     <section className={styles.widget}>
       <span className={styles.title}>Recent Trades</span>
@@ -30,8 +36,12 @@ export function JournalPreview(): JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {recentTrades.map((trade) => (
-            <tr key={`${trade.time}-${trade.instrument}`} className={styles.row}>
+          {trades.map((trade) => (
+            <tr
+              key={trade.id}
+              className={styles.row}
+              onClick={() => onOpenTradeReview(trade.id)}
+            >
               <td className={`num ${styles.tdLeft} ${styles.time}`}>{trade.time}</td>
               <td className={styles.tdLeft}>{trade.instrument}</td>
               <td className={styles.tdLeft}>{trade.side}</td>

@@ -1,5 +1,5 @@
 import { useState, type JSX } from 'react'
-import { X, Check, XCircle, Minus } from 'lucide-react'
+import { X, Check, XCircle, Minus, Maximize2 } from 'lucide-react'
 import type { JournalTrade, RuleState } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
 import { countEntries, countExits, ruleCompliancePercent } from '@renderer/lib/journal'
@@ -8,16 +8,24 @@ import styles from './TradeReview.module.css'
 type Tab = 'Overview' | 'Executions' | 'Strategy' | 'Notes'
 const tabs: Tab[] = ['Overview', 'Executions', 'Strategy', 'Notes']
 
-function outcomeNumClass(outcome: JournalTrade['outcome']): string {
-  return outcome === 'break-even' ? 'num--neutral' : `num--${outcome}`
+// Accepts CalendarOutcome's superset too ('no-trade') so Day Review / Trade
+// Review can reuse this for day-level aggregate outcomes, not just a single
+// trade's outcome.
+export function outcomeNumClass(outcome: JournalTrade['outcome'] | 'no-trade'): string {
+  if (outcome === 'break-even' || outcome === 'no-trade') return 'num--neutral'
+  return `num--${outcome}`
 }
 
 interface TradeReviewProps {
   trade: JournalTrade
   onClose: () => void
+  // Present when this panel is the Journal's quick preview (Checkpoint 008)
+  // — opens the same trade in the canonical, full-page Trade Review.
+  // Absent when TradeReview is reused as a plain tabbed panel elsewhere.
+  onOpenFull?: () => void
 }
 
-export function TradeReview({ trade, onClose }: TradeReviewProps): JSX.Element {
+export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('Overview')
 
   return (
@@ -32,9 +40,17 @@ export function TradeReview({ trade, onClose }: TradeReviewProps): JSX.Element {
             {trade.date} · {trade.openTime.slice(0, 5)} – {trade.closeTime.slice(0, 5)} · {trade.duration}
           </div>
         </div>
-        <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close trade review">
-          <X size={16} strokeWidth={1.75} />
-        </button>
+        <div className={styles.headerActions}>
+          {onOpenFull && (
+            <button type="button" className={styles.openFullButton} onClick={onOpenFull}>
+              <Maximize2 size={12} strokeWidth={1.75} />
+              Open full review
+            </button>
+          )}
+          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close trade review">
+            <X size={16} strokeWidth={1.75} />
+          </button>
+        </div>
       </div>
 
       <div className={styles.resultLine}>
@@ -82,7 +98,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
   )
 }
 
-function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
+export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
   return (
     <div>
       <div className={styles.group}>
@@ -129,7 +145,7 @@ function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
   )
 }
 
-function ExecutionsTab({ trade }: { trade: JournalTrade }): JSX.Element {
+export function ExecutionsTab({ trade }: { trade: JournalTrade }): JSX.Element {
   const entries = countEntries(trade)
   const exits = countExits(trade)
 
@@ -190,7 +206,7 @@ function RuleGlyph({ state }: { state: RuleState }): JSX.Element {
   return <Minus size={12} strokeWidth={2} />
 }
 
-function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
+export function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
   return (
     <div>
       <div className={styles.strategyHead}>

@@ -21,7 +21,11 @@ function matchesFilters(trade: JournalTrade, filters: JournalFilterState): boole
   return true
 }
 
-export function JournalWorkspace(): JSX.Element {
+interface JournalWorkspaceProps {
+  onOpenTradeReview: (tradeId: string) => void
+}
+
+export function JournalWorkspace({ onOpenTradeReview }: JournalWorkspaceProps): JSX.Element {
   const [filters, setFilters] = useState<JournalFilterState>(defaultJournalFilters)
   const [selectedId, setSelectedId] = useState<string | null>(journalTrades[0]?.id ?? null)
 
@@ -43,7 +47,11 @@ export function JournalWorkspace(): JSX.Element {
 
         {selectedTrade && (
           <div className={styles.reviewRegion}>
-            <TradeReview trade={selectedTrade} onClose={() => setSelectedId(null)} />
+            <TradeReview
+              trade={selectedTrade}
+              onClose={() => setSelectedId(null)}
+              onOpenFull={() => onOpenTradeReview(selectedTrade.id)}
+            />
           </div>
         )}
       </div>

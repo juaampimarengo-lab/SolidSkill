@@ -25,7 +25,11 @@ function formatWinRate(value: number): string {
   return Number.isInteger(value) ? `${value}%` : `${value.toFixed(2)}%`
 }
 
-export function CalendarWorkspace(): JSX.Element {
+interface CalendarWorkspaceProps {
+  onOpenDayReview: (date: string) => void
+}
+
+export function CalendarWorkspace({ onOpenDayReview }: CalendarWorkspaceProps): JSX.Element {
   const [monthIndex, setMonthIndex] = useState(currentMonthIndex)
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -99,6 +103,7 @@ export function CalendarWorkspace(): JSX.Element {
             summary={month.weeklySummaries[weekIndex]}
             selected={selected}
             onSelect={setSelected}
+            onOpenDayReview={onOpenDayReview}
           />
         ))}
       </div>
@@ -112,7 +117,8 @@ function WeekRow({
   monthIndex,
   summary,
   selected,
-  onSelect
+  onSelect,
+  onOpenDayReview
 }: {
   week: CalendarDayCell[]
   weekIndex: number
@@ -120,17 +126,23 @@ function WeekRow({
   summary: WeeklySummaryData
   selected: string | null
   onSelect: (key: string | null) => void
+  onOpenDayReview: (date: string) => void
 }): JSX.Element {
   return (
     <>
       {week.map((cell, cellIndex) => {
         const key = `${monthIndex}-${weekIndex}-${cellIndex}`
+        const interactive = cell.inMonth && cell.trades > 0 && Boolean(cell.dateKey)
         return (
           <DayCell
             key={key}
             cell={cell}
             isSelected={selected === key}
-            onSelect={() => onSelect(selected === key ? null : cell.inMonth ? key : null)}
+            interactive={interactive}
+            onSelect={() => {
+              onSelect(selected === key ? null : cell.inMonth ? key : null)
+              if (interactive) onOpenDayReview(cell.dateKey as string)
+            }}
           />
         )
       })}
@@ -142,10 +154,12 @@ function WeekRow({
 function DayCell({
   cell,
   isSelected,
+  interactive,
   onSelect
 }: {
   cell: CalendarDayCell
   isSelected: boolean
+  interactive: boolean
   onSelect: () => void
 }): JSX.Element {
   const classes = [
@@ -153,13 +167,13 @@ function DayCell({
     cellOutcomeClass[cell.outcome],
     !cell.inMonth ? styles.dayCellOutside : '',
     isSelected ? styles.dayCellSelected : '',
-    cell.inMonth ? styles.dayCellInteractive : ''
+    interactive ? styles.dayCellInteractive : ''
   ]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <button type="button" className={classes} onClick={cell.inMonth ? onSelect : undefined} disabled={!cell.inMonth}>
+    <button type="button" className={classes} onClick={interactive ? onSelect : undefined} disabled={!interactive}>
       <div className={styles.dayCellHead}>
         <span className={styles.dateGroup}>
           <span className={styles.dateNumber}>{cell.date}</span>

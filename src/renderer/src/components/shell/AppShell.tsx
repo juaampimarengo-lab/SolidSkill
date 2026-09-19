@@ -5,6 +5,12 @@ import styles from './AppShell.module.css'
 
 interface AppShellProps {
   active: string
+  // Defaults to `active` (the sidebar section name). Overridden when a
+  // contextual overlay (Day Review / Trade Review) is open on top of that
+  // section — the sidebar highlight stays on the origin section while the
+  // topbar title reflects the overlay instead. See CLAUDE.md checkpoint
+  // instructions, "GOAL 1 — CONTEXTUAL PAGE TITLE."
+  pageTitle?: string
   onSelect: (label: string) => void
   representation: Representation
   onChangeRepresentation: (representation: Representation) => void
@@ -13,6 +19,7 @@ interface AppShellProps {
 
 export function AppShell({
   active,
+  pageTitle,
   onSelect,
   representation,
   onChangeRepresentation,
@@ -22,7 +29,11 @@ export function AppShell({
     <div className={styles.shell}>
       <Sidebar active={active} onSelect={onSelect} />
       <div className={styles.main}>
-        <Topbar pageTitle={active} representation={representation} onChangeRepresentation={onChangeRepresentation} />
+        <Topbar
+          pageTitle={pageTitle ?? active}
+          representation={representation}
+          onChangeRepresentation={onChangeRepresentation}
+        />
         <div className={styles.content}>{children}</div>
       </div>
     </div>

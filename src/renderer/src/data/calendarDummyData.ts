@@ -1,24 +1,62 @@
-// Static dummy data for the Calendar workspace (Checkpoint 005). Values are
-// hand-authored, not derived from any trade/day/week relationship — the
-// point of this checkpoint is visual rendering, not calculation
-// correctness. Real aggregation, outcome classification, and win-rate
-// calculation are out of scope here (see docs/CALENDAR_SPEC.md §15).
+// Calendar Workspace fixture data (Checkpoint 008). Every in-month day
+// cell is derived from the shared journalTrades fixtures (journalDummyData.ts)
+// via aggregateDay — Calendar and Journal/Day Review can never disagree
+// about the same day's numbers, per CLAUDE.md checkpoint instructions
+// ("SHARED DUMMY DATA"). A day with no fixture trades is a genuine
+// no-trade cell; this includes every date after Sep 16, 2026 (today, the
+// review date), since no trade fixture exists past that date — see
+// "FIX THE FUTURE-DATE DUMMY-DATA ISSUE."
+//
+// No calculation here is a real aggregation engine — see docs/CALENDAR_SPEC.md
+// §15. This module only sums/counts already-computed JournalTrade fields.
 
-import type { CalendarDayCell, CalendarMonthData } from '@renderer/types/calendar'
+import { aggregateDay } from '@renderer/lib/dayAggregate'
+import { journalTrades } from '@renderer/data/journalDummyData'
+import type { CalendarDayCell, CalendarMonthData, MonthlyStats, WeeklySummaryData } from '@renderer/types/calendar'
+import type { JournalTrade } from '@renderer/types/journal'
 
-function day(
-  date: number,
-  inMonth: boolean,
-  overrides: Partial<Omit<CalendarDayCell, 'date' | 'inMonth'>> = {}
-): CalendarDayCell {
+const TODAY_KEY = 'Sep 16'
+
+const tradesByDate = new Map<string, JournalTrade[]>()
+for (const trade of journalTrades) {
+  const list = tradesByDate.get(trade.date) ?? []
+  list.push(trade)
+  tradesByDate.set(trade.date, list)
+}
+
+function outsideCell(date: number): CalendarDayCell {
+  return { date, inMonth: false, outcome: 'no-trade', result: null, trades: 0, winRate: null }
+}
+
+function inMonthCell(date: number, monthAbbr: string): CalendarDayCell {
+  const dateKey = `${monthAbbr} ${date}`
+  const dayTrades = (tradesByDate.get(dateKey) ?? [])
+    .slice()
+    .sort((a, b) => a.openTime.localeCompare(b.openTime))
+
+  if (dayTrades.length === 0) {
+    return {
+      date,
+      inMonth: true,
+      outcome: 'no-trade',
+      result: null,
+      trades: 0,
+      winRate: null,
+      isToday: dateKey === TODAY_KEY
+    }
+  }
+
+  const agg = aggregateDay(dayTrades)
   return {
     date,
-    inMonth,
-    outcome: 'no-trade',
-    result: null,
-    trades: 0,
-    winRate: null,
-    ...overrides
+    inMonth: true,
+    outcome: agg.outcome,
+    result: agg.netPnl,
+    trades: agg.trades,
+    winRate: agg.winRate,
+    hasJournalEntry: dayTrades.some((t) => Boolean(t.dayNote)),
+    isToday: dateKey === TODAY_KEY,
+    dateKey
   }
 }
 
@@ -30,77 +68,82 @@ function chunk7(cells: CalendarDayCell[]): CalendarDayCell[][] {
   return weeks
 }
 
+function monthlyStats(weeks: CalendarDayCell[][]): MonthlyStats {
+  const tradedDayCells = weeks.flat().filter((c) => c.inMonth && c.trades > 0)
+  return {
+    result: tradedDayCells.reduce((sum, c) => sum + (c.result ?? 0), 0),
+    tradedDays: tradedDayCells.length
+  }
+}
+
+function weeklySummaries(weeks: CalendarDayCell[][]): WeeklySummaryData[] {
+  return weeks.map((week, i) => {
+    const traded = week.filter((c) => c.trades > 0)
+    const result = traded.reduce((sum, c) => sum + (c.result ?? 0), 0)
+    const outcome = traded.length === 0 ? 'no-trade' : result > 0 ? 'positive' : result < 0 ? 'negative' : 'break-even'
+    return { label: `Week ${i + 1}`, outcome, result, tradedDays: traded.length }
+  })
+}
+
 // ---------------------------------------------------------------------
-// September 2026 — the primary dummy month (matches the CALENDAR_SPEC
-// worked example on day 14: +$556 / 3 trades / 33.33% / journal entry).
-// Sept 1, 2026 falls on a Tuesday.
+// September 2026 — the primary/current dummy month. Sept 1, 2026 falls on
+// a Tuesday. Today is Sep 16, 2026.
 // ---------------------------------------------------------------------
 
 const septemberCells: CalendarDayCell[] = [
   // Week 1 — trailing August days + Sep 1-5
-  day(30, false),
-  day(31, false),
-  day(1, true, { outcome: 'positive', result: 715, trades: 2, winRate: 50 }),
-  day(2, true, { outcome: 'negative', result: -340, trades: 1, winRate: 0 }),
-  day(3, true),
-  day(4, true, { outcome: 'break-even', result: 0, trades: 2, winRate: 50 }),
-  day(5, true),
+  outsideCell(30),
+  outsideCell(31),
+  inMonthCell(1, 'Sep'),
+  inMonthCell(2, 'Sep'),
+  inMonthCell(3, 'Sep'),
+  inMonthCell(4, 'Sep'),
+  inMonthCell(5, 'Sep'),
 
   // Week 2 — Sep 6-12
-  day(6, true),
-  day(7, true, { outcome: 'positive', result: 482, trades: 1, winRate: 100 }),
-  day(8, true, { outcome: 'negative', result: -214.5, trades: 3, winRate: 33.33 }),
-  day(9, true),
-  day(10, true, { outcome: 'positive', result: 916.25, trades: 6, winRate: 66.67, hasJournalEntry: true }),
-  day(11, true, { outcome: 'break-even', result: 0, trades: 1, winRate: 0 }),
-  day(12, true),
+  inMonthCell(6, 'Sep'),
+  inMonthCell(7, 'Sep'),
+  inMonthCell(8, 'Sep'),
+  inMonthCell(9, 'Sep'),
+  inMonthCell(10, 'Sep'),
+  inMonthCell(11, 'Sep'),
+  inMonthCell(12, 'Sep'),
 
   // Week 3 — Sep 13-19
-  day(13, true),
-  day(14, true, {
-    outcome: 'positive',
-    result: 556,
-    trades: 3,
-    winRate: 33.33,
-    hasJournalEntry: true,
-    isToday: true
-  }),
-  day(15, true, { outcome: 'negative', result: -488.25, trades: 4, winRate: 25 }),
-  day(16, true, { outcome: 'positive', result: 220.5, trades: 3, winRate: 66.67 }),
-  day(17, true),
-  day(18, true, { outcome: 'positive', result: 340, trades: 3, winRate: 100 }),
-  day(19, true),
+  inMonthCell(13, 'Sep'),
+  inMonthCell(14, 'Sep'),
+  inMonthCell(15, 'Sep'),
+  inMonthCell(16, 'Sep'),
+  inMonthCell(17, 'Sep'),
+  inMonthCell(18, 'Sep'),
+  inMonthCell(19, 'Sep'),
 
   // Week 4 — Sep 20-26
-  day(20, true),
-  day(21, true, { outcome: 'break-even', result: 0, trades: 1, winRate: 0 }),
-  day(22, true, { outcome: 'negative', result: -152, trades: 2, winRate: 0 }),
-  day(23, true, { outcome: 'positive', result: 812.5, trades: 5, winRate: 80 }),
-  day(24, true, { outcome: 'positive', result: 118.25, trades: 2, winRate: 50 }),
-  day(25, true),
-  day(26, true),
+  inMonthCell(20, 'Sep'),
+  inMonthCell(21, 'Sep'),
+  inMonthCell(22, 'Sep'),
+  inMonthCell(23, 'Sep'),
+  inMonthCell(24, 'Sep'),
+  inMonthCell(25, 'Sep'),
+  inMonthCell(26, 'Sep'),
 
   // Week 5 — Sep 27-30 + leading October days
-  day(27, true),
-  day(28, true, { outcome: 'negative', result: -64, trades: 1, winRate: 0 }),
-  day(29, true, { outcome: 'positive', result: 540, trades: 4, winRate: 75 }),
-  day(30, true, { outcome: 'positive', result: 1842.5, trades: 6, winRate: 83.33, hasJournalEntry: true }),
-  day(1, false),
-  day(2, false),
-  day(3, false)
+  inMonthCell(27, 'Sep'),
+  inMonthCell(28, 'Sep'),
+  inMonthCell(29, 'Sep'),
+  inMonthCell(30, 'Sep'),
+  outsideCell(1),
+  outsideCell(2),
+  outsideCell(3)
 ]
+
+const septemberWeeks = chunk7(septemberCells)
 
 const september2026: CalendarMonthData = {
   monthLabel: 'September 2026',
-  monthlyStats: { result: 5130, tradedDays: 13 },
-  weeks: chunk7(septemberCells),
-  weeklySummaries: [
-    { label: 'Week 1', outcome: 'positive', result: 482, tradedDays: 1 },
-    { label: 'Week 2', outcome: 'positive', result: 1050, tradedDays: 4 },
-    { label: 'Week 3', outcome: 'negative', result: -320, tradedDays: 3 },
-    { label: 'Week 4', outcome: 'break-even', result: 0, tradedDays: 2 },
-    { label: 'Week 5', outcome: 'positive', result: 2318, tradedDays: 3 }
-  ]
+  monthlyStats: monthlyStats(septemberWeeks),
+  weeks: septemberWeeks,
+  weeklySummaries: weeklySummaries(septemberWeeks)
 }
 
 // ---------------------------------------------------------------------
@@ -110,133 +153,91 @@ const september2026: CalendarMonthData = {
 
 const augustCells: CalendarDayCell[] = [
   // Week 1 — trailing July + Aug 1
-  day(26, false),
-  day(27, false),
-  day(28, false),
-  day(29, false),
-  day(30, false),
-  day(31, false),
-  day(1, true),
+  outsideCell(26),
+  outsideCell(27),
+  outsideCell(28),
+  outsideCell(29),
+  outsideCell(30),
+  outsideCell(31),
+  inMonthCell(1, 'Aug'),
 
   // Week 2 — Aug 2-8
-  day(2, true),
-  day(3, true, { outcome: 'positive', result: 268, trades: 2, winRate: 50 }),
-  day(4, true, { outcome: 'negative', result: -190, trades: 1, winRate: 0 }),
-  day(5, true),
-  day(6, true),
-  day(7, true, { outcome: 'positive', result: 604.5, trades: 4, winRate: 75 }),
-  day(8, true),
+  inMonthCell(2, 'Aug'),
+  inMonthCell(3, 'Aug'),
+  inMonthCell(4, 'Aug'),
+  inMonthCell(5, 'Aug'),
+  inMonthCell(6, 'Aug'),
+  inMonthCell(7, 'Aug'),
+  inMonthCell(8, 'Aug'),
 
   // Week 3 — Aug 9-15
-  day(9, true),
-  day(10, true, { outcome: 'break-even', result: 0, trades: 1, winRate: 0 }),
-  day(11, true),
-  day(12, true, { outcome: 'positive', result: 388, trades: 3, winRate: 66.67, hasJournalEntry: true }),
-  day(13, true),
-  day(14, true),
-  day(15, true),
+  inMonthCell(9, 'Aug'),
+  inMonthCell(10, 'Aug'),
+  inMonthCell(11, 'Aug'),
+  inMonthCell(12, 'Aug'),
+  inMonthCell(13, 'Aug'),
+  inMonthCell(14, 'Aug'),
+  inMonthCell(15, 'Aug'),
 
   // Week 4 — Aug 16-22
-  day(16, true, { outcome: 'negative', result: -96, trades: 2, winRate: 0 }),
-  day(17, true),
-  day(18, true, { outcome: 'positive', result: 512, trades: 3, winRate: 66.67 }),
-  day(19, true),
-  day(20, true),
-  day(21, true, { outcome: 'negative', result: -260, trades: 2, winRate: 50 }),
-  day(22, true),
+  inMonthCell(16, 'Aug'),
+  inMonthCell(17, 'Aug'),
+  inMonthCell(18, 'Aug'),
+  inMonthCell(19, 'Aug'),
+  inMonthCell(20, 'Aug'),
+  inMonthCell(21, 'Aug'),
+  inMonthCell(22, 'Aug'),
 
   // Week 5 — Aug 23-29
-  day(23, true),
-  day(24, true, { outcome: 'positive', result: 175, trades: 1, winRate: 100 }),
-  day(25, true),
-  day(26, true),
-  day(27, true, { outcome: 'positive', result: 940, trades: 5, winRate: 80, hasJournalEntry: true }),
-  day(28, true),
-  day(29, true),
+  inMonthCell(23, 'Aug'),
+  inMonthCell(24, 'Aug'),
+  inMonthCell(25, 'Aug'),
+  inMonthCell(26, 'Aug'),
+  inMonthCell(27, 'Aug'),
+  inMonthCell(28, 'Aug'),
+  inMonthCell(29, 'Aug'),
 
   // Week 6 — Aug 30-31 + leading September days
-  day(30, true),
-  day(31, true, { outcome: 'negative', result: -145, trades: 1, winRate: 0 }),
-  day(1, false),
-  day(2, false),
-  day(3, false),
-  day(4, false),
-  day(5, false)
+  inMonthCell(30, 'Aug'),
+  inMonthCell(31, 'Aug'),
+  outsideCell(1),
+  outsideCell(2),
+  outsideCell(3),
+  outsideCell(4),
+  outsideCell(5)
 ]
+
+const augustWeeks = chunk7(augustCells)
 
 const august2026: CalendarMonthData = {
   monthLabel: 'August 2026',
-  monthlyStats: { result: 2996.5, tradedDays: 10 },
-  weeks: chunk7(augustCells),
-  weeklySummaries: [
-    { label: 'Week 1', outcome: 'no-trade', result: 0, tradedDays: 0 },
-    { label: 'Week 2', outcome: 'positive', result: 682.5, tradedDays: 3 },
-    { label: 'Week 3', outcome: 'positive', result: 388, tradedDays: 2 },
-    { label: 'Week 4', outcome: 'positive', result: 156, tradedDays: 3 },
-    { label: 'Week 5', outcome: 'positive', result: 1115, tradedDays: 2 },
-    { label: 'Week 6', outcome: 'negative', result: -145, tradedDays: 1 }
-  ]
+  monthlyStats: monthlyStats(augustWeeks),
+  weeks: augustWeeks,
+  weeklySummaries: weeklySummaries(augustWeeks)
 }
 
 // ---------------------------------------------------------------------
-// October 2026 — an upcoming month with no realized activity yet, to
-// demonstrate the all-no-trade empty state. Oct 1, 2026 falls on a
-// Thursday.
+// October 2026 — an upcoming month with no realized activity yet (no
+// fixture trade is ever dated after Sep 16, 2026 — see journalDummyData.ts),
+// so every in-month cell resolves to the no-trade state automatically.
+// Oct 1, 2026 falls on a Thursday.
 // ---------------------------------------------------------------------
 
 const octoberCells: CalendarDayCell[] = [
-  day(27, false),
-  day(28, false),
-  day(29, false),
-  day(30, false),
-  day(1, true),
-  day(2, true),
-  day(3, true),
-
-  day(4, true),
-  day(5, true),
-  day(6, true),
-  day(7, true),
-  day(8, true),
-  day(9, true),
-  day(10, true),
-
-  day(11, true),
-  day(12, true),
-  day(13, true),
-  day(14, true),
-  day(15, true),
-  day(16, true),
-  day(17, true),
-
-  day(18, true),
-  day(19, true),
-  day(20, true),
-  day(21, true),
-  day(22, true),
-  day(23, true),
-  day(24, true),
-
-  day(25, true),
-  day(26, true),
-  day(27, true),
-  day(28, true),
-  day(29, true),
-  day(30, true),
-  day(31, true)
+  outsideCell(27),
+  outsideCell(28),
+  outsideCell(29),
+  outsideCell(30),
+  ...Array.from({ length: 31 }, (_, i) => inMonthCell(i + 1, 'Oct'))
 ]
+
+const octoberWeeks = chunk7(octoberCells)
 
 const october2026: CalendarMonthData = {
   monthLabel: 'October 2026',
-  monthlyStats: { result: 0, tradedDays: 0 },
-  weeks: chunk7(octoberCells),
-  weeklySummaries: [
-    { label: 'Week 1', outcome: 'no-trade', result: 0, tradedDays: 0 },
-    { label: 'Week 2', outcome: 'no-trade', result: 0, tradedDays: 0 },
-    { label: 'Week 3', outcome: 'no-trade', result: 0, tradedDays: 0 },
-    { label: 'Week 4', outcome: 'no-trade', result: 0, tradedDays: 0 },
-    { label: 'Week 5', outcome: 'no-trade', result: 0, tradedDays: 0 }
-  ]
+  monthlyStats: monthlyStats(octoberWeeks),
+  weeks: octoberWeeks,
+  weeklySummaries: weeklySummaries(octoberWeeks)
 }
 
 // Ordered so month navigation is a simple index walk. September is the

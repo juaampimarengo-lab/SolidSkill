@@ -16,6 +16,10 @@ export interface CalendarDayCell {
   trades: number
   winRate: number | null
   hasJournalEntry?: boolean
+  // Shared-fixture lookup key (e.g. "Sep 15") matching JournalTrade.date —
+  // present only for in-month cells backed by real fixture trades, since
+  // that's the only case a day is navigable to Day Review.
+  dateKey?: string
 }
 
 export interface WeeklySummaryData {

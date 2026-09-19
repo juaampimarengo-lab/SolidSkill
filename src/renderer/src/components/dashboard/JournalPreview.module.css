@@ -33,6 +33,7 @@
 
 .row {
   height: var(--table-row-height);
+  cursor: pointer;
   transition: background var(--motion-hover);
 }
 

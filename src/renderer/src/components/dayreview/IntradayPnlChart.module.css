@@ -1,0 +1,77 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.svg {
+  width: 100%;
+  height: 108px;
+  display: block;
+}
+
+.zeroLine {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.line {
+  stroke: var(--text-secondary);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.dotPositive {
+  fill: var(--positive);
+}
+
+.dotNegative {
+  fill: var(--negative);
+}
+
+.dotNeutral {
+  fill: var(--text-muted);
+}
+
+.axis {
+  position: relative;
+  height: 14px;
+}
+
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: var(--text-micro-size);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footerLabel {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.footerValue {
+  font-size: var(--text-caption-size);
+  font-weight: 500;
+}
+
+.empty {
+  padding: 16px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-caption-size);
+}

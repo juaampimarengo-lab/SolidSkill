@@ -4,6 +4,9 @@
 export type Outcome = 'positive' | 'negative' | 'break-even'
 
 export interface RecentTrade {
+  // Canonical fixture id — resolves to the same Trade shown in Journal /
+  // Day Review / Trade Review (docs/JOURNAL_SPEC.md).
+  id: string
   time: string
   instrument: string
   side: 'Long' | 'Short'
@@ -21,16 +24,6 @@ export interface DayPerformance {
   label: string
   pnl: number
   outcome: Outcome
-}
-
-export interface CalendarDay {
-  date: number
-  inMonth: boolean
-  pnl: number | null
-  trades: number
-  outcome: Outcome | 'none'
-  hasNote?: boolean
-  isToday?: boolean
 }
 
 export interface ChecklistRule {

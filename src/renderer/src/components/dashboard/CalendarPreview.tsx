@@ -1,25 +1,28 @@
-import { useState, type JSX } from 'react'
-import { calendarDays } from '@renderer/data/dummyData'
+import type { JSX } from 'react'
+import { calendarMonths, currentMonthIndex } from '@renderer/data/calendarDummyData'
+import type { CalendarDayCell, CalendarOutcome } from '@renderer/types/calendar'
 import { formatUsdCompact } from '@renderer/lib/format'
 import styles from './CalendarPreview.module.css'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-const outcomeClass: Record<string, string> = {
+const outcomeClass: Record<CalendarOutcome, string> = {
   positive: styles.cellPositive,
   negative: styles.cellNegative,
   'break-even': styles.cellNeutral,
-  none: ''
+  'no-trade': ''
 }
 
-export function CalendarPreview(): JSX.Element {
-  // UI-only selection state — no day-detail view, no persistence. Purely
-  // so the "selected day" outline treatment has something to demonstrate.
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+interface CalendarPreviewProps {
+  onOpenDayReview: (date: string) => void
+}
+
+export function CalendarPreview({ onOpenDayReview }: CalendarPreviewProps): JSX.Element {
+  const month = calendarMonths[currentMonthIndex]
 
   return (
     <section className={styles.widget}>
-      <span className={styles.title}>Calendar — September</span>
+      <span className={styles.title}>Calendar — {month.monthLabel}</span>
 
       <div className={styles.weekdayRow}>
         {weekdays.map((day) => (
@@ -30,34 +33,53 @@ export function CalendarPreview(): JSX.Element {
       </div>
 
       <div className={styles.grid}>
-        {calendarDays.map((day, i) => (
-          <div
-            key={i}
-            onClick={day.inMonth ? () => setSelectedIndex(i) : undefined}
-            className={`${styles.cell} ${outcomeClass[day.outcome]} ${!day.inMonth ? styles.cellOutside : ''} ${
-              day.inMonth ? styles.cellInteractive : ''
-            } ${selectedIndex === i ? styles.cellSelected : ''}`}
-          >
-            <div className={styles.cellHead}>
-              <span className={styles.dateGroup}>
-                <span className={styles.dateNumber}>{day.date}</span>
-                {day.isToday && <span className={styles.todayDot} />}
-              </span>
-              {day.hasNote && <span className={styles.noteDot} />}
-            </div>
-            {day.pnl !== null && (
-              <span
-                className={`num ${styles.pnl} ${
-                  day.outcome === 'break-even' ? 'num--neutral' : `num--${day.outcome}`
-                }`}
-              >
-                {formatUsdCompact(day.pnl)}
-              </span>
-            )}
-            {day.trades > 0 && <span className={styles.tradeCount}>{day.trades} trades</span>}
-          </div>
-        ))}
+        {month.weeks.flat().map((cell, i) => {
+          const interactive = cell.inMonth && cell.trades > 0 && Boolean(cell.dateKey)
+          return (
+            <DayCell
+              key={i}
+              cell={cell}
+              interactive={interactive}
+              onOpen={interactive ? () => onOpenDayReview(cell.dateKey as string) : undefined}
+            />
+          )
+        })}
       </div>
     </section>
+  )
+}
+
+function DayCell({
+  cell,
+  interactive,
+  onOpen
+}: {
+  cell: CalendarDayCell
+  interactive: boolean
+  onOpen?: () => void
+}): JSX.Element {
+  return (
+    <div
+      onClick={onOpen}
+      className={`${styles.cell} ${outcomeClass[cell.outcome]} ${!cell.inMonth ? styles.cellOutside : ''} ${
+        interactive ? styles.cellInteractive : ''
+      }`}
+    >
+      <div className={styles.cellHead}>
+        <span className={styles.dateGroup}>
+          <span className={styles.dateNumber}>{cell.date}</span>
+          {cell.isToday && <span className={styles.todayDot} />}
+        </span>
+        {cell.hasJournalEntry && <span className={styles.noteDot} />}
+      </div>
+      {cell.result !== null && (
+        <span
+          className={`num ${styles.pnl} ${cell.outcome === 'break-even' ? 'num--neutral' : `num--${cell.outcome}`}`}
+        >
+          {formatUsdCompact(cell.result)}
+        </span>
+      )}
+      {cell.trades > 0 && <span className={styles.tradeCount}>{cell.trades} trades</span>}
+    </div>
   )
 }

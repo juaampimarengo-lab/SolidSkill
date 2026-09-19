@@ -1,0 +1,279 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-spacing);
+  height: 100%;
+  min-height: 0;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: var(--text-body-sm-size);
+}
+
+/* ---------------------------------------------------------------- header */
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--button-height-sm);
+  padding: 0 10px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm-size);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.backButton:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.instrument {
+  font-size: var(--text-section-title-size);
+  line-height: var(--text-section-title-lh);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.direction {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+}
+
+.meta {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.resultLine {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.resultValue {
+  font-size: var(--text-kpi-value-size);
+  line-height: var(--text-kpi-value-lh);
+  font-weight: 500;
+  letter-spacing: var(--text-kpi-value-ls);
+}
+
+.resultR {
+  font-size: var(--text-body-sm-size);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------- regions */
+
+.regions {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: var(--widget-gap);
+  overflow: auto;
+}
+
+.contextRegion {
+  flex: 0 0 auto;
+  width: 220px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--widget-padding);
+  gap: 4px;
+}
+
+.contextHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.contextDate {
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.contextResult {
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+}
+
+.contextSubline {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.contextList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contextRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--motion-hover);
+}
+
+.contextRow:hover {
+  background: var(--surface-hover);
+}
+
+.contextRowActive {
+  background: var(--selection);
+}
+
+.contextRowTime {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.contextRowInstrument {
+  font-size: var(--text-caption-size);
+  color: var(--text-primary);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextRowResult {
+  font-size: var(--text-caption-size);
+  flex: 0 0 auto;
+}
+
+.detailRegion {
+  flex: 0 0 auto;
+  width: 340px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.analysisRegion {
+  flex: 1 1 auto;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--widget-gap);
+}
+
+.analysisBlock {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--widget-padding);
+}
+
+.blockTitle {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.noteText {
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-lh);
+  color: var(--text-secondary);
+}
+
+/* ----------------------------------------------------------- running p&l */
+
+.runningList {
+  display: flex;
+  flex-direction: column;
+}
+
+.runningRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.runningRow:last-child {
+  border-bottom: none;
+}
+
+.runningRowActive {
+  background: var(--selection);
+  margin: 0 -10px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+}
+
+.runningTime {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.runningInstrument {
+  font-size: var(--text-caption-size);
+  color: var(--text-primary);
+  flex: 1 1 auto;
+}
+
+.runningValue {
+  font-size: var(--text-caption-size);
+  flex: 0 0 auto;
+  width: 80px;
+  text-align: right;
+}
+
+.runningCumulative {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  flex: 0 0 auto;
+  width: 90px;
+  text-align: right;
+}

@@ -8,7 +8,12 @@ import { CalendarPreview } from './CalendarPreview'
 import { StrategyCompliancePreview } from './StrategyCompliancePreview'
 import styles from './Dashboard.module.css'
 
-export function Dashboard(): JSX.Element {
+interface DashboardProps {
+  onOpenTradeReview: (tradeId: string) => void
+  onOpenDayReview: (date: string) => void
+}
+
+export function Dashboard({ onOpenTradeReview, onOpenDayReview }: DashboardProps): JSX.Element {
   return (
     <div className={styles.page}>
       <div className={styles.rowSplit}>
@@ -21,10 +26,10 @@ export function Dashboard(): JSX.Element {
         <ProcessCompliance />
       </div>
 
-      <JournalPreview />
+      <JournalPreview onOpenTradeReview={onOpenTradeReview} />
 
       <div className={styles.rowSplit}>
-        <CalendarPreview />
+        <CalendarPreview onOpenDayReview={onOpenDayReview} />
         <StrategyCompliancePreview />
       </div>
     </div>
