@@ -102,6 +102,23 @@ on — flag it for follow-up rather than treating it as fact.
   user-created strategies/playbooks.
 - [OBSERVED] Strategy-related screens show a list of named strategies with
   associated performance stats per strategy.
+- [VERIFIED] A TradeZella Strategy can have a name, description, icon/image,
+  and color.
+- [VERIFIED] Strategies can contain Rule Groups/Criteria, which contain
+  Rules. Rules are user-created and tailored to the trader's own style.
+  Groups conceptually organize related rules.
+- [VERIFIED] TradeZella documents rule applicability/display settings: show
+  when the trade is a winner, show when a loser, show when breakeven, or
+  always show. TradeZella also states that once a trade is already linked
+  to a rule, some rule applicability settings cannot be changed afterward.
+- [VERIFIED] Trades can be associated with Strategies from Trade Page /
+  trade-management workflows. Per-trade rules can be checked off.
+- [VERIFIED] TradeZella exposes rule-level analysis: follow rate, net P&L,
+  profit factor, and win rate.
+- [VERIFIED] TradeZella also documents strategy templates/shared strategies
+  and missed-trade features. These are reference facts only — see
+  `STRATEGY_BUILDER_SPEC.md` §18–§19 for why neither is a Solid Skill V1
+  requirement.
 - [SOLID SKILL DECISION] Solid Skill's Strategy Engine (Strategy → Strategy
   Version → Rule Group → Rule → Condition/Dependency → Trade Rule Result,
   per `STRATEGY_ENGINE.md`) is a materially deeper, fully user-configurable
@@ -109,6 +126,18 @@ on — flag it for follow-up rather than treating it as fact.
   decision, not something being claimed as TradeZella's structure — do not
   treat TradeZella's strategy/playbook feature as evidence for how Solid
   Skill's Strategy Engine internals should work.
+- [SOLID SKILL DECISION] TradeZella's public documentation does not
+  establish a historical strategy-version architecture comparable to what
+  Solid Skill requires (see `STRATEGY_VERSIONING.md`). Do not infer
+  undocumented TradeZella versioning behavior from the strategy/rule facts
+  above.
+- [SOLID SKILL DECISION] TradeZella's winner/loser/breakeven/always rule
+  applicability (above) is reference material only. Solid Skill's
+  applicability model (`STRATEGY_BUILDER_SPEC.md`, "Applicability /
+  conditions") deliberately does not adopt outcome-based applicability as
+  its default, since conditioning a process rule's applicability on the
+  trade's own result is in tension with Solid Skill's process/outcome
+  separation principle (`CLAUDE.md` Absolute Rule 5).
 
 ## 5. Analytics / Reports
 

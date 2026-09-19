@@ -90,11 +90,34 @@ trading logic. Conditions are structural/logical, not methodology-specific.
 
 ### Trade Rule Result
 
-When a trade is reviewed against a strategy version, the outcome is a set of
-Trade Rule Results: one per applicable rule, recording whether that rule was
-respected, violated, or not applicable for that trade, at that time, under
-that exact strategy version. This is the atomic unit that Behavior Analytics
-consumes.
+When a trade is associated with a strategy version, each applicable rule
+gets a Trade Rule Result whose state is one of:
+
+- **PASS** — the rule was reviewed and satisfied.
+- **FAIL** — the rule was reviewed and violated.
+- **N/A** — the trader explicitly determined the rule does not apply to
+  this trade. N/A is a deliberate judgment the trader made, never a
+  stand-in for "not reviewed," "unknown," "forgotten," or "skipped."
+- **UNREVIEWED** — the rule is applicable but the trader has not yet
+  evaluated it. This is the default state for every applicable rule at the
+  moment a trade is first associated with a strategy version, and it
+  remains the state until the trader records PASS, FAIL, or N/A.
+
+N/A and UNREVIEWED must never be conflated: N/A means the trader looked at
+the rule and decided it doesn't apply; UNREVIEWED means the trader hasn't
+looked yet. This is the atomic unit that Behavior Analytics consumes.
+
+**Compliance vs. review completeness.** These are two distinct concepts and
+must never be merged into one figure. *Compliance* is calculated only over
+reviewed, applicable rules: `PASS / (PASS + FAIL)`, with N/A and UNREVIEWED
+both excluded from the calculation. *Review completeness* is a separate
+signal — whether every applicable rule has actually been reviewed (i.e.,
+whether any UNREVIEWED rules remain). A trade with unresolved UNREVIEWED
+rules must never be presented as fully reviewed, regardless of what its
+compliance percentage among the rules reviewed so far happens to be. No
+weighted compliance formula, and no use of P&L in this calculation, is
+defined or implied here — see `STRATEGY_BUILDER_SPEC.md` for the full V1
+compliance/review-completeness product specification.
 
 ## Future user-facing capabilities (to design toward, not to build now)
 
@@ -116,12 +139,20 @@ than user-created rules, evaluated the same generic way.
 This is mandatory, not aspirational:
 
 - When a trade is associated with a strategy and evaluated, Solid Skill must
-  preserve the exact strategy version and the exact rule state that existed
-  at the time of that evaluation.
+  preserve the exact strategy version, the exact rule state that existed at
+  the time of that evaluation, and each rule's recorded Trade Rule Result
+  state (PASS, FAIL, N/A, or UNREVIEWED) exactly as the trader left it.
 - Editing a strategy afterward (renaming rules, adding/removing rules,
   restructuring groups) must create a new strategy version and must **never**
   alter the historical Trade Rule Results already recorded against prior
   versions.
+- Strategy-level presentation changes — display name, icon, color — do not
+  by themselves create a new version, since they change nothing about what
+  any rule asks the trader to do. Changes to a rule's meaning, wording,
+  applicability, dependencies, or group membership do create a new version.
+  Whether every possible Rule Group *rename* counts as a presentation
+  change or a logic change remains an open product question, deliberately
+  left unresolved here — see `STRATEGY_VERSIONING.md`.
 - Any implementation (schema, migration, or code) that would allow a past
   evaluation to change as a side effect of editing the current strategy
   definition is a bug against this specification, regardless of how
