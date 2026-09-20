@@ -6,9 +6,12 @@ import { CalendarWorkspace } from '@renderer/components/calendar/CalendarWorkspa
 import { JournalWorkspace } from '@renderer/components/journal/JournalWorkspace'
 import { DayReviewWorkspace } from '@renderer/components/dayreview/DayReviewWorkspace'
 import { TradeReviewWorkspace } from '@renderer/components/tradereview/TradeReviewWorkspace'
+import { StrategiesWorkspace } from '@renderer/components/strategies/StrategiesWorkspace'
 import { Placeholder } from '@renderer/components/shell/Placeholder'
 import type { NavEntry } from '@renderer/types/navigation'
 import { journalTrades } from '@renderer/data/journalDummyData'
+import { seedStrategies } from '@renderer/data/strategyDummyData'
+import type { Strategy } from '@renderer/types/strategy'
 
 function App(): JSX.Element {
   const [active, setActive] = useState('Dashboard')
@@ -16,6 +19,15 @@ function App(): JSX.Element {
   // survives navigation and can later drive real value recalculation once
   // the Strategy/Trading Domain layers exist to back it.
   const [representation, setRepresentation] = useState<Representation>('$')
+
+  // Session-local Strategy Builder state (Checkpoint 010). Lives here, like
+  // representation, so drafts/publishes survive switching sidebar sections.
+  // Seeded from static fixtures; nothing is persisted.
+  const [strategies, setStrategies] = useState<Strategy[]>(seedStrategies)
+
+  function updateStrategy(id: string, fn: (s: Strategy) => Strategy): void {
+    setStrategies((list) => list.map((s) => (s.id === id ? fn(s) : s)))
+  }
 
   // Day Review / Trade Review are contextual overlays stacked on top of
   // whichever sidebar section is active, not permanent sidebar destinations
@@ -80,7 +92,19 @@ function App(): JSX.Element {
         )}
         {active === 'Calendar' && <CalendarWorkspace onOpenDayReview={openDayReview} />}
         {active === 'Journal' && <JournalWorkspace onOpenTradeReview={openTradeReviewFromAnywhere} />}
-        {active !== 'Dashboard' && active !== 'Calendar' && active !== 'Journal' && <Placeholder />}
+        {active === 'Strategies' && (
+          <StrategiesWorkspace
+            strategies={strategies}
+            onUpdate={updateStrategy}
+            onCreate={(created) => setStrategies((list) => [...list, created])}
+            onDelete={(id) => setStrategies((list) => list.filter((s) => s.id !== id))}
+            onOpenTradeReview={openTradeReviewFromAnywhere}
+          />
+        )}
+        {active !== 'Dashboard' &&
+          active !== 'Calendar' &&
+          active !== 'Journal' &&
+          active !== 'Strategies' && <Placeholder />}
       </div>
 
       {overlay && overlay.kind === 'dayReview' && (

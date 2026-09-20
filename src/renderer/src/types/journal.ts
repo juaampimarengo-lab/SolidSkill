@@ -8,8 +8,9 @@
 export type Direction = 'Long' | 'Short'
 export type ExecutionSide = 'BUY' | 'SELL'
 export type Outcome = 'positive' | 'negative' | 'break-even'
-export type Compliance = 'Compliant' | 'Violation' | 'Partial'
-export type RuleState = 'Pass' | 'Fail' | 'N/A'
+// UNREVIEWED = not yet evaluated (default); distinct from N/A = explicitly
+// judged not applicable. See docs/STRATEGY_BUILDER_SPEC.md §9.
+export type RuleState = 'Pass' | 'Fail' | 'N/A' | 'Unreviewed'
 
 export interface JournalExecution {
   id: string
@@ -51,7 +52,6 @@ export interface JournalTrade {
 
   strategy: string
   strategyVersion: string
-  compliance: Compliance
   complianceRules: StrategyRule[]
 
   tradeNote: string

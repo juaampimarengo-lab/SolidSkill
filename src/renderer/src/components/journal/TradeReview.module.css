@@ -373,3 +373,24 @@
   line-height: var(--text-body-lh);
   color: var(--text-secondary);
 }
+
+.reviewLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ruleGroup + .ruleGroup {
+  margin-top: 12px;
+}
+
+.ruleGroupTitle {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-strong);
+}

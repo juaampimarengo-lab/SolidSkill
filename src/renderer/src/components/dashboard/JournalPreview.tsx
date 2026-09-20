@@ -1,13 +1,8 @@
 import type { JSX } from 'react'
 import { recentTrades } from '@renderer/lib/trades'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
+import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import styles from './JournalPreview.module.css'
-
-const complianceModifier: Record<string, string> = {
-  Compliant: styles.badgePositive,
-  Violation: styles.badgeNegative,
-  Partial: styles.badgeWarning
-}
 
 interface JournalPreviewProps {
   onOpenTradeReview: (tradeId: string) => void
@@ -64,9 +59,7 @@ export function JournalPreview({ onOpenTradeReview }: JournalPreviewProps): JSX.
               </td>
               <td className={styles.tdLeft}>{trade.strategy}</td>
               <td className={styles.tdLeft}>
-                <span className={`${styles.badge} ${complianceModifier[trade.compliance]}`}>
-                  {trade.compliance}
-                </span>
+                <CompactCompliance summary={trade.compliance} />
               </td>
             </tr>
           ))}

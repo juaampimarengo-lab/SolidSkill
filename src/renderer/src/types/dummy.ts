@@ -1,3 +1,5 @@
+import type { ComplianceSummary } from '@renderer/lib/compliance'
+
 // Static shapes for Checkpoint 003's dummy data only. Not a domain model —
 // the real Trading Domain / Strategy Engine types land in a later checkpoint.
 
@@ -17,7 +19,7 @@ export interface RecentTrade {
   outcome: Outcome
   r: number
   strategy: string
-  compliance: 'Compliant' | 'Violation' | 'Partial'
+  compliance: ComplianceSummary
 }
 
 export interface DayPerformance {

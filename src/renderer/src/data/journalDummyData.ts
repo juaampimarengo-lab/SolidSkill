@@ -46,13 +46,11 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 2.0,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v2',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
       { name: 'Rule C', state: 'Pass' },
-      { name: 'Rule D', state: 'N/A' },
-      { name: 'Rule E', state: 'Pass' }
+      { name: 'Rule D', state: 'N/A' }
     ],
     tradeNote: 'Textbook entry on the reclaim, held for the full planned target.'
   },
@@ -82,7 +80,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: -1.3,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Violation',
     complianceRules: [
       { name: 'Rule A', state: 'Fail' },
       { name: 'Rule B', state: 'Pass' },
@@ -120,13 +117,11 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 2.5,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v2',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
       { name: 'Rule C', state: 'Pass' },
-      { name: 'Rule D', state: 'N/A' },
-      { name: 'Rule E', state: 'Pass' }
+      { name: 'Rule D', state: 'N/A' }
     ],
     tradeNote: 'Best trade of the month — patient entry, added size on confirmation, held to target.',
     dayNote: 'Best trade of the month — patient entry, full size, held to target.'
@@ -157,7 +152,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 1.6,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -191,7 +185,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: -0.9,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Partial',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Fail' },
@@ -227,7 +220,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: -1.0,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -263,7 +255,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 0,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -298,13 +289,12 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 0,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
       { name: 'Rule C', state: 'Pass' },
       { name: 'Rule D', state: 'Pass' },
-      { name: 'Rule E', state: 'N/A' }
+      { name: 'Rule E', state: 'Unreviewed' }
     ],
     tradeNote: 'Same story, second attempt — flat market, scratched instead of forcing.',
     dayNote: 'Choppy session, both attempts scratched at breakeven rather than forced — good discipline.'
@@ -335,7 +325,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: -1.2,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Violation',
     complianceRules: [
       { name: 'Rule A', state: 'Fail' },
       { name: 'Rule B', state: 'Pass' },
@@ -371,7 +360,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 2.0,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -406,7 +394,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 1.8,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -443,7 +430,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 2.1,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -481,7 +467,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: -1.1,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Violation',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Fail' },
@@ -518,7 +503,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 1.4,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -558,7 +542,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 2.4,
     strategy: 'Strategy Alpha',
     strategyVersion: 'v3',
-    compliance: 'Partial',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -597,7 +580,6 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 1.6,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
@@ -634,12 +616,11 @@ export const journalTrades: JournalTrade[] = [
     realizedR: 0,
     strategy: 'Strategy Beta',
     strategyVersion: 'v1',
-    compliance: 'Compliant',
     complianceRules: [
       { name: 'Rule A', state: 'Pass' },
       { name: 'Rule B', state: 'Pass' },
       { name: 'Rule C', state: 'Pass' },
-      { name: 'Rule D', state: 'N/A' },
+      { name: 'Rule D', state: 'Unreviewed' },
       { name: 'Rule E', state: 'Pass' }
     ],
     tradeNote: 'Stopped at breakeven once the setup failed to follow through — no harm, no foul.'

@@ -1,5 +1,6 @@
 import { useMemo, useState, type JSX } from 'react'
 import { journalTrades } from '@renderer/data/journalDummyData'
+import { tradeSummary } from '@renderer/lib/compliance'
 import type { JournalTrade } from '@renderer/types/journal'
 import { JournalFilters, defaultJournalFilters, type JournalFilterState } from './JournalFilters'
 import { TradeTable } from './TradeTable'
@@ -17,7 +18,8 @@ function matchesFilters(trade: JournalTrade, filters: JournalFilterState): boole
   if (filters.direction !== 'All' && trade.direction !== filters.direction) return false
   if (filters.strategy !== 'All' && trade.strategy !== filters.strategy) return false
   if (filters.outcome !== 'All' && tradeOutcomeLabel(trade.outcome) !== filters.outcome) return false
-  if (filters.compliance !== 'All' && trade.compliance !== filters.compliance) return false
+  if (filters.review !== 'All' && (tradeSummary(trade.complianceRules).reviewComplete ? 'Complete' : 'Incomplete') !== filters.review)
+    return false
   return true
 }
 

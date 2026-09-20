@@ -4,6 +4,7 @@
 // JournalTrade fixture.
 
 import { journalTrades } from '@renderer/data/journalDummyData'
+import { tradeSummary } from '@renderer/lib/compliance'
 import type { RecentTrade } from '@renderer/types/dummy'
 import type { JournalTrade } from '@renderer/types/journal'
 
@@ -20,7 +21,7 @@ function toRecentTrade(trade: JournalTrade): RecentTrade {
     outcome: trade.outcome,
     r: trade.realizedR ?? 0,
     strategy: trade.strategy,
-    compliance: trade.compliance
+    compliance: tradeSummary(trade.complianceRules)
   }
 }
 

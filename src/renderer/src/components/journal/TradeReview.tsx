@@ -1,8 +1,12 @@
-import { useState, type JSX } from 'react'
-import { X, Check, XCircle, Minus, Maximize2 } from 'lucide-react'
+import { useState, type JSX, type ReactNode } from 'react'
+import { X, Maximize2 } from 'lucide-react'
 import type { JournalTrade, RuleState } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
-import { countEntries, countExits, ruleCompliancePercent } from '@renderer/lib/journal'
+import { countEntries, countExits } from '@renderer/lib/journal'
+import { summarizeRules, tradeSummary } from '@renderer/lib/compliance'
+import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
+import { getSeedVersion } from '@renderer/data/strategyDummyData'
+import { ComplianceReadout, ReviewTag, RuleStateTag } from '@renderer/components/strategies/RuleStateTag'
 import styles from './TradeReview.module.css'
 
 type Tab = 'Overview' | 'Executions' | 'Strategy' | 'Notes'
@@ -89,7 +93,7 @@ export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): J
   )
 }
 
-function Field({ label, value }: { label: string; value: string }): JSX.Element {
+function Field({ label, value }: { label: string; value: ReactNode }): JSX.Element {
   return (
     <div className={styles.fieldRow}>
       <span className={styles.fieldLabel}>{label}</span>
@@ -138,7 +142,7 @@ export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
         <div className={styles.fieldGrid}>
           <Field label="Strategy" value={trade.strategy} />
           <Field label="Strategy version" value={trade.strategyVersion} />
-          <Field label="Compliance" value={trade.compliance} />
+          <Field label="Compliance" value={<CompactCompliance summary={tradeSummary(trade.complianceRules)} />} />
         </div>
       </div>
     </div>
@@ -194,43 +198,70 @@ export function ExecutionsTab({ trade }: { trade: JournalTrade }): JSX.Element {
   )
 }
 
-const ruleStateModifier: Record<RuleState, string> = {
-  Pass: styles.rulePass,
-  Fail: styles.ruleFail,
-  'N/A': styles.ruleNa
+interface RuleRow {
+  name: string
+  state: RuleState
 }
 
-function RuleGlyph({ state }: { state: RuleState }): JSX.Element {
-  if (state === 'Pass') return <Check size={12} strokeWidth={2} />
-  if (state === 'Fail') return <XCircle size={12} strokeWidth={2} />
-  return <Minus size={12} strokeWidth={2} />
+// Groups the trade's saved rule results by the group each rule belonged to
+// in the trade's SAVED strategy version (the static fixture snapshot — never
+// the live workspace session state, so editing/publishing a strategy can
+// not change how a historical trade renders).
+function groupSavedRules(trade: JournalTrade): { name: string; rules: RuleRow[] }[] {
+  const saved = getSeedVersion(trade.strategy, trade.strategyVersion)
+  const groups: { name: string; rules: RuleRow[] }[] = []
+  for (const result of trade.complianceRules) {
+    const groupName = saved?.groups.find((g) => g.rules.some((r) => r.name === result.name))?.name ?? 'Ungrouped'
+    let group = groups.find((g) => g.name === groupName)
+    if (!group) {
+      group = { name: groupName, rules: [] }
+      groups.push(group)
+    }
+    group.rules.push({ name: result.name, state: result.state })
+  }
+  return groups
 }
 
 export function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
+  const summary = summarizeRules(trade.complianceRules.map((r) => r.state))
+  const groups = groupSavedRules(trade)
+
   return (
     <div>
       <div className={styles.strategyHead}>
         <span className={styles.strategyName}>{trade.strategy}</span>
         <span className={styles.versionBadge}>{trade.strategyVersion}</span>
       </div>
-      <div className={styles.versionNote}>Saved strategy version at time of evaluation — not the current version.</div>
+      <div className={styles.versionNote}>
+        Saved version at time of evaluation — frozen. Not the current strategy definition.
+      </div>
 
       <div className={styles.complianceRow}>
-        <span className={`num ${styles.complianceValue}`}>{ruleCompliancePercent(trade.complianceRules)}%</span>
-        <span className={styles.complianceLabel}>rule compliance</span>
+        <ComplianceReadout summary={summary} showBasis />
+        <span className={styles.complianceLabel}>Compliance = PASS / (PASS + FAIL)</span>
+      </div>
+      <div className={styles.reviewLine}>
+        <ReviewTag summary={summary} />
+        <span className={styles.complianceLabel}>
+          <span className="num">
+            {summary.pass}P {summary.fail}F {summary.na}N/A {summary.unreviewed}U
+          </span>
+        </span>
       </div>
 
-      <div className={styles.ruleList}>
-        {trade.complianceRules.map((rule) => (
-          <div key={rule.name} className={styles.ruleRow}>
-            <span className={styles.ruleName}>{rule.name}</span>
-            <span className={`${styles.ruleState} ${ruleStateModifier[rule.state]}`}>
-              <RuleGlyph state={rule.state} />
-              {rule.state}
-            </span>
+      {groups.map((group) => (
+        <div key={group.name} className={styles.ruleGroup}>
+          <div className={styles.ruleGroupTitle}>{group.name}</div>
+          <div className={styles.ruleList}>
+            {group.rules.map((rule) => (
+              <div key={rule.name} className={styles.ruleRow}>
+                <span className={styles.ruleName}>{rule.name}</span>
+                <RuleStateTag state={rule.state} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   )
 }

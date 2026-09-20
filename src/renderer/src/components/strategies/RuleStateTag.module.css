@@ -1,0 +1,71 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  white-space: nowrap;
+}
+
+.pass {
+  background: var(--positive-subtle);
+  color: var(--positive);
+}
+
+.fail {
+  background: var(--negative-subtle);
+  color: var(--negative);
+}
+
+/* Reviewed, explicitly not applicable — solid neutral fill. */
+.na {
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+}
+
+/* Not yet evaluated — dashed outline, no fill, no positive/negative hue. */
+.unreviewed {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+}
+
+.readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.percent {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.basis {
+  font-size: var(--text-micro-size);
+  color: var(--text-muted);
+}
+
+.reviewComplete {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.reviewIncomplete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-micro-size);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

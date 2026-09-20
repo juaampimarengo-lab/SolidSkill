@@ -1,0 +1,27 @@
+.readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.percent {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.sep {
+  color: var(--text-disabled);
+}
+
+.complete {
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+/* Incomplete review is emphasised by weight, not by a positive/negative hue. */
+.incomplete {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  font-style: italic;
+}

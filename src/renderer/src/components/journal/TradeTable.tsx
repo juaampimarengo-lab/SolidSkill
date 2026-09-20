@@ -1,4 +1,6 @@
 import type { JSX, ReactNode } from 'react'
+import { tradeSummary } from '@renderer/lib/compliance'
+import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import type { JournalTrade } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
 import styles from './TradeTable.module.css'
@@ -12,12 +14,6 @@ interface TradeColumn {
   label: string
   align: 'left' | 'right'
   render: (trade: JournalTrade) => ReactNode
-}
-
-const complianceModifier: Record<JournalTrade['compliance'], string> = {
-  Compliant: styles.badgePositive,
-  Violation: styles.badgeNegative,
-  Partial: styles.badgeWarning
 }
 
 function outcomeNumClass(outcome: JournalTrade['outcome']): string {
@@ -45,7 +41,7 @@ const columns: TradeColumn[] = [
     render: (t) => (t.realizedR === null ? '—' : formatR(t.realizedR))
   },
   { key: 'strategy', label: 'Strategy', align: 'left', render: (t) => t.strategy },
-  { key: 'compliance', label: 'Compliance', align: 'left', render: (t) => t.compliance },
+  { key: 'compliance', label: 'Compliance', align: 'left', render: (t) => <CompactCompliance summary={tradeSummary(t.complianceRules)} /> },
   { key: 'duration', label: 'Duration', align: 'right', render: (t) => t.duration }
 ]
 
@@ -97,9 +93,7 @@ export function TradeTable({ trades, selectedId, onSelect }: TradeTableProps): J
                   if (col.key === 'compliance') {
                     return (
                       <td key={col.key} className={cellClass}>
-                        <span className={`${styles.badge} ${complianceModifier[trade.compliance]}`}>
-                          {trade.compliance}
-                        </span>
+                        <CompactCompliance summary={tradeSummary(trade.complianceRules)} />
                       </td>
                     )
                   }

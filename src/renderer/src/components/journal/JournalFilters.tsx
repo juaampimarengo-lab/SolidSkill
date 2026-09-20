@@ -14,7 +14,7 @@ export interface JournalFilterState {
   direction: string
   strategy: string
   outcome: string
-  compliance: string
+  review: string
 }
 
 export const defaultJournalFilters: JournalFilterState = {
@@ -22,7 +22,7 @@ export const defaultJournalFilters: JournalFilterState = {
   direction: 'All',
   strategy: 'All',
   outcome: 'All',
-  compliance: 'All'
+  review: 'All'
 }
 
 interface JournalFiltersProps {
@@ -84,10 +84,10 @@ export function JournalFilters({ trades, filters, onChange }: JournalFiltersProp
       />
 
       <FilterField
-        label="Compliance"
-        value={filters.compliance}
-        options={['All', 'Compliant', 'Partial', 'Violation']}
-        onChange={(v) => set('compliance', v)}
+        label="Review"
+        value={filters.review}
+        options={['All', 'Complete', 'Incomplete']}
+        onChange={(v) => set('review', v)}
       />
 
       <span className={styles.spacer} />

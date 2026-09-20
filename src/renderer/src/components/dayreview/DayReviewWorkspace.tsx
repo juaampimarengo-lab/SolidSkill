@@ -3,15 +3,11 @@ import { ArrowLeft } from 'lucide-react'
 import { journalTrades } from '@renderer/data/journalDummyData'
 import { aggregateDay } from '@renderer/lib/dayAggregate'
 import { formatPercent, formatR, formatUsd } from '@renderer/lib/format'
+import { tradeSummary } from '@renderer/lib/compliance'
+import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import type { JournalTrade } from '@renderer/types/journal'
 import { IntradayPnlChart } from './IntradayPnlChart'
 import styles from './DayReviewWorkspace.module.css'
-
-const complianceModifier: Record<JournalTrade['compliance'], string> = {
-  Compliant: styles.badgePositive,
-  Violation: styles.badgeNegative,
-  Partial: styles.badgeWarning
-}
 
 function outcomeNumClass(outcome: JournalTrade['outcome'] | 'no-trade'): string {
   if (outcome === 'break-even' || outcome === 'no-trade') return 'num--neutral'
@@ -93,9 +89,7 @@ export function DayReviewWorkspace({ date, onBack, onOpenTrade }: DayReviewWorks
                   </td>
                   <td className={styles.tdLeft}>{trade.strategy}</td>
                   <td className={styles.tdLeft}>
-                    <span className={`${styles.badge} ${complianceModifier[trade.compliance]}`}>
-                      {trade.compliance}
-                    </span>
+                    <CompactCompliance summary={tradeSummary(trade.complianceRules)} />
                   </td>
                 </tr>
               ))}

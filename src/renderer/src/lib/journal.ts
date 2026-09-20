@@ -1,9 +1,9 @@
 // Small display-only helpers for the Journal workspace's dummy fixtures.
 // No trade reconstruction, no P&L/R calculation — every input here is
 // already a computed fixture value; this only derives simple UI facts from
-// them (entry/exit counts, a rule pass percentage).
+// them (entry/exit counts). Rule compliance lives in lib/compliance.ts.
 
-import type { JournalExecution, JournalTrade, StrategyRule } from '@renderer/types/journal'
+import type { JournalExecution, JournalTrade } from '@renderer/types/journal'
 
 // Entries/exits are read from the trade's already-known direction (the
 // side that opened the exposure), never from which execution appears last —
@@ -21,11 +21,4 @@ export function countEntries(trade: JournalTrade): number {
 export function countExits(trade: JournalTrade): number {
   const opening = openingSide(trade)
   return trade.executions.filter((execution: JournalExecution) => execution.side !== opening).length
-}
-
-export function ruleCompliancePercent(rules: StrategyRule[]): number {
-  const applicable = rules.filter((rule) => rule.state !== 'N/A')
-  if (applicable.length === 0) return 0
-  const passed = applicable.filter((rule) => rule.state === 'Pass').length
-  return Math.round((passed / applicable.length) * 100)
 }
