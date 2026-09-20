@@ -98,6 +98,15 @@ export class Database {
     }
   }
 
+  /**
+   * Runs `fn` atomically across repositories (BEGIN IMMEDIATE / COMMIT, or a
+   * SAVEPOINT when nested). Any throw rolls everything back. This is
+   * transaction control only; it does not expose the connection.
+   */
+  transaction<T>(fn: () => T): T {
+    return this.sql.transaction(fn)
+  }
+
   /** Test/diagnostic access to the migration history. */
   listAppliedMigrations(): { version: number; name: string }[] {
     return this.sql

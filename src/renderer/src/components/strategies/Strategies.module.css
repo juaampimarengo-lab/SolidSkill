@@ -766,3 +766,17 @@ button.versionRow:hover {
 .captionRow .tabCaption {
   margin-bottom: 0;
 }
+
+/* Refused/failed persistence action (e.g. publish blocked, save failed). */
+.actionError {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px var(--widget-padding);
+  background: var(--negative-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-body-sm-size);
+  color: var(--negative);
+}

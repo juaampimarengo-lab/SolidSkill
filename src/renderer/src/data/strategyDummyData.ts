@@ -1,5 +1,10 @@
-// Static Strategy fixtures for the Checkpoint 010 Strategy Builder
-// workspace. Every name below is generic USER DATA — nothing methodology-
+// Static Strategy FIXTURES. Since Checkpoint 011B-1 these are NO LONGER the
+// source of truth for the Strategies workspace (SQLite is; the development
+// seed in src/main/strategies/devSeed.ts mirrors this data). They remain only
+// as the frozen version snapshots Trade Review reads for the fixture Journal
+// trades (getSeedVersion) until Trades and evaluations are persisted in
+// 011B-2.
+// Every name below is generic USER DATA — nothing methodology-
 // specific. Published versions are deep-frozen: attempting to mutate one
 // throws in strict mode, so immutability is enforced, not just conventional.
 //

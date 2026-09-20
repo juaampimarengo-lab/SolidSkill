@@ -64,6 +64,30 @@ export class StrategyRepository {
     return this.require(id)
   }
 
+  /**
+   * Permanently deletes a Strategy that has NEVER been published, together
+   * with its Draft content. Safe by definition: nothing can reference a
+   * Draft (trades and evaluations only reference published versions). Throws
+   * if any published version exists; such strategies are archived, never
+   * deleted (docs/STRATEGY_VERSIONING.md §10).
+   */
+  deleteNeverPublished(id: string): void {
+    this.sql.transaction(() => {
+      this.require(id)
+      const published = this.sql.get(
+        `SELECT COUNT(*) AS n FROM strategy_versions WHERE strategy_id = ? AND state = 'PUBLISHED'`,
+        [id]
+      )
+      if (published === undefined || int(published['n']) > 0) {
+        throw new Error(`Strategy ${id} has published versions and cannot be deleted`)
+      }
+      this.sql.run('DELETE FROM rules WHERE strategy_version_id IN (SELECT id FROM strategy_versions WHERE strategy_id = ?)', [id])
+      this.sql.run('DELETE FROM rule_groups WHERE strategy_version_id IN (SELECT id FROM strategy_versions WHERE strategy_id = ?)', [id])
+      this.sql.run('DELETE FROM strategy_versions WHERE strategy_id = ?', [id])
+      this.sql.run('DELETE FROM strategies WHERE id = ?', [id])
+    })
+  }
+
   /** Archive is reversible and never touches versions, rules, trades or evaluations. */
   setArchived(id: string, archived: boolean): Strategy {
     this.require(id)

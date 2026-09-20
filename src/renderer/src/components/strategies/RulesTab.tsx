@@ -1,25 +1,21 @@
 import { useState, type JSX } from 'react'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
 import { ruleKinds, type RuleGroupDef, type RuleKind, type Strategy } from '@renderer/types/strategy'
-import {
-  addGroup,
-  addRule,
-  currentVersion,
-  deleteGroup,
-  deleteRule,
-  moveGroup,
-  moveRule,
-  renameGroup,
-  startDraft,
-  updateRule,
-  type RuleInput
-} from '@renderer/lib/strategyDraft'
+import type { DraftEdit } from '@shared/ipc/strategies'
+import type { StrategyActions } from '@renderer/hooks/useStrategies'
+import { currentVersion } from '@renderer/lib/strategyDraft'
 import { ReadOnlyGroups } from './ReadOnlyGroups'
 import styles from './Strategies.module.css'
 
 interface RulesTabProps {
   strategy: Strategy
-  onChange: (fn: (s: Strategy) => Strategy) => void
+  actions: StrategyActions
+}
+
+interface RuleInput {
+  name: string
+  kind: RuleKind
+  description: string
 }
 
 interface EditTarget {
@@ -28,7 +24,7 @@ interface EditTarget {
   ruleId: string | null
 }
 
-export function RulesTab({ strategy, onChange }: RulesTabProps): JSX.Element {
+export function RulesTab({ strategy, actions }: RulesTabProps): JSX.Element {
   const draft = strategy.draft
   const published = currentVersion(strategy)
 
@@ -41,7 +37,7 @@ export function RulesTab({ strategy, onChange }: RulesTabProps): JSX.Element {
             changes are made in a Draft.
           </div>
           {strategy.status === 'Active' && (
-            <button type="button" className={styles.buttonPrimary} onClick={() => onChange(startDraft)}>
+            <button type="button" className={styles.buttonPrimary} onClick={() => void actions.beginDraft(strategy.id)}>
               Edit Rules
             </button>
           )}
@@ -53,18 +49,19 @@ export function RulesTab({ strategy, onChange }: RulesTabProps): JSX.Element {
     )
   }
 
-  return <DraftEditor strategy={strategy} groups={draft.groups} onChange={onChange} />
+  return <DraftEditor strategy={strategy} groups={draft.groups} actions={actions} />
 }
 
 function DraftEditor({
   strategy,
   groups,
-  onChange
+  actions
 }: {
   strategy: Strategy
   groups: RuleGroupDef[]
-  onChange: (fn: (s: Strategy) => Strategy) => void
+  actions: StrategyActions
 }): JSX.Element {
+  const edit = (e: DraftEdit): Promise<boolean> => actions.editDraft(strategy.id, e)
   const [editing, setEditing] = useState<EditTarget | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [addingGroup, setAddingGroup] = useState(false)
@@ -95,9 +92,8 @@ function DraftEditor({
                 initial={group.name}
                 placeholder="Group name"
                 submitLabel="Save"
-                onSubmit={(name) => {
-                  onChange((s) => renameGroup(s, group.id, name))
-                  setRenamingId(null)
+                onSubmit={async (name) => {
+                  if (await edit({ type: 'renameGroup', groupId: group.id, name })) setRenamingId(null)
                 }}
                 onCancel={() => setRenamingId(null)}
               />
@@ -112,21 +108,21 @@ function DraftEditor({
                   <IconButton
                     label="Move group up"
                     disabled={gi === 0}
-                    onClick={() => onChange((s) => moveGroup(s, group.id, -1))}
+                    onClick={() => void edit({ type: 'moveGroup', groupId: group.id, delta: -1 })}
                   >
                     <ArrowUp size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton
                     label="Move group down"
                     disabled={gi === groups.length - 1}
-                    onClick={() => onChange((s) => moveGroup(s, group.id, 1))}
+                    onClick={() => void edit({ type: 'moveGroup', groupId: group.id, delta: 1 })}
                   >
                     <ArrowDown size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton label="Rename group" onClick={() => setRenamingId(group.id)}>
                     <Pencil size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Delete group" onClick={() => onChange((s) => deleteGroup(s, group.id))}>
+                  <IconButton label="Delete group" onClick={() => void edit({ type: 'deleteGroup', groupId: group.id })}>
                     <Trash2 size={13} strokeWidth={1.75} />
                   </IconButton>
                 </div>
@@ -140,9 +136,8 @@ function DraftEditor({
                 key={rule.id}
                 initial={{ name: rule.name, kind: rule.kind, description: rule.description }}
                 submitLabel="Save rule"
-                onSubmit={(input) => {
-                  onChange((s) => updateRule(s, group.id, rule.id, input))
-                  setEditing(null)
+                onSubmit={async (input) => {
+                  if (await edit({ type: 'updateRule', ruleId: rule.id, ...input })) setEditing(null)
                 }}
                 onCancel={() => setEditing(null)}
               />
@@ -155,21 +150,21 @@ function DraftEditor({
                   <IconButton
                     label="Move rule up"
                     disabled={ri === 0}
-                    onClick={() => onChange((s) => moveRule(s, group.id, rule.id, -1))}
+                    onClick={() => void edit({ type: 'moveRule', ruleId: rule.id, delta: -1 })}
                   >
                     <ArrowUp size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton
                     label="Move rule down"
                     disabled={ri === group.rules.length - 1}
-                    onClick={() => onChange((s) => moveRule(s, group.id, rule.id, 1))}
+                    onClick={() => void edit({ type: 'moveRule', ruleId: rule.id, delta: 1 })}
                   >
                     <ArrowDown size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton label="Edit rule" onClick={() => setEditing({ groupId: group.id, ruleId: rule.id })}>
                     <Pencil size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Delete rule" onClick={() => onChange((s) => deleteRule(s, group.id, rule.id))}>
+                  <IconButton label="Delete rule" onClick={() => void edit({ type: 'deleteRule', ruleId: rule.id })}>
                     <Trash2 size={13} strokeWidth={1.75} />
                   </IconButton>
                 </div>
@@ -181,9 +176,8 @@ function DraftEditor({
             <RuleForm
               initial={{ name: '', kind: 'Required', description: '' }}
               submitLabel="Add rule"
-              onSubmit={(input) => {
-                onChange((s) => addRule(s, group.id, input))
-                setEditing(null)
+              onSubmit={async (input) => {
+                if (await edit({ type: 'addRule', groupId: group.id, ...input })) setEditing(null)
               }}
               onCancel={() => setEditing(null)}
             />
@@ -207,9 +201,8 @@ function DraftEditor({
               initial=""
               placeholder="Group name"
               submitLabel="Add group"
-              onSubmit={(name) => {
-                onChange((s) => addGroup(s, name))
-                setAddingGroup(false)
+              onSubmit={async (name) => {
+                if (await edit({ type: 'addGroup', name })) setAddingGroup(false)
               }}
               onCancel={() => setAddingGroup(false)}
             />
@@ -253,7 +246,7 @@ function InlineNameForm({
   initial: string
   placeholder: string
   submitLabel: string
-  onSubmit: (name: string) => void
+  onSubmit: (name: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
   const [name, setName] = useState(initial)
@@ -294,7 +287,7 @@ function RuleForm({
 }: {
   initial: RuleInput
   submitLabel: string
-  onSubmit: (input: RuleInput) => void
+  onSubmit: (input: RuleInput) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
   const [name, setName] = useState(initial.name)

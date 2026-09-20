@@ -1,9 +1,8 @@
-// Display-only join of the shared journalTrades fixtures to a strategy by
-// name. Trades keep the strategy VERSION recorded on the fixture — nothing
+// Display-only join of the shared journalTrades FIXTURES to a strategy by
+// name (temporary; see fixtureNameFor). Trades keep the strategy VERSION recorded on the fixture — nothing
 // here (or in the workspace's session state) can rewrite that association.
 
 import { journalTrades } from '@renderer/data/journalDummyData'
-import { seedStrategies } from '@renderer/data/strategyDummyData'
 import type { Strategy } from '@renderer/types/strategy'
 import { pooledSummary, summarizeRules, type ComplianceSummary } from '@renderer/lib/compliance'
 import type { JournalTrade } from '@renderer/types/journal'
@@ -13,12 +12,14 @@ export interface StrategyTradeRow {
   summary: ComplianceSummary
 }
 
-// SESSION-FIXTURE WORKAROUND ONLY. The fixture trades store a display name, so
-// this resolves a strategy's id to its seed name to survive a session rename.
-// Real persistence must associate a trade by stable Strategy identity AND exact
-// Strategy Version identity — never by display name.
+// TEMPORARY 011B-1 COMPATIBILITY ADAPTER — reads FIXTURE trades only.
+// Journal trades are not persisted yet, and the fixture trades identify their
+// strategy by display name, so this matches on the persisted strategy's CURRENT
+// name. Consequence (accepted until 011B-2): renaming a strategy detaches the
+// fixture trades from it in this tab. Persistent trades will associate by
+// stable Strategy identity AND exact Strategy Version identity, never by name.
 function fixtureNameFor(strategy: Strategy): string {
-  return seedStrategies.find((s) => s.id === strategy.id)?.name ?? strategy.name
+  return strategy.name
 }
 
 // Newest first. journalTrades is authored oldest-first.

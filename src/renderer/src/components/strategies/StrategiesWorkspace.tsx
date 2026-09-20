@@ -1,14 +1,8 @@
 import { useState, type JSX } from 'react'
 import { Plus } from 'lucide-react'
 import type { Strategy } from '@renderer/types/strategy'
-import {
-  createStrategy,
-  currentVersion,
-  discardDraft,
-  publishBlocker,
-  publishDraft,
-  setArchived
-} from '@renderer/lib/strategyDraft'
+import type { StrategyActions } from '@renderer/hooks/useStrategies'
+import { currentVersion, publishBlocker } from '@renderer/lib/strategyDraft'
 import { aggregateStrategyTrades, tradesForStrategy } from '@renderer/lib/strategyTrades'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import { OverviewTab } from './OverviewTab'
@@ -22,17 +16,18 @@ const tabs: Tab[] = ['Overview', 'Rules', 'Versions', 'Trades']
 
 interface StrategiesWorkspaceProps {
   strategies: Strategy[]
-  onUpdate: (id: string, fn: (s: Strategy) => Strategy) => void
-  onCreate: (strategy: Strategy) => void
-  onDelete: (id: string) => void
+  actions: StrategyActions
+  // Message from the last refused/failed persistence action, if any.
+  actionError: string | null
+  onDismissError: () => void
   onOpenTradeReview: (tradeId: string) => void
 }
 
 export function StrategiesWorkspace({
   strategies,
-  onUpdate,
-  onCreate,
-  onDelete,
+  actions,
+  actionError,
+  onDismissError,
   onOpenTradeReview
 }: StrategiesWorkspaceProps): JSX.Element {
   const [selectedId, setSelectedId] = useState<string>(strategies[0]?.id ?? '')
@@ -58,9 +53,9 @@ export function StrategiesWorkspace({
           <CreateForm
             existingNames={strategies.map((s) => s.name.toLowerCase())}
             onCancel={() => setCreating(false)}
-            onCreate={(name, description) => {
-              const created = createStrategy(name, description)
-              onCreate(created)
+            onCreate={async (name, description) => {
+              const created = await actions.create(name, description)
+              if (!created) return
               setSelectedId(created.id)
               setTab('Rules')
               setCreating(false)
@@ -88,12 +83,16 @@ export function StrategiesWorkspace({
             tab={tab}
             onTab={setTab}
             otherNames={strategies.filter((s) => s.id !== selected.id).map((s) => s.name.toLowerCase())}
-            onChange={(fn) => onUpdate(selected.id, fn)}
-            onDelete={() => onDelete(selected.id)}
+            actions={actions}
+            actionError={actionError}
+            onDismissError={onDismissError}
             onOpenTradeReview={onOpenTradeReview}
           />
         ) : (
-          <div className={styles.empty}>No strategies. Create one to begin.</div>
+          <>
+            <ErrorBanner message={actionError} onDismiss={onDismissError} />
+            <div className={styles.empty}>No strategies. Create one to begin.</div>
+          </>
         )}
       </section>
     </div>
@@ -138,7 +137,7 @@ function CreateForm({
   onCancel
 }: {
   existingNames: string[]
-  onCreate: (name: string, description: string) => void
+  onCreate: (name: string, description: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
   const [name, setName] = useState('')
@@ -185,23 +184,37 @@ function CreateForm({
   )
 }
 
+function ErrorBanner({ message, onDismiss }: { message: string | null; onDismiss: () => void }): JSX.Element | null {
+  if (!message) return null
+  return (
+    <div className={styles.actionError} role="alert">
+      <span>{message}</span>
+      <button type="button" className={styles.buttonSecondary} onClick={onDismiss}>
+        Dismiss
+      </button>
+    </div>
+  )
+}
+
 type Confirm = 'publish' | 'delete' | null
 
 function StrategyDetail({
   strategy,
   tab,
   onTab,
-  onChange,
+  actions,
+  actionError,
+  onDismissError,
   otherNames,
-  onDelete,
   onOpenTradeReview
 }: {
   strategy: Strategy
   tab: Tab
   onTab: (tab: Tab) => void
-  onChange: (fn: (s: Strategy) => Strategy) => void
+  actions: StrategyActions
+  actionError: string | null
+  onDismissError: () => void
   otherNames: string[]
-  onDelete: () => void
   onOpenTradeReview: (tradeId: string) => void
 }): JSX.Element {
   const [confirm, setConfirm] = useState<Confirm>(null)
@@ -213,6 +226,7 @@ function StrategyDetail({
 
   return (
     <div className={styles.detail}>
+      <ErrorBanner message={actionError} onDismiss={onDismissError} />
       <header className={styles.detailHead}>
         <div className={styles.detailTitleRow}>
           <h2 className={styles.detailTitle}>{strategy.name}</h2>
@@ -226,7 +240,7 @@ function StrategyDetail({
         </div>
         <div className={styles.headActions}>
           {canArchive && (
-            <button type="button" className={styles.buttonSecondary} onClick={() => onChange((s) => setArchived(s, true))}>
+            <button type="button" className={styles.buttonSecondary} onClick={() => void actions.setArchived(strategy.id, true)}>
               Archive
             </button>
           )}
@@ -238,7 +252,7 @@ function StrategyDetail({
         {strategy.status === 'Archived' ? (
           <>
             <span>Archived — read-only. Versions, history and trade association are retained.</span>
-            <button type="button" className={styles.buttonSecondary} onClick={() => onChange((s) => setArchived(s, false))}>
+            <button type="button" className={styles.buttonSecondary} onClick={() => void actions.setArchived(strategy.id, false)}>
               Restore
             </button>
           </>
@@ -259,10 +273,8 @@ function StrategyDetail({
                 <button
                   type="button"
                   className={styles.buttonPrimary}
-                  onClick={() => {
-                    onChange((s) =>
-                      publishDraft(s, new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }))
-                    )
+                  onClick={async () => {
+                    await actions.publishDraft(strategy.id)
                     setConfirm(null)
                   }}
                 >
@@ -277,7 +289,7 @@ function StrategyDetail({
             <>
               <span>Delete this unpublished strategy? It has no versions or trades.</span>
               <span className={styles.stripActions}>
-                <button type="button" className={styles.buttonPrimary} onClick={onDelete}>
+                <button type="button" className={styles.buttonPrimary} onClick={() => void actions.removeUnpublished(strategy.id)}>
                   Confirm delete
                 </button>
                 <button type="button" className={styles.buttonSecondary} onClick={() => setConfirm(null)}>
@@ -300,7 +312,7 @@ function StrategyDetail({
               </span>
               <span className={styles.stripActions}>
                 {version ? (
-                  <button type="button" className={styles.buttonSecondary} onClick={() => onChange(discardDraft)}>
+                  <button type="button" className={styles.buttonSecondary} onClick={() => void actions.discardDraft(strategy.id)}>
                     Discard changes
                   </button>
                 ) : (
@@ -345,8 +357,14 @@ function StrategyDetail({
       </div>
 
       <div className={styles.tabBody}>
-        {tab === 'Overview' && <OverviewTab strategy={strategy} onChange={onChange} otherNames={otherNames} />}
-        {tab === 'Rules' && <RulesTab strategy={strategy} onChange={onChange} />}
+        {tab === 'Overview' && (
+          <OverviewTab
+            strategy={strategy}
+            onSaveDetails={(name, description) => actions.updateDetails(strategy.id, name, description)}
+            otherNames={otherNames}
+          />
+        )}
+        {tab === 'Rules' && <RulesTab strategy={strategy} actions={actions} />}
         {tab === 'Versions' && <VersionsTab strategy={strategy} />}
         {tab === 'Trades' && <TradesTab strategy={strategy} onOpenTradeReview={onOpenTradeReview} />}
       </div>

@@ -10,8 +10,8 @@ import { StrategiesWorkspace } from '@renderer/components/strategies/StrategiesW
 import { Placeholder } from '@renderer/components/shell/Placeholder'
 import type { NavEntry } from '@renderer/types/navigation'
 import { journalTrades } from '@renderer/data/journalDummyData'
-import { seedStrategies } from '@renderer/data/strategyDummyData'
-import type { Strategy } from '@renderer/types/strategy'
+import { StrategiesStatus } from '@renderer/components/strategies/StrategiesStatus'
+import { useStrategies } from '@renderer/hooks/useStrategies'
 
 function App(): JSX.Element {
   const [active, setActive] = useState('Dashboard')
@@ -20,14 +20,11 @@ function App(): JSX.Element {
   // the Strategy/Trading Domain layers exist to back it.
   const [representation, setRepresentation] = useState<Representation>('$')
 
-  // Session-local Strategy Builder state (Checkpoint 010). Lives here, like
-  // representation, so drafts/publishes survive switching sidebar sections.
-  // Seeded from static fixtures; nothing is persisted.
-  const [strategies, setStrategies] = useState<Strategy[]>(seedStrategies)
-
-  function updateStrategy(id: string, fn: (s: Strategy) => Strategy): void {
-    setStrategies((list) => list.map((s) => (s.id === id ? fn(s) : s)))
-  }
+  // Strategies are persisted in SQLite (main process) and reached only through
+  // the typed preload API. Loaded once here so the workspace keeps its state
+  // across sidebar navigation. There is no fixture fallback: a persistence
+  // failure is shown as an error, never as empty or fake data.
+  const strategyData = useStrategies()
 
   // Day Review / Trade Review are contextual overlays stacked on top of
   // whichever sidebar section is active, not permanent sidebar destinations
@@ -92,15 +89,18 @@ function App(): JSX.Element {
         )}
         {active === 'Calendar' && <CalendarWorkspace onOpenDayReview={openDayReview} />}
         {active === 'Journal' && <JournalWorkspace onOpenTradeReview={openTradeReviewFromAnywhere} />}
-        {active === 'Strategies' && (
-          <StrategiesWorkspace
-            strategies={strategies}
-            onUpdate={updateStrategy}
-            onCreate={(created) => setStrategies((list) => [...list, created])}
-            onDelete={(id) => setStrategies((list) => list.filter((s) => s.id !== id))}
-            onOpenTradeReview={openTradeReviewFromAnywhere}
-          />
-        )}
+        {active === 'Strategies' &&
+          (strategyData.state.status === 'ready' ? (
+            <StrategiesWorkspace
+              strategies={strategyData.state.strategies}
+              actions={strategyData.actions}
+              actionError={strategyData.actionError}
+              onDismissError={strategyData.dismissActionError}
+              onOpenTradeReview={openTradeReviewFromAnywhere}
+            />
+          ) : (
+            <StrategiesStatus state={strategyData.state} onRetry={strategyData.reload} />
+          ))}
         {active !== 'Dashboard' &&
           active !== 'Calendar' &&
           active !== 'Journal' &&

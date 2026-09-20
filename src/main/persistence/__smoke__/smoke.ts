@@ -16,6 +16,13 @@ import { decimalToScaled, scaledToDecimal } from '../fixedPoint'
 import { MIGRATIONS } from '../migrations'
 import type { Migration } from '../migrator'
 import type { EvaluationState, StrategyVersion } from '../types'
+import { createStrategyHandlers } from '../../ipc/strategyHandlers'
+import type { StrategyHandler } from '../../ipc/strategyHandlers'
+import { seedDevelopmentStrategies } from '../../strategies/devSeed'
+import { StrategyService } from '../../strategies/strategyService'
+import type { IpcResult } from '../../../shared/ipc/result'
+import { STRATEGY_CHANNELS } from '../../../shared/ipc/strategies'
+import type { DraftEdit, StrategyDto } from '../../../shared/ipc/strategies'
 
 const outFile = process.env['SMOKE_OUT']
 if (outFile !== undefined) writeFileSync(outFile, '')
@@ -818,6 +825,332 @@ db.close()
   })
   reopened.close()
 }
+
+// ===========================================================================
+// 011B-1: Strategy service + IPC handlers (persistence across restarts)
+// ===========================================================================
+const strategyDbPath = newDbPath()
+
+interface Session {
+  db: Database
+  svc: StrategyService
+  call: (channel: keyof typeof STRATEGY_CHANNELS, payload?: unknown) => IpcResult<unknown>
+}
+
+/** Opens the database like an app start: new connection, new service, new handlers. */
+function startSession(path: string): Session {
+  const db = Database.open(path)
+  const svc = new StrategyService(db)
+  const handlers = createStrategyHandlers({ getService: () => svc, log: () => undefined })
+  return {
+    db,
+    svc,
+    call: (channel, payload) => (handlers[STRATEGY_CHANNELS[channel]] as StrategyHandler)(payload)
+  }
+}
+
+function ok<T>(result: IpcResult<unknown>): T {
+  if (!result.ok) throw new Error(`expected ok, got ${result.error.code}: ${result.error.message}`)
+  return result.data as T
+}
+
+function fail(result: IpcResult<unknown>, code: string, pattern?: RegExp): void {
+  if (result.ok) throw new Error(`expected ${code}, but the call succeeded`)
+  if (result.error.code !== code) throw new Error(`expected ${code}, got ${result.error.code}: ${result.error.message}`)
+  if (pattern && !pattern.test(result.error.message)) throw new Error(`message "${result.error.message}" !~ ${pattern}`)
+}
+
+const named = (list: StrategyDto[], name: string): StrategyDto =>
+  require_(list.find((x) => x.name === name), `strategy ${name}`)
+const flatNames = (groups: { rules: { name: string }[] }[]): string[] => groups.flatMap((g) => g.rules.map((x) => x.name))
+
+let session = startSession(strategyDbPath)
+let v3Snapshot = ''
+let v1v2Snapshot = ''
+let betaV1Snapshot = ''
+
+check('I dev seed: seeds an empty DB once, is idempotent, and seeds no trading history', () => {
+  equal(seedDevelopmentStrategies(session.db), true, 'first seed')
+  equal(seedDevelopmentStrategies(session.db), false, 'second seed is a no-op')
+  const list = ok<StrategyDto[]>(session.call('list'))
+  equal(list.map((x) => x.name), ['Strategy Alpha', 'Strategy Beta', 'Strategy Gamma'])
+  equal(list.map((x) => x.versions.length), [3, 1, 1])
+  equal(list.map((x) => x.status), ['Active', 'Active', 'Archived'])
+  equal(list.every((x) => x.draft === null), true, 'seed leaves no drafts')
+  equal(session.db.repositories.trades.list().length, 0, 'no trades seeded')
+  equal(session.db.repositories.accounts.list({ includeArchived: true }).length, 0, 'no accounts seeded')
+  v3Snapshot = JSON.stringify(named(list, 'Strategy Alpha').versions[2])
+  v1v2Snapshot = JSON.stringify(named(list, 'Strategy Alpha').versions.slice(0, 2))
+  betaV1Snapshot = JSON.stringify(named(list, 'Strategy Beta').versions[0])
+})
+
+session.db.close()
+session = startSession(strategyDbPath)
+
+check('I dev seed: a restart does not duplicate Strategy Alpha', () => {
+  equal(seedDevelopmentStrategies(session.db), false)
+  equal(ok<StrategyDto[]>(session.call('list')).filter((x) => x.name === 'Strategy Alpha').length, 1)
+})
+
+check('A metadata edit persists across restart and creates no Draft or Version', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  const updated = ok<StrategyDto>(
+    session.call('updateDetails', { strategyId: alpha.id, name: 'Strategy Alpha', description: 'Edited description' })
+  )
+  equal(updated.description, 'Edited description')
+  equal([updated.draft, updated.versions.length], [null, 3])
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal(after.description, 'Edited description')
+  equal([after.draft, after.versions.length], [null, 3])
+  equal(JSON.stringify(after.versions[2]), v3Snapshot, 'v3 untouched by metadata edit')
+})
+
+check('C/D unpublished Draft with rule edits, kinds and ordering survives restart', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  const begun = ok<StrategyDto>(session.call('beginDraft', alpha.id))
+  equal(begun.draft?.basedOn, 3)
+  equal(flatNames(begun.draft!.groups), ['Rule A', 'Rule B', 'Rule C', 'Rule D', 'Rule E'])
+  const edit = (e: DraftEdit): StrategyDto => ok<StrategyDto>(session.call('editDraft', { strategyId: alpha.id, edit: e }))
+  const ruleB = begun.draft!.groups[0]!.rules.find((x) => x.name === 'Rule B')!
+  edit({ type: 'updateRule', ruleId: ruleB.id, name: 'Rule B', kind: 'Optional', description: 'Rule B — edited in draft' })
+  const groupB = begun.draft!.groups[1]!
+  const withF = edit({ type: 'addRule', groupId: groupB.id, name: 'Rule F', kind: 'Conditional', description: 'Rule F' })
+  const ruleF = withF.draft!.groups[1]!.rules.find((x) => x.name === 'Rule F')!
+  edit({ type: 'moveRule', ruleId: ruleF.id, delta: -1 })
+  edit({ type: 'moveGroup', groupId: groupB.id, delta: -1 })
+  const before = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal(before.draft!.groups.map((g) => g.name), ['Group B', 'Group A'])
+  equal(before.draft!.groups[0]!.rules.map((x) => x.name), ['Rule D', 'Rule F', 'Rule E'])
+
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal(after.draft?.basedOn, 3, 'still based on v3')
+  equal(after.draft!.groups.map((g) => g.name), ['Group B', 'Group A'], 'group order')
+  equal(after.draft!.groups[0]!.rules.map((x) => x.name), ['Rule D', 'Rule F', 'Rule E'], 'rule order')
+  const b = after.draft!.groups[1]!.rules.find((x) => x.name === 'Rule B')!
+  equal([b.kind, b.description], ['Optional', 'Rule B — edited in draft'])
+  equal(after.draft!.groups[0]!.rules.find((x) => x.name === 'Rule F')!.kind, 'Conditional')
+  equal(after.versions.length, 3)
+  equal(JSON.stringify(after.versions[2]), v3Snapshot, 'published v3 unchanged by draft edits')
+  equal(JSON.stringify(after.versions.slice(0, 2)), v1v2Snapshot, 'v1/v2 unchanged')
+})
+
+check('one Draft per strategy: a second beginDraft is refused', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  fail(session.call('beginDraft', alpha.id), 'CONFLICT', /already has a draft/)
+})
+
+check('draft edits only honour ids from THIS strategy\'s draft', () => {
+  const list = ok<StrategyDto[]>(session.call('list'))
+  const alpha = named(list, 'Strategy Alpha')
+  const betaId = named(list, 'Strategy Beta').id
+  ok(session.call('beginDraft', betaId))
+  const beta = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  const alphaGroup = alpha.draft!.groups[0]!.id
+  fail(
+    session.call('editDraft', { strategyId: beta.id, edit: { type: 'renameGroup', groupId: alphaGroup, name: 'hijack' } }),
+    'NOT_FOUND'
+  )
+  ok(session.call('discardDraft', beta.id))
+})
+
+check('F publish creates the next sequential version; G older versions unchanged; draft consumed', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  const published = ok<StrategyDto>(session.call('publishDraft', alpha.id))
+  equal(published.versions.map((v) => v.number), [1, 2, 3, 4])
+  equal(published.draft, null)
+  equal(JSON.stringify(published.versions[2]), v3Snapshot, 'v3 unchanged in the publish response')
+  equal(flatNames(published.versions[3]!.groups), ['Rule D', 'Rule F', 'Rule E', 'Rule A', 'Rule B', 'Rule C'])
+  equal(published.versions[3]!.changes.includes('+ Rule F'), true, 'change summary mentions the added rule')
+  equal(published.versions[3]!.changes.includes('Rule B updated'), true)
+
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal(after.versions.map((v) => v.number), [1, 2, 3, 4], 'versions after restart')
+  equal(after.draft, null)
+  equal(JSON.stringify(after.versions[2]), v3Snapshot, 'v3 unchanged after restart')
+  equal(JSON.stringify(after.versions.slice(0, 2)), v1v2Snapshot, 'v1/v2 unchanged after restart')
+  equal(JSON.stringify(after.versions[3]), JSON.stringify(published.versions[3]), 'v4 identical after restart')
+})
+
+check('publish is blocked (and changes nothing) when the draft has no changes', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  ok(session.call('beginDraft', alpha.id))
+  fail(session.call('publishDraft', alpha.id), 'RULE_VIOLATION', /No rule changes from v4/)
+  const still = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal([still.versions.length, still.draft?.basedOn], [4, 4], 'no half-published version')
+  ok(session.call('discardDraft', alpha.id))
+})
+
+check('publish is atomic: a failure after the flip rolls the whole publish back', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  ok(session.call('beginDraft', alpha.id))
+  const draft = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha').draft!
+  ok(session.call('editDraft', { strategyId: alpha.id, edit: { type: 'addRule', groupId: draft.groups[0]!.id, name: 'Rule G', kind: 'Required', description: '' } }))
+  throws(
+    () =>
+      session.db.transaction(() => {
+        session.svc.publishDraft(alpha.id)
+        throw new Error('simulated failure after publish')
+      }),
+    /simulated failure/
+  )
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  equal(after.versions.map((v) => v.number), [1, 2, 3, 4], 'no v5 left behind')
+  equal(flatNames(after.draft!.groups).includes('Rule G'), true, 'draft intact')
+  ok(session.call('discardDraft', alpha.id))
+})
+
+check('E discard removes only the Draft and persists across restart', () => {
+  const list = ok<StrategyDto[]>(session.call('list'))
+  const beta = named(list, 'Strategy Beta')
+  ok(session.call('beginDraft', beta.id))
+  const g = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta').draft!.groups[0]!
+  ok(session.call('editDraft', { strategyId: beta.id, edit: { type: 'deleteGroup', groupId: g.id } }))
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const mid = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  equal(mid.draft!.groups.length, 2, 'draft edit survived restart')
+  const discarded = ok<StrategyDto>(session.call('discardDraft', beta.id))
+  equal(discarded.draft, null)
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  equal(after.draft, null)
+  equal(JSON.stringify(after.versions[0]), betaV1Snapshot, 'Beta v1 unchanged')
+  equal(after.versions.length, 1)
+})
+
+check('B new strategy: initial Draft (no fabricated v1) survives restart; first publish makes v1', () => {
+  const created = ok<StrategyDto>(session.call('create', { name: 'Strategy Delta', description: 'new' }))
+  equal([created.versions.length, created.draft?.basedOn, created.status], [0, null, 'Active'])
+  const edit = (e: DraftEdit): StrategyDto => ok<StrategyDto>(session.call('editDraft', { strategyId: created.id, edit: e }))
+  const withGroup = edit({ type: 'addGroup', name: 'Group X' })
+  const gid = withGroup.draft!.groups[0]!.id
+  edit({ type: 'addRule', groupId: gid, name: 'Rule 1', kind: 'Required', description: 'first' })
+  edit({ type: 'addRule', groupId: gid, name: 'Rule 2', kind: 'Optional', description: '' })
+  fail(session.call('discardDraft', created.id), 'RULE_VIOLATION', /delete it/)
+  fail(session.call('archive', created.id), 'RULE_VIOLATION')
+
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const after = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Delta')
+  equal([after.versions.length, after.draft?.basedOn], [0, null], 'no version before publish')
+  equal(flatNames(after.draft!.groups), ['Rule 1', 'Rule 2'])
+
+  const published = ok<StrategyDto>(session.call('publishDraft', after.id))
+  equal(published.versions.map((v) => v.number), [1])
+  equal(published.versions[0]!.changes, ['Initial version'])
+  equal(published.draft, null)
+})
+
+check('publish of an empty first draft is refused', () => {
+  const created = ok<StrategyDto>(session.call('create', { name: 'Strategy Empty', description: '' }))
+  fail(session.call('publishDraft', created.id), 'RULE_VIOLATION', /at least one rule/)
+  ok(session.call('editDraft', { strategyId: created.id, edit: { type: 'addGroup', name: 'Only group' } }))
+  fail(session.call('publishDraft', created.id), 'RULE_VIOLATION', /at least one rule/)
+})
+
+check('delete: only a never-published strategy; persists across restart', () => {
+  const list = ok<StrategyDto[]>(session.call('list'))
+  const empty = named(list, 'Strategy Empty')
+  fail(session.call('deleteUnpublished', named(list, 'Strategy Alpha').id), 'RULE_VIOLATION', /archive/)
+  ok(session.call('deleteUnpublished', empty.id))
+  session.db.close()
+  session = startSession(strategyDbPath)
+  equal(ok<StrategyDto[]>(session.call('list')).some((x) => x.name === 'Strategy Empty'), false)
+  fail(session.call('deleteUnpublished', 'no-such-id'), 'NOT_FOUND')
+})
+
+check('H archive / restore persist across restart; archived is read-only; history retained', () => {
+  const beta = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  equal(ok<StrategyDto>(session.call('archive', beta.id)).status, 'Archived')
+  session.db.close()
+  session = startSession(strategyDbPath)
+  const archived = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  equal([archived.status, archived.versions.length], ['Archived', 1])
+  equal(JSON.stringify(archived.versions[0]), betaV1Snapshot, 'history retained')
+  fail(session.call('beginDraft', beta.id), 'RULE_VIOLATION', /archived/)
+  fail(session.call('updateDetails', { strategyId: beta.id, name: 'Strategy Beta', description: 'x' }), 'RULE_VIOLATION', /archived/)
+  equal(ok<StrategyDto>(session.call('restore', beta.id)).status, 'Active')
+  session.db.close()
+  session = startSession(strategyDbPath)
+  equal(named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta').status, 'Active')
+})
+
+check('archive is refused while a draft is open', () => {
+  const beta = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  ok(session.call('beginDraft', beta.id))
+  fail(session.call('archive', beta.id), 'RULE_VIOLATION', /draft/)
+  ok(session.call('discardDraft', beta.id))
+})
+
+check('duplicate strategy names (case-insensitive) are refused on create and rename', () => {
+  fail(session.call('create', { name: '  strategy ALPHA ', description: '' }), 'CONFLICT', /already exists/)
+  const beta = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Beta')
+  fail(session.call('updateDetails', { strategyId: beta.id, name: 'strategy alpha', description: '' }), 'CONFLICT')
+})
+
+check('published versions stay immutable: the database still refuses direct edits', () => {
+  const alpha = named(ok<StrategyDto[]>(session.call('list')), 'Strategy Alpha')
+  const rule = alpha.versions[3]!.groups[0]!.rules[0]!
+  const raw = new DatabaseSync(strategyDbPath)
+  try {
+    throws(() => raw.exec(`UPDATE rules SET title = 'x' WHERE id = '${rule.id}'`), /immutable/)
+  } finally {
+    raw.close()
+  }
+})
+
+check('IPC validation: malformed, oversized and unknown payloads become INVALID_INPUT, never exceptions', () => {
+  fail(session.call('archive', 42), 'INVALID_INPUT')
+  fail(session.call('create', null), 'INVALID_INPUT')
+  fail(session.call('create', { name: '   ', description: '' }), 'INVALID_INPUT', /required/)
+  fail(session.call('create', { name: 'x'.repeat(500), description: '' }), 'INVALID_INPUT', /too long/)
+  fail(session.call('create', { name: 'ok', description: 5 }), 'INVALID_INPUT')
+  fail(session.call('editDraft', { strategyId: 'a', edit: { type: 'dropTables' } }), 'INVALID_INPUT', /Unknown draft edit/)
+  fail(session.call('editDraft', { strategyId: 'a', edit: { type: 'moveRule', ruleId: 'r', delta: 5 } }), 'INVALID_INPUT')
+  fail(
+    session.call('editDraft', { strategyId: 'a', edit: { type: 'addRule', groupId: 'g', name: 'r', kind: 'Mandatory', description: '' } }),
+    'INVALID_INPUT',
+    /kind/
+  )
+  fail(session.call('editDraft', 'SELECT * FROM rules'), 'INVALID_INPUT')
+})
+
+check('IPC results are plain serializable data (no BigInt, no class instances)', () => {
+  const result = session.call('list')
+  const roundTripped = JSON.parse(JSON.stringify(result)) as unknown
+  equal(roundTripped, result as unknown)
+  const text = JSON.stringify(result)
+  equal(/"(publishedAt|number)":\d+/.test(text), true)
+})
+
+check('J persistence unavailable: every channel reports PERSISTENCE_UNAVAILABLE (no silent empty data)', () => {
+  const handlers = createStrategyHandlers({ getService: () => null, log: () => undefined })
+  for (const channel of Object.values(STRATEGY_CHANNELS)) {
+    const result = handlers[channel]({ strategyId: 'x', name: 'n', description: '' })
+    equal(result.ok, false, channel)
+    if (result.ok) throw new Error('unreachable')
+    equal(result.error.code, 'PERSISTENCE_UNAVAILABLE', channel)
+  }
+})
+
+check('unexpected failures are logged and returned as a generic INTERNAL error (no internals leaked)', () => {
+  let logged = 0
+  const broken = { list: () => { throw new Error('sqlite secret path C:/x') } } as unknown as StrategyService
+  const handlers = createStrategyHandlers({ getService: () => broken, log: () => { logged += 1 } })
+  const result = handlers[STRATEGY_CHANNELS.list](undefined)
+  fail(result, 'INTERNAL')
+  equal(/secret|sqlite/.test(JSON.stringify(result)), false, 'no leak')
+  equal(logged, 1)
+})
+
+session.db.close()
 
 rmSync(workDir, { recursive: true, force: true })
 log(`\n${passed} passed, ${failed} failed`)

@@ -1,8 +1,9 @@
-// Static shapes for the Checkpoint 010 Strategy Builder workspace (session-
-// local UI state over static fixtures). Not the production Strategy Engine
-// model — no persistence, no evaluation engine. Every name/label here is
-// USER DATA (generic fixtures like "Strategy Alpha"/"Rule A"); nothing
-// methodology-specific is a type or enum. See docs/STRATEGY_BUILDER_SPEC.md
+// Renderer view model for the Strategy Builder workspace. Strategy data is
+// persisted in SQLite by the main process and arrives over the typed preload
+// API (src/shared/ipc/strategies.ts, mapped in lib/strategyMapping.ts); these
+// shapes are what the UI renders, not persistence rows. Every name/label here
+// is USER DATA (e.g. "Strategy Alpha"/"Rule A"); nothing methodology-specific
+// is a type or enum. See docs/STRATEGY_BUILDER_SPEC.md
 // and docs/STRATEGY_VERSIONING.md.
 
 export type RuleKind = 'Required' | 'Optional' | 'Conditional'

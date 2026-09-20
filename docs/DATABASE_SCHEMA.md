@@ -242,8 +242,11 @@ is the default `NO ACTION` (**restrict**): **nothing cascades**. Consequences
   history cannot be deleted; the FKs, or triggers, refuse it.
 - The only destructive operations that exist: discarding a **Draft**
   (deletes that Draft's rules, groups, and row), removing groups/rules from a
-  **Draft**, and overwriting a note's text. There is no delete for trades,
-  executions, accounts, strategies, published versions, or evaluations.
+  **Draft**, deleting a Strategy that has **never been published**
+  (`StrategyRepository.deleteNeverPublished`: nothing can reference a Draft, and
+  it refuses if any published version exists), and overwriting a note's text.
+  There is no delete for trades, executions, accounts, strategies with
+  published versions, published versions, or evaluations.
 
 ## 17. Historical integrity rules
 

@@ -1,27 +1,49 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { Database } from './persistence'
+import { registerStrategyIpc } from './ipc/registerStrategyIpc'
+import { seedDevelopmentStrategies } from './strategies/devSeed'
+import { StrategyService } from './strategies/strategyService'
 
 const DATABASE_FILENAME = 'solid-skill.db'
 
+// An unpackaged (development) run uses its own userData folder so development
+// seed data can never land in the production-named database. An explicit
+// --user-data-dir (used by QA scripts) always wins.
+if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
+  app.setPath('userData', join(app.getPath('appData'), 'solid-skill-dev'))
+}
+
 // Owned by the main process only. The renderer never sees this connection;
-// a narrow IPC boundary will be added in a later checkpoint.
+// it reaches Strategy data only through the typed IPC in src/main/ipc.
 let database: Database | null = null
+let strategyService: StrategyService | null = null
 
 function initializePersistence(): void {
   const path = join(app.getPath('userData'), DATABASE_FILENAME)
   try {
     database = Database.open(path)
+    strategyService = new StrategyService(database)
     const { schemaVersion, migrationsAppliedThisOpen, journalMode, foreignKeys } = database.health
     console.info(
       `[persistence] opened ${path} (schema v${schemaVersion}, journal=${journalMode}, ` +
         `foreign_keys=${foreignKeys ? 'on' : 'off'}, migrations applied this start: ` +
         `${migrationsAppliedThisOpen.length === 0 ? 'none' : migrationsAppliedThisOpen.join(', ')})`
     )
+    // Development-only demo strategies: unpackaged runs, empty strategies table only.
+    if (!app.isPackaged && process.env['SOLID_SKILL_DEV_SEED'] !== '0') {
+      try {
+        if (seedDevelopmentStrategies(database)) console.info('[persistence] development seed applied (empty strategies table)')
+      } catch (error) {
+        console.error('[persistence] development seed failed; database left usable', error)
+      }
+    }
   } catch (error) {
-    // Fail safe: the app keeps running on its existing renderer data, and the
-    // failure is visible in the log. No recovery UI at this checkpoint.
+    // Fail safe: the app still starts, the failure is logged, and every IPC
+    // call reports PERSISTENCE_UNAVAILABLE (the renderer shows an error, it
+    // does not fall back to fixtures). No recovery UI yet.
     database = null
+    strategyService = null
     console.error(`[persistence] failed to initialize database at ${path}`, error)
   }
 }
@@ -35,6 +57,7 @@ function closePersistence(): void {
     console.error('[persistence] error while closing database', error)
   }
   database = null
+  strategyService = null
 }
 
 function createWindow(): void {
@@ -47,7 +70,7 @@ function createWindow(): void {
     backgroundColor: '#0B0C0E',
     autoHideMenuBar: true,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   })
@@ -70,6 +93,10 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   initializePersistence()
+  registerStrategyIpc({
+    getService: () => strategyService,
+    log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
   createWindow()
 
   app.on('activate', () => {

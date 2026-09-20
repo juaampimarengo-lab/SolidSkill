@@ -4,7 +4,8 @@ Checkpoint 011A. This document describes the local persistence foundation:
 how Solid Skill stores data, who owns the database, how the schema evolves,
 and where the boundaries are. The schema itself is described in
 `DATABASE_SCHEMA.md`. At this checkpoint the renderer still runs on its
-existing fixtures; wiring the app to persistence is checkpoint 011B.
+existing fixtures for Journal/Trades; **Strategies are persisted and wired
+(Checkpoint 011B-1)**; Trades and evaluations follow in 011B-2.
 
 ## 1. Why local SQLite
 
@@ -26,10 +27,13 @@ SQLite (node:sqlite)
         ↓
 Repository / Persistence layer   (src/main/persistence)
         ↓
-narrow IPC boundary  (later checkpoint)
+typed IPC handlers + preload API   (src/main/ipc, src/preload)
         ↓
 Renderer
 ```
+
+Renderer → `window.solidSkill` (preload) → typed IPC → main handlers (validate)
+→ `StrategyService` → repositories → SQLite. See `IPC_CONTRACT.md`.
 
 The database is opened, used, and closed only in the Electron **main**
 process. The renderer never opens SQLite and never receives a connection,
@@ -74,7 +78,9 @@ driver later would not touch repositories' public API.
 ```
 
 (plus `-wal` / `-shm` sidecar files while open). On Windows this is normally
-`%APPDATA%\solid-skill\solid-skill.db`. The database is never inside the Git
+`%APPDATA%\solid-skill\solid-skill.db` for a packaged app. An unpackaged
+(development) run uses `%APPDATA%\solid-skill-dev\` instead (see "Development
+seed policy"). The database is never inside the Git
 repository; `*.db`, `*.db-wal`, `*.db-shm`, `*.db-journal` are gitignored in
 case tooling creates one locally. No runtime data is ever seeded: a new user
 gets an empty schema.
@@ -93,9 +99,10 @@ gets an empty schema.
    migrations applied on this start.
 
 If any step fails the partially opened connection is closed, the error is
-logged (`[persistence] failed to initialize …`), and the app **continues to
-start** on its existing renderer data. The window is never blocked on the
-database and there is no recovery UI yet.
+logged (`[persistence] failed to initialize …`), and the app **still starts**.
+The window is never blocked on the database; every Strategy IPC call then
+reports `PERSISTENCE_UNAVAILABLE` and the Strategies screen shows an error
+state (no fixture fallback). There is no recovery UI yet.
 
 ## 6. Migrations
 
@@ -159,14 +166,48 @@ graceful close checkpoints the WAL; verified by launching and closing the app
 twice with no leftover `-wal`/`-shm` files. If the process is killed abruptly,
 SQLite's WAL recovery restores a consistent state on the next open.
 
-## 10. Future IPC boundary
+## 10. IPC boundary (Strategies live; Trades later)
 
-A later checkpoint will add a narrow, typed IPC surface in `src/preload`,
-exposing **application-level operations** (e.g. "list trades for a date",
-"set a rule evaluation"), validated in the main process, backed by these
-repositories. It will never expose SQL, file paths, or the connection. Money
-crosses that boundary as Decimal strings. This checkpoint deliberately adds
-none of it.
+The renderer reaches Strategy data only through the typed API in
+`docs/IPC_CONTRACT.md`: application-level operations (list, create, edit
+details, archive/restore, begin/edit/discard/publish draft), validated in main,
+each one transaction, returning serializable DTOs. Strategy business
+operations live in `src/main/strategies/strategyService.ts` (no Electron
+imports; tested directly); `src/main/ipc` only validates and maps results.
+The renderer's Strategies are loaded through this API; if the database is
+unavailable the UI shows an error state, never fixtures. Trades and Accounts
+will get their own namespaces the same way; nothing generic (no `query(sql)`)
+will ever be exposed.
+
+## Development seed policy
+
+Demo strategies (Strategy Alpha with v1–v3, Beta v1, Gamma v1 archived) are
+useful for visual QA but are **not** production data. `src/main/strategies/devSeed.ts`:
+
+- runs only when `!app.isPackaged` (and can be disabled with
+  `SOLID_SKILL_DEV_SEED=0`); a packaged app never seeds;
+- runs only when the strategies table is completely empty, so it is idempotent
+  and never duplicates Alpha on later launches (re-seeds only if a developer
+  empties the table or deletes the dev database);
+- writes Strategy data only — no trades, executions, accounts, or evaluations;
+- goes through the real repositories (seeded versions are immutable like any
+  other) and stamps versions with the seed time, not the fixture dates;
+- uses a **separate development data folder**: an unpackaged run sets
+  userData to `%APPDATA%solid-skill-dev` (unless `--user-data-dir` is passed
+  explicitly), so seeded data can never land in the production-named
+  `solid-skill` database.
+
+The seed mirrors `src/renderer/src/data/strategyDummyData.ts`, which remains
+only for Trade Review's fixture snapshots until 011B-2; delete the duplicate
+then.
+
+## Strategy QA
+
+`npm run qa:strategies-restart` (after `npm run build`) launches the real app
+against a throwaway user-data dir, drives it over the DevTools protocol, and
+closes it gracefully between runs to verify restart persistence end to end
+(metadata, draft, publish, version history, create, archive/restore, seed
+idempotency, and the persistence-failure error state).
 
 ## 11. Backup / export (later)
 

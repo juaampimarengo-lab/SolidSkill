@@ -3,7 +3,7 @@ import type { Strategy } from '@renderer/types/strategy'
 import type { RuleState } from '@renderer/types/journal'
 import { summarizeRules } from '@renderer/lib/compliance'
 import { formatUsd } from '@renderer/lib/format'
-import { currentVersion, ruleCount, updateDetails } from '@renderer/lib/strategyDraft'
+import { currentVersion, ruleCount } from '@renderer/lib/strategyDraft'
 import { aggregateStrategyTrades, sampleLabel, tradesForStrategy } from '@renderer/lib/strategyTrades'
 import { ComplianceReadout, ReviewTag, RuleStateTag } from './RuleStateTag'
 import styles from './Strategies.module.css'
@@ -14,12 +14,13 @@ const exampleStates: RuleState[] = ['Pass', 'Fail', 'N/A', 'Unreviewed']
 
 interface OverviewTabProps {
   strategy: Strategy
-  onChange: (fn: (s: Strategy) => Strategy) => void
+  // Persists name/description immediately (no Draft, no Version). Resolves true on success.
+  onSaveDetails: (name: string, description: string) => Promise<boolean>
   // Lower-cased names of the OTHER strategies, for the uniqueness check.
   otherNames: string[]
 }
 
-export function OverviewTab({ strategy, onChange, otherNames }: OverviewTabProps): JSX.Element {
+export function OverviewTab({ strategy, onSaveDetails, otherNames }: OverviewTabProps): JSX.Element {
   const [editingDetails, setEditingDetails] = useState(false)
   const version = currentVersion(strategy)
   const shownGroups = version?.groups ?? strategy.draft?.groups ?? []
@@ -45,9 +46,8 @@ export function OverviewTab({ strategy, onChange, otherNames }: OverviewTabProps
           <DetailsForm
             strategy={strategy}
             otherNames={otherNames}
-            onSave={(name, description) => {
-              onChange((s) => updateDetails(s, name, description))
-              setEditingDetails(false)
+            onSave={async (name, description) => {
+              if (await onSaveDetails(name, description)) setEditingDetails(false)
             }}
             onCancel={() => setEditingDetails(false)}
           />
@@ -149,7 +149,7 @@ function DetailsForm({
 }: {
   strategy: Strategy
   otherNames: string[]
-  onSave: (name: string, description: string) => void
+  onSave: (name: string, description: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
   const [name, setName] = useState(strategy.name)

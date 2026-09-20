@@ -10,7 +10,8 @@
     "build": "tsc --noEmit -p tsconfig.web.json && electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
-    "smoke:persistence": "node scripts/persistence-smoke.mjs"
+    "smoke:persistence": "node scripts/persistence-smoke.mjs",
+    "qa:strategies-restart": "node scripts/strategy-restart-qa.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
