@@ -28,3 +28,10 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 *.db
+
+# Local database files (never in the repo; the app DB lives under Electron userData)
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
