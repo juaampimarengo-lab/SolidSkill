@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
     "smoke:persistence": "node scripts/persistence-smoke.mjs",
     "smoke:mt5": "node scripts/mt5-smoke.mjs",
+    "smoke:mt5-normalizer": "node scripts/mt5-normalizer-smoke.mjs",
+    "qa:mt5-snapshot": "node scripts/mt5-snapshot-report.mjs",
     "qa:strategies-restart": "node scripts/strategy-restart-qa.mjs",
     "qa:trading-restart": "node scripts/trading-restart-qa.mjs"
   },

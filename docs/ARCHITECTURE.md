@@ -148,30 +148,34 @@ interfaces and never talks directly to a broker adapter or the database. UI
 components should not encode business rules that belong in the Trading
 Domain, Strategy Engine, or Behavior Analytics Engine.
 
-### MetaTrader 5 adapter path (Checkpoint 012 spike)
+### MetaTrader 5 adapter path (Checkpoints 012 / 012B-1)
 
 ```
 MT5
  ↓
-Read-only EA Adapter        integrations/mt5/ea/SolidSkillBridge.mq5   (built, NOT yet compiled/run)
+Read-only EA Adapter        integrations/mt5/ea/SolidSkillBridge.mq5   (compiled and run against a real account)
  ↓
 Raw Deal Contract           docs/MT5_RAW_DEAL_CONTRACT.md
  ↓
 MT5 Receiver                src/main/integrations/mt5/                 (built; in-memory raw staging)
  ↓
-future MT5 Normalizer       (does not exist yet)
+MT5 Normalizer              src/main/integrations/mt5/normalizer/      (built; pure; docs/MT5_NORMALIZATION.md)
  ↓
-Trading Domain
+FUTURE Import Service       (does not exist yet)
  ↓
-SQLite
+Trading Domain / SQLite
 ```
 
-Only the top three boxes exist. The MT5 Receiver stages **raw deals** in
-memory and does not feed the Trading Domain, `TradeRepository`, SQLite, or the
-renderer; no normalizer or persistence for raw MT5 events exists yet. The
-integration is **read-only**: the EA has no trading code and no inbound
-channel, and Solid Skill never controls the account. See
-`MT5_INTEGRATION_SPIKE.md`.
+The Receiver and the Normalizer exist. The Receiver stages **raw deals** in
+memory; the Normalizer is a pure function from raw deals to lifecycle
+candidates (completed / open / unresolved) and touches no SQLite, Electron,
+IPC, or renderer state. **Nothing feeds the Trading Domain, `TradeRepository`,
+SQLite, or the renderer yet**: the Import Service (Solid Skill UUIDs,
+idempotent upsert by source lifecycle key) is a future checkpoint, and only
+`planMt5Import` (`normalizer/importBoundary.ts`, uninvoked) prepares its
+boundary. The integration is **read-only**: the EA has no trading code and no
+inbound channel, and Solid Skill never controls the account. See
+`MT5_INTEGRATION_SPIKE.md` and `MT5_NORMALIZATION.md`.
 
 ## Cross-cutting rules
 

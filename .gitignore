@@ -35,3 +35,6 @@ Thumbs.db
 *.db-journal
 *.sqlite-wal
 *.sqlite-shm
+
+# Development-only MT5 raw snapshots for normalization QA (real account history; never commit)
+.dev-data/

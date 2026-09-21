@@ -1,9 +1,12 @@
 import { DEFAULT_MT5_BRIDGE_PORT } from './protocol'
+import { writeDevSnapshots } from './devSnapshot'
 import { Mt5Receiver, type Mt5BridgeEvent } from './receiver'
 
 export * from './protocol'
 export * from './rawDealStaging'
 export * from './receiver'
+export * from './devSnapshot'
+export * from './normalizer'
 
 /**
  * Compact, non-sensitive log line for a bridge event. Per-deal events are
@@ -53,12 +56,21 @@ export function describeBridgeEvent(event: Mt5BridgeEvent): string | null {
  * Starts the spike receiver only when explicitly enabled
  * (SOLID_SKILL_MT5_BRIDGE=1). Failure to start (e.g. port in use) is logged
  * and swallowed: the application must run without MT5.
+ *
+ * SOLID_SKILL_MT5_DEV_SNAPSHOT=1 additionally writes a pseudonymized raw
+ * snapshot to <baseDir>/.dev-data/mt5 after each history sync — development
+ * builds only (isDevelopment), never exposed to the renderer.
  */
 export async function startMt5BridgeFromEnvironment(
   env: NodeJS.ProcessEnv,
-  log: (message: string) => void
+  log: (message: string) => void,
+  dev: { readonly isDevelopment: boolean; readonly baseDir: string } = { isDevelopment: false, baseDir: process.cwd() }
 ): Promise<Mt5Receiver | null> {
   if (env['SOLID_SKILL_MT5_BRIDGE'] !== '1') return null
+  const snapshotEnabled = dev.isDevelopment && env['SOLID_SKILL_MT5_DEV_SNAPSHOT'] === '1'
+  if (env['SOLID_SKILL_MT5_DEV_SNAPSHOT'] === '1' && !dev.isDevelopment) {
+    log('MT5 dev snapshot requested but ignored: development builds only')
+  }
   const port = Number(env['SOLID_SKILL_MT5_PORT'] ?? DEFAULT_MT5_BRIDGE_PORT)
   const receiver = new Mt5Receiver({
     port: Number.isInteger(port) && port >= 0 && port <= 65535 ? port : DEFAULT_MT5_BRIDGE_PORT,
@@ -66,6 +78,14 @@ export async function startMt5BridgeFromEnvironment(
     onEvent: (event) => {
       const line = describeBridgeEvent(event)
       if (line !== null) log(line)
+      if (snapshotEnabled && event.kind === 'history_end' && event.status === 'complete') {
+        try {
+          const files = writeDevSnapshots(receiver, dev.baseDir)
+          log(`MT5 dev raw snapshot written (${files.length} account file(s) under .dev-data/mt5, gitignored)`)
+        } catch (error) {
+          log(`MT5 dev snapshot failed: ${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
     }
   })
   try {

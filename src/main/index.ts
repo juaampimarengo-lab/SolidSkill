@@ -119,7 +119,10 @@ app.whenReady().then(() => {
     getService: () => tradingService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
   })
-  void startMt5BridgeFromEnvironment(process.env, (message) => console.info(`[mt5] ${message}`)).then((receiver) => {
+  void startMt5BridgeFromEnvironment(process.env, (message) => console.info(`[mt5] ${message}`), {
+    isDevelopment: !app.isPackaged,
+    baseDir: process.cwd()
+  }).then((receiver) => {
     mt5Bridge = receiver
   })
   createWindow()
