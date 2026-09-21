@@ -11,6 +11,7 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
     "smoke:persistence": "node scripts/persistence-smoke.mjs",
+    "smoke:mt5": "node scripts/mt5-smoke.mjs",
     "qa:strategies-restart": "node scripts/strategy-restart-qa.mjs",
     "qa:trading-restart": "node scripts/trading-restart-qa.mjs"
   },

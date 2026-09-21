@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { Database } from './persistence'
+import { startMt5BridgeFromEnvironment, type Mt5Receiver } from './integrations/mt5'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
 import { seedDevelopmentStrategies } from './strategies/devSeed'
@@ -22,6 +23,9 @@ if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
 let database: Database | null = null
 let strategyService: StrategyService | null = null
 let tradingService: TradingService | null = null
+// MT5 read-only raw-deal bridge (spike). Opt-in via SOLID_SKILL_MT5_BRIDGE=1;
+// never exposed to the renderer and never wired into the Trade repositories.
+let mt5Bridge: Mt5Receiver | null = null
 
 function initializePersistence(): void {
   const path = join(app.getPath('userData'), DATABASE_FILENAME)
@@ -115,6 +119,9 @@ app.whenReady().then(() => {
     getService: () => tradingService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
   })
+  void startMt5BridgeFromEnvironment(process.env, (message) => console.info(`[mt5] ${message}`)).then((receiver) => {
+    mt5Bridge = receiver
+  })
   createWindow()
 
   app.on('activate', () => {
@@ -122,7 +129,11 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('will-quit', closePersistence)
+app.on('will-quit', () => {
+  void mt5Bridge?.stop()
+  mt5Bridge = null
+  closePersistence()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

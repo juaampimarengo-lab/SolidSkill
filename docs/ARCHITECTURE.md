@@ -148,6 +148,31 @@ interfaces and never talks directly to a broker adapter or the database. UI
 components should not encode business rules that belong in the Trading
 Domain, Strategy Engine, or Behavior Analytics Engine.
 
+### MetaTrader 5 adapter path (Checkpoint 012 spike)
+
+```
+MT5
+ ↓
+Read-only EA Adapter        integrations/mt5/ea/SolidSkillBridge.mq5   (built, NOT yet compiled/run)
+ ↓
+Raw Deal Contract           docs/MT5_RAW_DEAL_CONTRACT.md
+ ↓
+MT5 Receiver                src/main/integrations/mt5/                 (built; in-memory raw staging)
+ ↓
+future MT5 Normalizer       (does not exist yet)
+ ↓
+Trading Domain
+ ↓
+SQLite
+```
+
+Only the top three boxes exist. The MT5 Receiver stages **raw deals** in
+memory and does not feed the Trading Domain, `TradeRepository`, SQLite, or the
+renderer; no normalizer or persistence for raw MT5 events exists yet. The
+integration is **read-only**: the EA has no trading code and no inbound
+channel, and Solid Skill never controls the account. See
+`MT5_INTEGRATION_SPIKE.md`.
+
 ## Cross-cutting rules
 
 - **Replaceability**: any single layer above should be replaceable (a new

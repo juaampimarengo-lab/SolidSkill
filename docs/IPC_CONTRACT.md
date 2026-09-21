@@ -130,3 +130,10 @@ shared DTO + channel names in `src/shared/ipc/`, validation + handlers in
 preload. Trade DTOs carry money as decimal strings and associate strategies
 by persisted Strategy/Version ids. Nothing is generic; every operation is
 named and reviewed.
+
+## MT5 bridge is not part of this contract
+
+The MT5 read-only raw-deal bridge (Checkpoint 012, `MT5_INTEGRATION_SPIKE.md`)
+lives entirely in the main process and adds **no** renderer IPC channel and
+nothing to `window.solidSkill`. Raw MT5 deals are never sent to renderer
+state. No IPC operation anywhere may place, modify, cancel, or close orders.
