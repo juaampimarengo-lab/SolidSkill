@@ -223,8 +223,13 @@ exists yet.
   `(source_platform, account_id, source_execution_id)` where present:
   re-ingesting the same fill fails instead of duplicating (a failed trade
   insert rolls back with all its executions).
-- Non-unique lookup indexes on trades' and executions' source position ids
-  and on trades' source trade id. They are deliberately **not unique**: one
+- `trades_source_identity` (migration 002) — **unique**
+  `(source_platform, account_id, source_trade_id)` where present: one Trade per
+  integration-defined source Trade identity (MT5: the source lifecycle key).
+  The identity is the *Trade* id, not the position id, so a future segmented
+  Trade can use a distinct one.
+- Non-unique lookup indexes on trades' and executions' source position ids.
+  Position ids are deliberately **not unique**: one
   source position can legitimately be split into several analytical Trades
   (the open reversal-segmentation question in `TRADE_MODEL_CONCEPTS.md`).
 - Access-path indexes: trades by `(account, date)` and by strategy version;

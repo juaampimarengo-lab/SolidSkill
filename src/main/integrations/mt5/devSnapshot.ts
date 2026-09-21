@@ -38,6 +38,11 @@ export function pseudonymServer(server: string): string {
   return `server-${hashHex(`server:${server}`).slice(0, 8)}`
 }
 
+/** True when the account identity was replaced by the exporter's one-way pseudonyms (never a real identity). */
+export function isPseudonymizedSnapshotAccount(account: { readonly server: string }): boolean {
+  return /^server-[0-9a-f]{8}$/.test(account.server)
+}
+
 export function buildDevSnapshot(
   account: { server: string; login: string; accounting: PositionAccounting | null },
   deals: readonly RawMt5Deal[],

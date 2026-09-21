@@ -305,6 +305,10 @@ concept: every displayed field is a column, a join, or derived (outcome,
 duration, compliance %, day/month totals). Tags, attachments and the like are not
 used by the current UI, so nothing was added. **Migration 001 is unchanged.**
 
+### Migration 002 and MT5 import (012B-2)
+
+Migration 002 (`trade_source_identity`) adds a unique index on `trades (source_platform, account_id, source_trade_id)` (where not NULL) so imports are idempotent at the database level. The earlier "No migration 002" note applied to the 011B-2 UI audit and remains true for that checkpoint. See `MT5_IMPORT.md`: per-lifecycle transactions, conflicts never overwrite history, imported Trades start with no Strategy/evaluations/notes, and the importer is reachable only through an explicit development command.
+
 ### Development trading seed policy
 
 `src/main/trading/devSeed.ts` (+ `devSeedData.ts`, the former 17-trade renderer

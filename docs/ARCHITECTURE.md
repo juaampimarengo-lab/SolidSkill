@@ -148,7 +148,7 @@ interfaces and never talks directly to a broker adapter or the database. UI
 components should not encode business rules that belong in the Trading
 Domain, Strategy Engine, or Behavior Analytics Engine.
 
-### MetaTrader 5 adapter path (Checkpoints 012 / 012B-1)
+### MetaTrader 5 adapter path (Checkpoints 012 / 012B-1 / 012B-2)
 
 ```
 MT5
@@ -161,7 +161,7 @@ MT5 Receiver                src/main/integrations/mt5/                 (built; i
  ↓
 MT5 Normalizer              src/main/integrations/mt5/normalizer/      (built; pure; docs/MT5_NORMALIZATION.md)
  ↓
-FUTURE Import Service       (does not exist yet)
+MT5 Import Service          src/main/integrations/mt5/import/          (built; idempotent; explicit dev gate only; docs/MT5_IMPORT.md)
  ↓
 Trading Domain / SQLite
 ```
@@ -169,11 +169,7 @@ Trading Domain / SQLite
 The Receiver and the Normalizer exist. The Receiver stages **raw deals** in
 memory; the Normalizer is a pure function from raw deals to lifecycle
 candidates (completed / open / unresolved) and touches no SQLite, Electron,
-IPC, or renderer state. **Nothing feeds the Trading Domain, `TradeRepository`,
-SQLite, or the renderer yet**: the Import Service (Solid Skill UUIDs,
-idempotent upsert by source lifecycle key) is a future checkpoint, and only
-`planMt5Import` (`normalizer/importBoundary.ts`, uninvoked) prepares its
-boundary. The integration is **read-only**: the EA has no trading code and no
+IPC, or renderer state. The Import Service (012B-2) maps only completed, proven candidates into Account/Trade/Executions through the repositories, idempotently by source lifecycle key (migration 002 adds the unique Trade source identity). It is **not invoked by the application**: only an explicit development command (dry run by default) and tests call it, so startup and reconnect never import. Automatic sync is a later checkpoint. The integration is **read-only**: the EA has no trading code and no
 inbound channel, and Solid Skill never controls the account. See
 `MT5_INTEGRATION_SPIKE.md` and `MT5_NORMALIZATION.md`.
 

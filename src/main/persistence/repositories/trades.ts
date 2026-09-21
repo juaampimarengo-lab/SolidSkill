@@ -213,6 +213,28 @@ export class TradeRepository {
     return row === undefined ? null : toTrade(row)
   }
 
+  /** Reconciliation lookup by the integration's stable Trade identity (unique per platform + account). */
+  findBySourceTradeId(sourcePlatform: string, accountId: string, sourceTradeId: string): Trade | null {
+    const row = this.sql.get(
+      'SELECT * FROM trades WHERE source_platform = ? AND account_id = ? AND source_trade_id = ?',
+      [sourcePlatform, accountId, sourceTradeId]
+    )
+    return row === undefined ? null : toTrade(row)
+  }
+
+  /** Reconciliation lookup of one execution by its stable source identity. */
+  findExecutionBySourceId(
+    sourcePlatform: string,
+    accountId: string,
+    sourceExecutionId: string
+  ): Execution | null {
+    const row = this.sql.get(
+      'SELECT * FROM executions WHERE source_platform = ? AND account_id = ? AND source_execution_id = ?',
+      [sourcePlatform, accountId, sourceExecutionId]
+    )
+    return row === undefined ? null : toExecution(row)
+  }
+
   require(id: string): Trade {
     const trade = this.getById(id)
     if (trade === null) throw new Error(`Trade not found: ${id}`)

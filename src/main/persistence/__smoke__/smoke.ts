@@ -15,6 +15,7 @@ import { Database } from '../database'
 import { decimalToScaled, scaledToDecimal } from '../fixedPoint'
 import { MIGRATIONS } from '../migrations'
 import type { Migration } from '../migrator'
+import type { NewTrade } from '../repositories/trades'
 import type { EvaluationState, StrategyVersion } from '../types'
 import { createStrategyHandlers } from '../../ipc/strategyHandlers'
 import type { StrategyHandler } from '../../ipc/strategyHandlers'
@@ -133,11 +134,14 @@ const firstPath = newDbPath()
 {
   const db = Database.open(firstPath)
   check('A first start: migration 001 applied, foreign keys on, WAL on', () => {
-    equal(db.health.migrationsAppliedThisOpen, [1], 'applied this open')
-    equal(db.health.schemaVersion, 1, 'schema version')
+    equal(db.health.migrationsAppliedThisOpen, [1, 2], 'applied this open')
+    equal(db.health.schemaVersion, 2, 'schema version')
     equal(db.health.foreignKeys, true, 'foreign keys')
     equal(db.health.journalMode, 'wal', 'journal mode')
-    equal(db.listAppliedMigrations(), [{ version: 1, name: 'initial_core' }])
+    equal(db.listAppliedMigrations(), [
+      { version: 1, name: 'initial_core' },
+      { version: 2, name: 'trade_source_identity' }
+    ])
   })
   db.close()
   check('A first start: expected tables exist', () => {
@@ -182,7 +186,10 @@ check('A foreign keys are actually enforced', () => {
   const second = Database.open(path)
   check('B second start: 001 not re-applied, no duplicate history, data intact', () => {
     equal(second.health.migrationsAppliedThisOpen, [], 'applied this open')
-    equal(second.listAppliedMigrations(), [{ version: 1, name: 'initial_core' }])
+    equal(second.listAppliedMigrations(), [
+      { version: 1, name: 'initial_core' },
+      { version: 2, name: 'trade_source_identity' }
+    ])
     equal(second.repositories.accounts.list().map((a) => a.id), [account.id])
   })
   second.close()
@@ -195,26 +202,26 @@ check('A foreign keys are actually enforced', () => {
 check('migrations: a second migration applies once, in order, on a later start', () => {
   const path = newDbPath()
   const m2: Migration = {
-    version: 2,
+    version: 3,
     name: 'future_change',
     sql: 'CREATE TABLE future_thing (id TEXT PRIMARY KEY) STRICT;'
   }
   const a = Database.open(path, { migrations: [...MIGRATIONS] })
-  equal(a.health.migrationsAppliedThisOpen, [1])
+  equal(a.health.migrationsAppliedThisOpen, [1, 2])
   a.close()
   const b = Database.open(path, { migrations: [...MIGRATIONS, m2] })
-  equal(b.health.migrationsAppliedThisOpen, [2])
+  equal(b.health.migrationsAppliedThisOpen, [3])
   b.close()
   const c = Database.open(path, { migrations: [...MIGRATIONS, m2] })
   equal(c.health.migrationsAppliedThisOpen, [])
-  equal(c.listAppliedMigrations().map((m) => m.version), [1, 2])
+  equal(c.listAppliedMigrations().map((m) => m.version), [1, 2, 3])
   c.close()
 })
 
 check('migrations: a failing migration rolls back completely and is not recorded', () => {
   const path = newDbPath()
   const bad: Migration = {
-    version: 2,
+    version: 3,
     name: 'broken',
     sql: 'CREATE TABLE half_done (id TEXT) STRICT; INSERT INTO no_such_table VALUES (1);'
   }
@@ -222,14 +229,14 @@ check('migrations: a failing migration rolls back completely and is not recorded
   a.close()
   throws(() => Database.open(path, { migrations: [...MIGRATIONS, bad] }), /no_such_table/)
   const b = Database.open(path)
-  equal(b.health.schemaVersion, 1)
+  equal(b.health.schemaVersion, 2)
   b.close()
   equal(listTables(path).includes('half_done'), false, 'half_done leaked')
 })
 
 check('migrations: database from a newer build is refused', () => {
   const path = newDbPath()
-  const m2: Migration = { version: 2, name: 'newer', sql: 'CREATE TABLE newer_thing (id TEXT) STRICT;' }
+  const m2: Migration = { version: 3, name: 'newer', sql: 'CREATE TABLE newer_thing (id TEXT) STRICT;' }
   Database.open(path, { migrations: [...MIGRATIONS, m2] }).close()
   throws(() => Database.open(path), /does not know/)
 })
@@ -242,8 +249,37 @@ check('migrations: editing an applied migration is detected', () => {
 })
 
 check('migrations: non-sequential registry is rejected', () => {
-  const skipped: Migration = { version: 3, name: 'gap', sql: 'SELECT 1;' }
+  const skipped: Migration = { version: 4, name: 'gap', sql: 'SELECT 1;' }
   throws(() => Database.open(newDbPath(), { migrations: [...MIGRATIONS, skipped] }), /sequential/)
+})
+
+check('migration 002: trade source identity is unique per (platform, account); NULL ids unaffected', () => {
+  const db2 = Database.open(newDbPath())
+  try {
+    const acc = db2.repositories.accounts.create({ displayName: 'U', sourcePlatform: 'p', sourceAccountId: 'a', currency: 'USD' })
+    const mk = (id: string | null, exec: string): NewTrade => ({
+      accountId: acc.id,
+      sourceTradeId: id,
+      analyticalTradeDate: '2026-01-02',
+      instrument: 'X',
+      direction: 'LONG',
+      quantity: '1',
+      openedAt: 1,
+      avgEntryPrice: '1',
+      executions: [{ sourceExecutionId: exec, executedAt: 1, side: 'BUY', quantity: '1', price: '1' }]
+    })
+    db2.repositories.trades.createTrade(mk('t1', 'e1'))
+    throws(() => db2.repositories.trades.createTrade(mk('t1', 'e2')), /UNIQUE/)
+    equal(db2.repositories.trades.list().length, 1, 'failed insert left nothing')
+    db2.repositories.trades.createTrade(mk(null, 'e3'))
+    db2.repositories.trades.createTrade(mk(null, 'e4'))
+    equal(db2.repositories.trades.list().length, 3)
+    equal(db2.repositories.trades.findBySourceTradeId('p', acc.id, 't1')?.sourceTradeId, 't1')
+    equal(db2.repositories.trades.findBySourceTradeId('p', acc.id, 'nope'), null)
+    equal(db2.repositories.trades.findExecutionBySourceId('p', acc.id, 'e1')?.sourceExecutionId, 'e1')
+  } finally {
+    db2.close()
+  }
 })
 
 // ---- C. repository smoke ---------------------------------------------------

@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { Database } from './persistence'
 import { startMt5BridgeFromEnvironment, type Mt5Receiver } from './integrations/mt5'
+import { startDevImportGateFromEnvironment, type DevImportGate } from './integrations/mt5/import/devImportGate'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
 import { seedDevelopmentStrategies } from './strategies/devSeed'
@@ -26,6 +27,9 @@ let tradingService: TradingService | null = null
 // MT5 read-only raw-deal bridge (spike). Opt-in via SOLID_SKILL_MT5_BRIDGE=1;
 // never exposed to the renderer and never wired into the Trade repositories.
 let mt5Bridge: Mt5Receiver | null = null
+// DEVELOPMENT-ONLY explicit live-staging import gate (docs/MT5_IMPORT.md §14). Started only for an
+// unpackaged build with SOLID_SKILL_MT5_DEV_IMPORT=1; it acts only on a fresh, confirmed request file.
+let devImportGate: DevImportGate | null = null
 
 function initializePersistence(): void {
   const path = join(app.getPath('userData'), DATABASE_FILENAME)
@@ -125,6 +129,12 @@ app.whenReady().then(() => {
   }).then((receiver) => {
     mt5Bridge = receiver
   })
+  devImportGate = startDevImportGateFromEnvironment(process.env, !app.isPackaged, {
+    baseDir: process.cwd(),
+    getReceiver: () => mt5Bridge,
+    getDatabase: () => database,
+    log: (message) => console.info(`[mt5-import] ${message}`)
+  })
   createWindow()
 
   app.on('activate', () => {
@@ -133,6 +143,8 @@ app.whenReady().then(() => {
 })
 
 app.on('will-quit', () => {
+  devImportGate?.stop()
+  devImportGate = null
   void mt5Bridge?.stop()
   mt5Bridge = null
   closePersistence()

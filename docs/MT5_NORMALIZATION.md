@@ -262,6 +262,9 @@ It does **not** prove:
 - live `OnTradeTransaction` normalization (only history deals were tested)
 - every broker's commission representation (only this broker's booking)
 
+These 27 real completed candidates have since been persisted successfully
+through the importer (and replayed idempotently); see `MT5_IMPORT.md` §17.1.
+
 Real coverage must not be overstated; the synthetic suites remain the only
 evidence for the behaviors listed above.
 
