@@ -9,3 +9,10 @@ export type { DatabaseHealth, OpenOptions, Repositories } from './database'
 export { DECIMAL_SCALE, decimalToScaled, scaledToDecimal } from './fixedPoint'
 export type { Decimal } from './fixedPoint'
 export type * from './types'
+export type {
+  EvaluationCounts,
+  TradeStrategyRef,
+  TradeSummaryRecord
+} from './repositories/tradeReadModel'
+export type { NewTrade, NewExecution, TradeFilter } from './repositories/trades'
+export type { NewAccount } from './repositories/accounts'

@@ -86,11 +86,6 @@ export interface StrategiesApi {
   publishDraft(strategyId: string): Promise<IpcResult<StrategyDto>>
 }
 
-/** Renderer-visible root object: `window.solidSkill`. */
-export interface SolidSkillApi {
-  strategies: StrategiesApi
-}
-
 /** Channel names. Main registers exactly these; preload invokes exactly these. */
 export const STRATEGY_CHANNELS = {
   list: 'strategies:list',

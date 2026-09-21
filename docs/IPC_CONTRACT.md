@@ -1,11 +1,11 @@
 # Solid Skill — IPC Contract
 
-Checkpoint 011B-1. How the renderer reaches persisted data. Persistence
+Checkpoints 011B-1 (Strategies) and 011B-2 (Trading). How the renderer reaches persisted data. Persistence
 itself is described in `PERSISTENCE.md` and `DATABASE_SCHEMA.md`.
 
 ```
 Renderer ─▶ window.solidSkill (preload) ─▶ typed IPC ─▶ handlers (validate)
-        ─▶ StrategyService ─▶ repositories ─▶ SQLite        (all in main)
+        ─▶ StrategyService / TradingService ─▶ repositories ─▶ SQLite   (all in main)
 ```
 
 ## 1. Renderer trust boundary
@@ -23,8 +23,8 @@ application data.
 exactly one object, `window.solidSkill`, whose methods each invoke one fixed
 channel. It exposes no generic `send`/`invoke`, no channel names, no
 filesystem, no process, no SQL. The type of the object is
-`SolidSkillApi` in `src/shared/ipc/strategies.ts`, declared globally in
-`src/preload/index.d.ts`.
+`SolidSkillApi` in `src/shared/ipc/api.ts` (namespaces `strategies` and
+`trades`), declared globally in `src/preload/index.d.ts`.
 
 ## 3. Strategy operations
 
@@ -50,6 +50,37 @@ rule, no empty/unnamed groups, and a change from the base version (the same
 shared function the UI uses: `src/shared/strategyRules.ts`). Published
 versions stay immutable at the repository *and* schema level.
 
+## 3b. Trading operations (011B-2)
+
+DTOs and channel names: `src/shared/ipc/trades.ts`. Handlers and validation:
+`src/main/ipc/tradeHandlers.ts` + `validation.ts`; logic:
+`src/main/trading/tradingService.ts`. Exactly six channels; nothing generic.
+
+| Method | Effect |
+|---|---|
+| `list({accountId?, fromDate?, toDate?})` | accounts + a `TradeSummaryDto` per trade (chronological by analytical date, then open time) + the (account, date) pairs that have a Day Note. No executions or rule rows. |
+| `getDetail(tradeId)` | trade summary + executions + the exact saved strategy version with the trade's rule results (grouped as that version defined them) + trade note + day note + same-day sibling summaries |
+| `getDay({accountId, date})` | (account, analytical date) → trades + day note |
+| `updateTradeNote({tradeId, body})` | plain-text upsert (≤ 20 000 chars) |
+| `updateDayNote({accountId, date, body})` | plain-text upsert for (account, date) |
+| `updateRuleEvaluation({tradeId, ruleId, state})` | `Pass` / `Fail` / `N/A` / `Unreviewed` for one rule of **the trade's own strategy version**; any other rule → `RULE_VIOLATION`. Returns the new rule-state counts. |
+
+Model rules:
+
+- money, price, quantity and R are **decimal strings** (`null` = not reported,
+  never zero); timestamps are epoch ms; the **analytical date** (`YYYY-MM-DD`,
+  validated as a real calendar date) is the day-grouping key;
+- direction is the persisted `Long` / `Short`, never derived from executions;
+- strategy association is `{strategyId, versionId, versionNumber}` plus the
+  strategy's *current* display name;
+- compliance is derived from the four rule-state counts by
+  `src/shared/compliance.ts` (PASS / (PASS + FAIL); N/A and UNREVIEWED excluded;
+  UNREVIEWED ⇒ Incomplete) — there are no categorical compliance states;
+- trades and executions are not writable through IPC; nothing touches a broker;
+- an unavailable database yields `PERSISTENCE_UNAVAILABLE` on every channel;
+- list-vs-detail split: summaries carry counts only, detail is requested per
+  opened trade, so the UI never issues a call per row or per execution.
+
 ## 4. Error / result shape
 
 ```ts
@@ -70,10 +101,12 @@ details are logged in main only.
 - Timestamps are epoch milliseconds (`publishedAt`); formatting is the
   renderer's job.
 - Persistence rows (upper-case enums, fixed-point integers) never cross.
-  Handlers return DTOs (`StrategyDto` …). Money/price/quantity, when
-  Trades arrive, cross as decimal strings (see `DATABASE_SCHEMA.md` §13).
+  Handlers return DTOs (`StrategyDto`, `TradeSummaryDto` …).
+  Money/price/quantity/R cross as decimal strings, never `BigInt` or floats (see
+  `DATABASE_SCHEMA.md` §13); the renderer aggregates them exactly and converts
+  to a number only for display.
 - IDs are opaque strings. Persisted IDs — not names — identify strategies,
-  groups and rules.
+  versions, groups, rules, accounts and trades.
 - Payloads are validated with bounds (`src/main/ipc/validation.ts`); unknown
   edit types, wrong types, oversized text → `INVALID_INPUT`.
 
@@ -87,10 +120,11 @@ invariant in one place (service + schema triggers), keep the UI independent of
 storage, and keep the trust boundary auditable: the entire renderer-reachable
 surface is the table in §3.
 
-## 7. Future extension (Trades, Accounts)
+## 7. Future extension (Accounts, integrations)
 
-Add new namespaces to `SolidSkillApi` (`trades`, `accounts`) with their own
-DTOs, channel constants, validators, and service, following the same pattern:
+`trades` was added in 011B-2 following this pattern. Add further namespaces to
+`SolidSkillApi` (e.g. `accounts`) with their own DTOs, channel constants,
+validators, and service, the same way:
 shared DTO + channel names in `src/shared/ipc/`, validation + handlers in
 `src/main/ipc/`, a service over the repositories, one line per method in the
 preload. Trade DTOs carry money as decimal strings and associate strategies

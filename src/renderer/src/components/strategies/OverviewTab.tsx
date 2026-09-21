@@ -1,6 +1,6 @@
 import { useState, type JSX } from 'react'
 import type { Strategy } from '@renderer/types/strategy'
-import type { RuleState } from '@renderer/types/journal'
+import type { RuleState, TradeSummary } from '@renderer/types/journal'
 import { summarizeRules } from '@renderer/lib/compliance'
 import { formatUsd } from '@renderer/lib/format'
 import { currentVersion, ruleCount } from '@renderer/lib/strategyDraft'
@@ -14,17 +14,18 @@ const exampleStates: RuleState[] = ['Pass', 'Fail', 'N/A', 'Unreviewed']
 
 interface OverviewTabProps {
   strategy: Strategy
+  trades: readonly TradeSummary[]
   // Persists name/description immediately (no Draft, no Version). Resolves true on success.
   onSaveDetails: (name: string, description: string) => Promise<boolean>
   // Lower-cased names of the OTHER strategies, for the uniqueness check.
   otherNames: string[]
 }
 
-export function OverviewTab({ strategy, onSaveDetails, otherNames }: OverviewTabProps): JSX.Element {
+export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: OverviewTabProps): JSX.Element {
   const [editingDetails, setEditingDetails] = useState(false)
   const version = currentVersion(strategy)
   const shownGroups = version?.groups ?? strategy.draft?.groups ?? []
-  const rows = tradesForStrategy(strategy)
+  const rows = tradesForStrategy(strategy.id, trades)
   const agg = aggregateStrategyTrades(rows)
 
   const exampleRules = version ? version.groups.flatMap((g) => g.rules) : []

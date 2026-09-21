@@ -51,15 +51,27 @@ export class EvaluationRepository {
       .map(toDetail)
   }
 
-  /** Records the trader's judgement for one rule of the trade's associated version. */
+  /**
+   * Records the trader's judgement for one rule of the trade's associated
+   * version. Enforces evaluation.rule.version == trade.strategy_version: the
+   * evaluation must exist for this (trade, rule) AND both its version and its
+   * rule's version must equal the trade's associated version. (The schema's
+   * composite foreign keys already make anything else unrepresentable; this
+   * turns a violation into a clear error before it reaches SQLite.)
+   */
   setState(tradeId: string, ruleId: string, state: EvaluationState): void {
     const at = BigInt(this.now())
     const existing = this.sql.get(
-      'SELECT id FROM trade_rule_evaluations WHERE trade_id = ? AND rule_id = ?',
+      `SELECT e.id FROM trade_rule_evaluations e
+         JOIN trades t ON t.id = e.trade_id
+         JOIN rules r ON r.id = e.rule_id
+        WHERE e.trade_id = ? AND e.rule_id = ?
+          AND e.strategy_version_id = t.strategy_version_id
+          AND r.strategy_version_id = t.strategy_version_id`,
       [tradeId, ruleId]
     )
     if (existing === undefined) {
-      throw new Error(`No evaluation for trade ${tradeId} and rule ${ruleId}`)
+      throw new Error(`No evaluation for trade ${tradeId} and rule ${ruleId} in the trade's strategy version`)
     }
     this.sql.run(
       `UPDATE trade_rule_evaluations SET state = ?, evaluated_at = ?, updated_at = ?

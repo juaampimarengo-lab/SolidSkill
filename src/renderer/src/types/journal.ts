@@ -1,59 +1,25 @@
-// Static shapes for the Checkpoint 007 Journal workspace's dummy data only.
-// Not a domain model — the real Trading Domain / Normalization Layer types
-// (Order, Execution, Source Position, Trade — see docs/TRADE_MODEL_CONCEPTS.md)
-// land in a later checkpoint. Every value here is an already-computed visual
-// fixture; nothing is derived from raw broker data, and no broker-specific
-// field (Tradovate/MT5) is represented, per docs/JOURNAL_SPEC.md §7.
+// Renderer view types for the trading surfaces. The data itself is persisted in
+// SQLite and arrives over the typed preload API (src/shared/ipc/trades.ts):
+// money/price/quantity/R are exact decimal STRINGS, timestamps are epoch ms,
+// and days are keyed by the persisted analytical trading date ('YYYY-MM-DD').
+// Nothing here is a fixture, and nothing broker-specific is represented.
 
-export type Direction = 'Long' | 'Short'
-export type ExecutionSide = 'BUY' | 'SELL'
+import type {
+  DirectionDto,
+  ExecutionDto,
+  ExecutionSideDto,
+  RuleStateDto,
+  TradeDetailDto,
+  TradeSummaryDto
+} from '@shared/ipc/trades'
+
+export type Direction = DirectionDto
+export type ExecutionSide = ExecutionSideDto
 export type Outcome = 'positive' | 'negative' | 'break-even'
 // UNREVIEWED = not yet evaluated (default); distinct from N/A = explicitly
 // judged not applicable. See docs/STRATEGY_BUILDER_SPEC.md §9.
-export type RuleState = 'Pass' | 'Fail' | 'N/A' | 'Unreviewed'
+export type RuleState = RuleStateDto
 
-export interface JournalExecution {
-  id: string
-  time: string
-  side: ExecutionSide
-  qty: number
-  price: number
-  fee: number
-}
-
-export interface StrategyRule {
-  name: string
-  state: RuleState
-}
-
-export interface JournalTrade {
-  id: string
-  date: string
-  account: string
-  instrument: string
-  direction: Direction
-  executions: JournalExecution[]
-
-  openTime: string
-  closeTime: string
-  duration: string
-
-  avgEntry: number
-  avgExit: number
-  qty: number
-
-  grossPnl: number
-  fees: number
-  netPnl: number
-  outcome: Outcome
-
-  plannedR: number | null
-  realizedR: number | null
-
-  strategy: string
-  strategyVersion: string
-  complianceRules: StrategyRule[]
-
-  tradeNote: string
-  dayNote?: string
-}
+export type TradeSummary = TradeSummaryDto
+export type TradeDetail = TradeDetailDto
+export type TradeExecution = ExecutionDto

@@ -9,9 +9,10 @@ import { TradeReviewWorkspace } from '@renderer/components/tradereview/TradeRevi
 import { StrategiesWorkspace } from '@renderer/components/strategies/StrategiesWorkspace'
 import { Placeholder } from '@renderer/components/shell/Placeholder'
 import type { NavEntry } from '@renderer/types/navigation'
-import { journalTrades } from '@renderer/data/journalDummyData'
 import { StrategiesStatus } from '@renderer/components/strategies/StrategiesStatus'
+import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { useStrategies } from '@renderer/hooks/useStrategies'
+import { useTrading, type TradingData } from '@renderer/hooks/useTrading'
 
 function App(): JSX.Element {
   const [active, setActive] = useState('Dashboard')
@@ -25,6 +26,14 @@ function App(): JSX.Element {
   // across sidebar navigation. There is no fixture fallback: a persistence
   // failure is shown as an error, never as empty or fake data.
   const strategyData = useStrategies()
+
+  // Trades (with their accounts) are persisted in SQLite too and loaded once
+  // here as the single Trade universe every summary surface shares — Dashboard,
+  // Calendar, Journal, Strategies → Trades. Day Review and Trade Review load
+  // their own coherent detail views. Same rule: an error is an error, never
+  // fixtures.
+  const trading = useTrading()
+  const strategiesState = strategyData.state
 
   // Day Review / Trade Review are contextual overlays stacked on top of
   // whichever sidebar section is active, not permanent sidebar destinations
@@ -44,14 +53,18 @@ function App(): JSX.Element {
   function selectSection(label: string): void {
     setActive(label)
     setNavStack([])
+    // Silent re-read so a Strategy renamed elsewhere shows its new name here.
+    trading.refresh()
   }
 
   function openDayReview(date: string): void {
-    setNavStack((stack) => [...stack, { kind: 'dayReview', date }])
+    const accountId = trading.state.status === 'ready' ? trading.state.data.account?.id : undefined
+    if (accountId === undefined) return
+    setNavStack((stack) => [...stack, { kind: 'dayReview', accountId, date }])
   }
 
-  function openTradeReview(tradeId: string, date: string): void {
-    setNavStack((stack) => [...stack, { kind: 'tradeReview', tradeId, date }])
+  function openTradeReview(tradeId: string): void {
+    setNavStack((stack) => [...stack, { kind: 'tradeReview', tradeId }])
   }
 
   // Switching among a day's sibling trades updates the current overlay in
@@ -60,7 +73,7 @@ function App(): JSX.Element {
     setNavStack((stack) => {
       const top = stack[stack.length - 1]
       if (!top || top.kind !== 'tradeReview') return stack
-      return [...stack.slice(0, -1), { kind: 'tradeReview', tradeId, date: top.date }]
+      return [...stack.slice(0, -1), { kind: 'tradeReview', tradeId }]
     })
   }
 
@@ -68,11 +81,12 @@ function App(): JSX.Element {
     setNavStack((stack) => stack.slice(0, -1))
   }
 
-  function openTradeReviewFromAnywhere(tradeId: string): void {
-    // Dashboard/Journal entry points don't have a day-review origin — the
-    // trade's own date is only needed for the sibling-trade context panel.
-    const date = findTradeDate(tradeId)
-    if (date) openTradeReview(tradeId, date)
+  // Trading surfaces need the persisted Trade universe; show its loading/error
+  // state instead of a screen when it isn't ready.
+  function whenTradingReady(render: (data: TradingData) => JSX.Element): JSX.Element {
+    const state = trading.state
+    if (state.status !== 'ready') return <DataStatus what="Trades" state={state} onRetry={trading.retry} />
+    return render(state.data)
   }
 
   return (
@@ -84,22 +98,28 @@ function App(): JSX.Element {
       onChangeRepresentation={setRepresentation}
     >
       <div style={{ display: overlay ? 'none' : 'block', height: '100%' }}>
-        {active === 'Dashboard' && (
-          <Dashboard onOpenTradeReview={openTradeReviewFromAnywhere} onOpenDayReview={openDayReview} />
-        )}
-        {active === 'Calendar' && <CalendarWorkspace onOpenDayReview={openDayReview} />}
-        {active === 'Journal' && <JournalWorkspace onOpenTradeReview={openTradeReviewFromAnywhere} />}
+        {active === 'Dashboard' &&
+          whenTradingReady((data) => (
+            <Dashboard trading={data} onOpenTradeReview={openTradeReview} onOpenDayReview={openDayReview} />
+          ))}
+        {active === 'Calendar' &&
+          whenTradingReady((data) => <CalendarWorkspace trading={data} onOpenDayReview={openDayReview} />)}
+        {active === 'Journal' &&
+          whenTradingReady((data) => <JournalWorkspace trading={data} onOpenTradeReview={openTradeReview} />)}
         {active === 'Strategies' &&
-          (strategyData.state.status === 'ready' ? (
-            <StrategiesWorkspace
-              strategies={strategyData.state.strategies}
-              actions={strategyData.actions}
-              actionError={strategyData.actionError}
-              onDismissError={strategyData.dismissActionError}
-              onOpenTradeReview={openTradeReviewFromAnywhere}
-            />
+          (strategiesState.status !== 'ready' ? (
+            <StrategiesStatus state={strategiesState} onRetry={strategyData.reload} />
           ) : (
-            <StrategiesStatus state={strategyData.state} onRetry={strategyData.reload} />
+            whenTradingReady((data) => (
+              <StrategiesWorkspace
+                strategies={strategiesState.strategies}
+                trades={data.allTrades}
+                actions={strategyData.actions}
+                actionError={strategyData.actionError}
+                onDismissError={strategyData.dismissActionError}
+                onOpenTradeReview={openTradeReview}
+              />
+            ))
           ))}
         {active !== 'Dashboard' &&
           active !== 'Calendar' &&
@@ -109,9 +129,10 @@ function App(): JSX.Element {
 
       {overlay && overlay.kind === 'dayReview' && (
         <DayReviewWorkspace
+          accountId={overlay.accountId}
           date={overlay.date}
           onBack={goBack}
-          onOpenTrade={(tradeId) => openTradeReview(tradeId, overlay.date)}
+          onOpenTrade={openTradeReview}
         />
       )}
 
@@ -120,10 +141,6 @@ function App(): JSX.Element {
       )}
     </AppShell>
   )
-}
-
-function findTradeDate(tradeId: string): string | null {
-  return journalTrades.find((t) => t.id === tradeId)?.date ?? null
 }
 
 export default App

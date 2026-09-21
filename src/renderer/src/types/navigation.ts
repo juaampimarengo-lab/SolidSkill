@@ -6,5 +6,8 @@
 // ARCHITECTURE."
 
 export type NavEntry =
-  | { kind: 'dayReview'; date: string }
-  | { kind: 'tradeReview'; tradeId: string; date: string }
+  // Days are keyed by (account, analytical trading date 'YYYY-MM-DD').
+  | { kind: 'dayReview'; accountId: string; date: string }
+  // A trade is identified by its persisted id alone; sibling/day context is
+  // loaded with the trade's detail.
+  | { kind: 'tradeReview'; tradeId: string }

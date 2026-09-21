@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react'
 import { Plus } from 'lucide-react'
 import type { Strategy } from '@renderer/types/strategy'
+import type { TradeSummary } from '@renderer/types/journal'
 import type { StrategyActions } from '@renderer/hooks/useStrategies'
 import { currentVersion, publishBlocker } from '@renderer/lib/strategyDraft'
 import { aggregateStrategyTrades, tradesForStrategy } from '@renderer/lib/strategyTrades'
@@ -16,6 +17,9 @@ const tabs: Tab[] = ['Overview', 'Rules', 'Versions', 'Trades']
 
 interface StrategiesWorkspaceProps {
   strategies: Strategy[]
+  // The persisted Trade universe; a strategy's trades are those whose exact
+  // Strategy Version belongs to that strategy's stable id.
+  trades: readonly TradeSummary[]
   actions: StrategyActions
   // Message from the last refused/failed persistence action, if any.
   actionError: string | null
@@ -25,6 +29,7 @@ interface StrategiesWorkspaceProps {
 
 export function StrategiesWorkspace({
   strategies,
+  trades,
   actions,
   actionError,
   onDismissError,
@@ -66,11 +71,11 @@ export function StrategiesWorkspace({
         <div className={styles.listScroll}>
           <div className={styles.listSection}>Active · {active.length}</div>
           {active.map((s) => (
-            <StrategyRow key={s.id} strategy={s} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
+            <StrategyRow key={s.id} strategy={s} trades={trades} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
           ))}
           {archived.length > 0 && <div className={styles.listSection}>Archived · {archived.length}</div>}
           {archived.map((s) => (
-            <StrategyRow key={s.id} strategy={s} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
+            <StrategyRow key={s.id} strategy={s} trades={trades} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
           ))}
         </div>
       </aside>
@@ -80,6 +85,7 @@ export function StrategiesWorkspace({
           <StrategyDetail
             key={selected.id}
             strategy={selected}
+            trades={trades}
             tab={tab}
             onTab={setTab}
             otherNames={strategies.filter((s) => s.id !== selected.id).map((s) => s.name.toLowerCase())}
@@ -101,15 +107,17 @@ export function StrategiesWorkspace({
 
 function StrategyRow({
   strategy,
+  trades,
   selected,
   onSelect
 }: {
   strategy: Strategy
+  trades: readonly TradeSummary[]
   selected: boolean
   onSelect: () => void
 }): JSX.Element {
   const version = currentVersion(strategy)
-  const agg = aggregateStrategyTrades(tradesForStrategy(strategy))
+  const agg = aggregateStrategyTrades(tradesForStrategy(strategy.id, trades))
   return (
     <button
       type="button"
@@ -200,6 +208,7 @@ type Confirm = 'publish' | 'delete' | null
 
 function StrategyDetail({
   strategy,
+  trades,
   tab,
   onTab,
   actions,
@@ -209,6 +218,7 @@ function StrategyDetail({
   onOpenTradeReview
 }: {
   strategy: Strategy
+  trades: readonly TradeSummary[]
   tab: Tab
   onTab: (tab: Tab) => void
   actions: StrategyActions
@@ -360,13 +370,14 @@ function StrategyDetail({
         {tab === 'Overview' && (
           <OverviewTab
             strategy={strategy}
+            trades={trades}
             onSaveDetails={(name, description) => actions.updateDetails(strategy.id, name, description)}
             otherNames={otherNames}
           />
         )}
         {tab === 'Rules' && <RulesTab strategy={strategy} actions={actions} />}
-        {tab === 'Versions' && <VersionsTab strategy={strategy} />}
-        {tab === 'Trades' && <TradesTab strategy={strategy} onOpenTradeReview={onOpenTradeReview} />}
+        {tab === 'Versions' && <VersionsTab strategy={strategy} trades={trades} />}
+        {tab === 'Trades' && <TradesTab strategy={strategy} trades={trades} onOpenTradeReview={onOpenTradeReview} />}
       </div>
     </div>
   )

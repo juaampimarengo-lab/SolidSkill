@@ -9,17 +9,17 @@ import type { Database, RuleKind } from '../persistence'
  *  - runs only when the strategies table is completely empty, so it is
  *    idempotent and can never duplicate "Strategy Alpha";
  *  - writes Strategy data only (generic Alpha/Beta/Gamma with their published
- *    versions) — never trades, executions, or evaluations;
+ *    versions) — trades, executions and evaluations belong to trading/devSeed.ts;
  *  - goes through the real repositories, so seeded versions are immutable
  *    published versions like any other;
  *  - lands in the separate development userData folder, never in the
  *    production-named database.
  *
  * Every label below is generic user-style data, not an application concept.
- * This intentionally mirrors the renderer fixtures in
- * src/renderer/src/data/strategyDummyData.ts (still used by Trade Review
- * until 011B-2); keep the two in step or delete this file's duplicate when
- * trades move to persistence.
+ * This is now the ONLY definition of the demo strategies: the renderer
+ * fixtures that used to mirror it were removed in 011B-2. The demo trades that
+ * reference these strategies are seeded separately by src/main/trading/devSeed.ts,
+ * which runs after this one.
  */
 
 interface SeedRule {

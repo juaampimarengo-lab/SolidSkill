@@ -1,6 +1,8 @@
 import { RULE_KINDS } from '../../shared/ipc/strategies'
 import type { DraftEdit, RuleKindDto } from '../../shared/ipc/strategies'
-import { ServiceError } from '../strategies/strategyService'
+import { RULE_STATES } from '../../shared/ipc/trades'
+import type { RuleStateDto, TradeListRequest } from '../../shared/ipc/trades'
+import { ServiceError } from '../serviceError'
 
 /**
  * Manual, dependency-free validation of untrusted renderer payloads. Anything
@@ -119,5 +121,72 @@ export function editDraftInput(payload: unknown): { strategyId: string; edit: Dr
       }
     default:
       return invalid('Unknown draft edit')
+  }
+}
+
+// ---- Trading payloads -------------------------------------------------------
+
+const MAX_NOTE = 20000
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/** A real calendar date in 'YYYY-MM-DD' form. Pure string/UTC math: no local-timezone conversion. */
+function isoDate(value: unknown, what: string): string {
+  if (typeof value !== 'string') invalid(`${what} must be a date`)
+  const match = ISO_DATE.exec(value)
+  if (match === null) invalid(`${what} must be a date`)
+  const [, y, m, d] = match
+  const probe = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)))
+  if (probe.getUTCFullYear() !== Number(y) || probe.getUTCMonth() !== Number(m) - 1 || probe.getUTCDate() !== Number(d)) {
+    invalid(`${what} is not a real date`)
+  }
+  return value
+}
+
+function noteBody(value: unknown): string {
+  if (typeof value !== 'string') invalid('Note must be text')
+  if (value.length > MAX_NOTE) invalid('Note is too long')
+  return value
+}
+
+function ruleState(value: unknown): RuleStateDto {
+  if (typeof value !== 'string' || !(RULE_STATES as readonly string[]).includes(value)) invalid('Rule state is invalid')
+  return value as RuleStateDto
+}
+
+export function tradeId(payload: unknown): string {
+  return id(payload, 'Trade id')
+}
+
+export function tradeListInput(payload: unknown): TradeListRequest {
+  if (payload === undefined || payload === null) return {}
+  const p = record(payload, 'Request')
+  const request: TradeListRequest = {}
+  if (p['accountId'] !== undefined) request.accountId = id(p['accountId'], 'Account id')
+  if (p['fromDate'] !== undefined) request.fromDate = isoDate(p['fromDate'], 'From date')
+  if (p['toDate'] !== undefined) request.toDate = isoDate(p['toDate'], 'To date')
+  return request
+}
+
+export function dayInput(payload: unknown): { accountId: string; date: string } {
+  const p = record(payload, 'Request')
+  return { accountId: id(p['accountId'], 'Account id'), date: isoDate(p['date'], 'Date') }
+}
+
+export function tradeNoteInput(payload: unknown): { tradeId: string; body: string } {
+  const p = record(payload, 'Request')
+  return { tradeId: id(p['tradeId'], 'Trade id'), body: noteBody(p['body']) }
+}
+
+export function dayNoteInput(payload: unknown): { accountId: string; date: string; body: string } {
+  const p = record(payload, 'Request')
+  return { accountId: id(p['accountId'], 'Account id'), date: isoDate(p['date'], 'Date'), body: noteBody(p['body']) }
+}
+
+export function ruleEvaluationInput(payload: unknown): { tradeId: string; ruleId: string; state: RuleStateDto } {
+  const p = record(payload, 'Request')
+  return {
+    tradeId: id(p['tradeId'], 'Trade id'),
+    ruleId: id(p['ruleId'], 'Rule id'),
+    state: ruleState(p['state'])
   }
 }

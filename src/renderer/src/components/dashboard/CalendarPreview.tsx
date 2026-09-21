@@ -1,10 +1,13 @@
 import type { JSX } from 'react'
-import { calendarMonths, currentMonthIndex } from '@renderer/data/calendarDummyData'
+import { useMemo } from 'react'
+import { buildCalendarMonth, groupByDate, monthOfIso, todayIsoDate } from '@renderer/lib/calendar'
+import type { TradeSummary } from '@renderer/types/journal'
 import type { CalendarDayCell, CalendarOutcome } from '@renderer/types/calendar'
 import { formatUsdCompact } from '@renderer/lib/format'
 import styles from './CalendarPreview.module.css'
 
-const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+// Weeks start on Sunday (same grid as the Calendar workspace).
+const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const outcomeClass: Record<CalendarOutcome, string> = {
   positive: styles.cellPositive,
@@ -14,11 +17,16 @@ const outcomeClass: Record<CalendarOutcome, string> = {
 }
 
 interface CalendarPreviewProps {
+  trades: readonly TradeSummary[]
+  noteDates: ReadonlySet<string>
   onOpenDayReview: (date: string) => void
 }
 
-export function CalendarPreview({ onOpenDayReview }: CalendarPreviewProps): JSX.Element {
-  const month = calendarMonths[currentMonthIndex]
+export function CalendarPreview({ trades, noteDates, onOpenDayReview }: CalendarPreviewProps): JSX.Element {
+  const month = useMemo(() => {
+    const today = todayIsoDate()
+    return buildCalendarMonth(monthOfIso(today), groupByDate(trades), noteDates, today)
+  }, [trades, noteDates])
 
   return (
     <section className={styles.widget}>

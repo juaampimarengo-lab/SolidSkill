@@ -9,12 +9,14 @@ import { EvaluationRepository } from './repositories/evaluations'
 import { NoteRepository } from './repositories/notes'
 import { StrategyRepository } from './repositories/strategies'
 import { StrategyVersionRepository } from './repositories/strategyVersions'
+import { TradeReadRepository } from './repositories/tradeReadModel'
 import { TradeRepository } from './repositories/trades'
 import { Sql, int } from './sql'
 
 export interface Repositories {
   accounts: AccountRepository
   trades: TradeRepository
+  tradeReads: TradeReadRepository
   strategies: StrategyRepository
   strategyVersions: StrategyVersionRepository
   evaluations: EvaluationRepository
@@ -80,6 +82,7 @@ export class Database {
       const repositories: Repositories = {
         accounts,
         trades: new TradeRepository(sql, now, accounts),
+        tradeReads: new TradeReadRepository(sql),
         strategies: new StrategyRepository(sql, now),
         strategyVersions: new StrategyVersionRepository(sql, now),
         evaluations: new EvaluationRepository(sql, now),

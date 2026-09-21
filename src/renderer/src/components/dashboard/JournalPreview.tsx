@@ -1,15 +1,18 @@
 import type { JSX } from 'react'
 import { recentTrades } from '@renderer/lib/trades'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
+import { complianceOf, openTimeLabel, outcomeNumClass, strategyName, tradeOutcome } from '@renderer/lib/tradeView'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
+import type { TradeSummary } from '@renderer/types/journal'
 import styles from './JournalPreview.module.css'
 
 interface JournalPreviewProps {
+  trades: readonly TradeSummary[]
   onOpenTradeReview: (tradeId: string) => void
 }
 
-export function JournalPreview({ onOpenTradeReview }: JournalPreviewProps): JSX.Element {
-  const trades = recentTrades(6)
+export function JournalPreview({ trades: allTrades, onOpenTradeReview }: JournalPreviewProps): JSX.Element {
+  const trades = recentTrades(allTrades, 6)
 
   return (
     <section className={styles.widget}>
@@ -31,38 +34,36 @@ export function JournalPreview({ onOpenTradeReview }: JournalPreviewProps): JSX.
           </tr>
         </thead>
         <tbody>
-          {trades.map((trade) => (
-            <tr
-              key={trade.id}
-              className={styles.row}
-              onClick={() => onOpenTradeReview(trade.id)}
-            >
-              <td className={`num ${styles.tdLeft} ${styles.time}`}>{trade.time}</td>
-              <td className={styles.tdLeft}>{trade.instrument}</td>
-              <td className={styles.tdLeft}>{trade.side}</td>
-              <td className={`num ${styles.tdRight}`}>{trade.qty}</td>
-              <td className={`num ${styles.tdRight}`}>{formatPrice(trade.entry)}</td>
-              <td className={`num ${styles.tdRight}`}>{formatPrice(trade.exit)}</td>
-              <td
-                className={`num ${styles.tdRight} ${
-                  trade.outcome === 'break-even' ? 'num--neutral' : `num--${trade.outcome}`
-                }`}
-              >
-                {formatUsd(trade.resultUsd)}
-              </td>
-              <td
-                className={`num ${styles.tdRight} ${
-                  trade.outcome === 'break-even' ? 'num--neutral' : `num--${trade.outcome}`
-                }`}
-              >
-                {formatR(trade.r)}
-              </td>
-              <td className={styles.tdLeft}>{trade.strategy}</td>
-              <td className={styles.tdLeft}>
-                <CompactCompliance summary={trade.compliance} />
+          {trades.map((trade) => {
+            const outcomeClass = outcomeNumClass(tradeOutcome(trade))
+            return (
+              <tr key={trade.id} className={styles.row} onClick={() => onOpenTradeReview(trade.id)}>
+                <td className={`num ${styles.tdLeft} ${styles.time}`}>{openTimeLabel(trade).slice(0, 5)}</td>
+                <td className={styles.tdLeft}>{trade.instrument}</td>
+                <td className={styles.tdLeft}>{trade.direction}</td>
+                <td className={`num ${styles.tdRight}`}>{trade.quantity}</td>
+                <td className={`num ${styles.tdRight}`}>{formatPrice(trade.avgEntry)}</td>
+                <td className={`num ${styles.tdRight}`}>{trade.avgExit === null ? '—' : formatPrice(trade.avgExit)}</td>
+                <td className={`num ${styles.tdRight} ${outcomeClass}`}>
+                  {trade.netPnl === null ? '—' : formatUsd(trade.netPnl)}
+                </td>
+                <td className={`num ${styles.tdRight} ${outcomeClass}`}>
+                  {trade.realizedR === null ? '—' : formatR(trade.realizedR)}
+                </td>
+                <td className={styles.tdLeft}>{strategyName(trade)}</td>
+                <td className={styles.tdLeft}>
+                  <CompactCompliance summary={complianceOf(trade)} />
+                </td>
+              </tr>
+            )
+          })}
+          {trades.length === 0 && (
+            <tr>
+              <td colSpan={10} className={styles.tdLeft}>
+                No trades recorded yet.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </section>

@@ -1,38 +1,60 @@
 import { useMemo, type JSX } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { journalTrades } from '@renderer/data/journalDummyData'
+import { useDay } from '@renderer/hooks/useTrading'
 import { aggregateDay } from '@renderer/lib/dayAggregate'
 import { formatPercent, formatR, formatUsd } from '@renderer/lib/format'
-import { tradeSummary } from '@renderer/lib/compliance'
+import { complianceOf, longDateLabel, openTimeLabel, outcomeNumClass, strategyName, tradeOutcome } from '@renderer/lib/tradeView'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
-import type { JournalTrade } from '@renderer/types/journal'
+import { DataStatus } from '@renderer/components/shared/DataStatus'
+import type { DayDto } from '@shared/ipc/trades'
 import { IntradayPnlChart } from './IntradayPnlChart'
 import styles from './DayReviewWorkspace.module.css'
 
-function outcomeNumClass(outcome: JournalTrade['outcome'] | 'no-trade'): string {
-  if (outcome === 'break-even' || outcome === 'no-trade') return 'num--neutral'
-  return `num--${outcome}`
-}
-
 interface DayReviewWorkspaceProps {
+  accountId: string
+  // Analytical trading date, 'YYYY-MM-DD'.
   date: string
   onBack: () => void
   onOpenTrade: (tradeId: string) => void
 }
 
-export function DayReviewWorkspace({ date, onBack, onOpenTrade }: DayReviewWorkspaceProps): JSX.Element {
-  const dayTrades = useMemo(
-    () =>
-      journalTrades
-        .filter((t) => t.date === date)
-        .slice()
-        .sort((a, b) => a.openTime.localeCompare(b.openTime)),
-    [date]
-  )
+export function DayReviewWorkspace({ accountId, date, onBack, onOpenTrade }: DayReviewWorkspaceProps): JSX.Element {
+  // The persisted day: this account's trades for this analytical date, plus
+  // the Day Note (account + date). Nothing is derived from timestamps here.
+  const day = useDay(accountId, date)
 
+  if (day.state.status !== 'ready') {
+    return (
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <div className={styles.headerTop}>
+            <button type="button" className={styles.backButton} onClick={onBack}>
+              <ArrowLeft size={14} strokeWidth={1.75} />
+              Back
+            </button>
+            <div className={styles.headerTitle}>
+              <span className={styles.date}>{longDateLabel(date)}</span>
+            </div>
+          </div>
+        </header>
+        <DataStatus what="Day review" state={day.state} onRetry={day.retry} />
+      </div>
+    )
+  }
+  return <DayReview day={day.state.data} onBack={onBack} onOpenTrade={onOpenTrade} />
+}
+
+function DayReview({
+  day,
+  onBack,
+  onOpenTrade
+}: {
+  day: DayDto
+  onBack: () => void
+  onOpenTrade: (tradeId: string) => void
+}): JSX.Element {
+  const dayTrades = day.trades
   const agg = useMemo(() => aggregateDay(dayTrades), [dayTrades])
-  const dayNote = dayTrades.find((t) => t.dayNote)?.dayNote ?? null
-  const account = dayTrades[0]?.account ?? 'Apex 50K'
 
   return (
     <div className={styles.page}>
@@ -43,15 +65,19 @@ export function DayReviewWorkspace({ date, onBack, onOpenTrade }: DayReviewWorks
             Back
           </button>
           <div className={styles.headerTitle}>
-            <span className={styles.date}>{date}, 2026</span>
-            <span className={styles.account}>{account}</span>
+            <span className={styles.date}>{longDateLabel(day.date)}</span>
+            <span className={styles.account}>{day.accountName}</span>
           </div>
         </div>
 
         <div className={styles.statsStrip}>
-          <Stat label="Net P&L" value={formatUsd(agg.netPnl)} numClass={outcomeNumClass(agg.outcome)} />
-          <Stat label="Gross P&L" value={formatUsd(agg.grossPnl)} />
-          <Stat label="Fees" value={formatUsd(-agg.fees)} />
+          <Stat
+            label="Net P&L"
+            value={agg.netPnl === null ? '—' : formatUsd(agg.netPnl)}
+            numClass={outcomeNumClass(agg.outcome)}
+          />
+          <Stat label="Gross P&L" value={agg.grossPnl === null ? '—' : formatUsd(agg.grossPnl)} />
+          <Stat label="Fees" value={agg.costs === null ? '—' : formatUsd(agg.costs)} />
           <Stat label="Trades" value={String(agg.trades)} />
           <Stat label="Win Rate" value={agg.winRate === null ? '—' : formatPercent(agg.winRate)} />
           <Stat label="Winners" value={String(agg.winners)} numClass="num--positive" />
@@ -75,24 +101,27 @@ export function DayReviewWorkspace({ date, onBack, onOpenTrade }: DayReviewWorks
               </tr>
             </thead>
             <tbody>
-              {dayTrades.map((trade) => (
-                <tr key={trade.id} className={styles.row} onClick={() => onOpenTrade(trade.id)}>
-                  <td className={`num ${styles.tdLeft} ${styles.time}`}>{trade.openTime.slice(0, 5)}</td>
-                  <td className={styles.tdLeft}>{trade.instrument}</td>
-                  <td className={styles.tdLeft}>{trade.direction}</td>
-                  <td className={`num ${styles.tdRight}`}>{trade.qty}</td>
-                  <td className={`num ${styles.tdRight} ${outcomeNumClass(trade.outcome)}`}>
-                    {formatUsd(trade.netPnl)}
-                  </td>
-                  <td className={`num ${styles.tdRight} ${outcomeNumClass(trade.outcome)}`}>
-                    {trade.realizedR === null ? '—' : formatR(trade.realizedR)}
-                  </td>
-                  <td className={styles.tdLeft}>{trade.strategy}</td>
-                  <td className={styles.tdLeft}>
-                    <CompactCompliance summary={tradeSummary(trade.complianceRules)} />
-                  </td>
-                </tr>
-              ))}
+              {dayTrades.map((trade) => {
+                const outcomeClass = outcomeNumClass(tradeOutcome(trade))
+                return (
+                  <tr key={trade.id} className={styles.row} onClick={() => onOpenTrade(trade.id)}>
+                    <td className={`num ${styles.tdLeft} ${styles.time}`}>{openTimeLabel(trade).slice(0, 5)}</td>
+                    <td className={styles.tdLeft}>{trade.instrument}</td>
+                    <td className={styles.tdLeft}>{trade.direction}</td>
+                    <td className={`num ${styles.tdRight}`}>{trade.quantity}</td>
+                    <td className={`num ${styles.tdRight} ${outcomeClass}`}>
+                      {trade.netPnl === null ? '—' : formatUsd(trade.netPnl)}
+                    </td>
+                    <td className={`num ${styles.tdRight} ${outcomeClass}`}>
+                      {trade.realizedR === null ? '—' : formatR(trade.realizedR)}
+                    </td>
+                    <td className={styles.tdLeft}>{strategyName(trade)}</td>
+                    <td className={styles.tdLeft}>
+                      <CompactCompliance summary={complianceOf(trade)} />
+                    </td>
+                  </tr>
+                )
+              })}
 
               {dayTrades.length === 0 && (
                 <tr>
@@ -113,7 +142,7 @@ export function DayReviewWorkspace({ date, onBack, onOpenTrade }: DayReviewWorks
 
           <div className={styles.notesRegion}>
             <div className={styles.noteTitle}>Day Notes</div>
-            <p className={styles.noteText}>{dayNote ?? 'No day notes recorded.'}</p>
+            <p className={styles.noteText}>{day.dayNote || 'No day notes recorded.'}</p>
           </div>
         </div>
       </div>

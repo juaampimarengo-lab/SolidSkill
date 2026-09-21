@@ -1,4 +1,4 @@
-import type { SolidSkillApi } from '../shared/ipc/strategies'
+import type { SolidSkillApi } from '../shared/ipc/api'
 
 declare global {
   interface Window {

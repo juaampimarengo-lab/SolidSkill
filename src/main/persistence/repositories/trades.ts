@@ -66,7 +66,7 @@ export interface TradeFilter {
   toDate?: string
 }
 
-function toTrade(row: Row): Trade {
+export function toTrade(row: Row): Trade {
   return {
     id: str(row['id']),
     accountId: str(row['account_id']),

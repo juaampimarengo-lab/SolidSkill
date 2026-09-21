@@ -1,14 +1,15 @@
 import { useState, type JSX } from 'react'
 import type { Strategy } from '@renderer/types/strategy'
+import type { TradeSummary } from '@renderer/types/journal'
 import { currentVersion, ruleCount } from '@renderer/lib/strategyDraft'
 import { tradesForStrategy } from '@renderer/lib/strategyTrades'
 import { ReadOnlyGroups } from './ReadOnlyGroups'
 import styles from './Strategies.module.css'
 
-export function VersionsTab({ strategy }: { strategy: Strategy }): JSX.Element {
+export function VersionsTab({ strategy, trades: allTrades }: { strategy: Strategy; trades: readonly TradeSummary[] }): JSX.Element {
   const [selected, setSelected] = useState<number | null>(null)
   const current = currentVersion(strategy)
-  const trades = tradesForStrategy(strategy)
+  const trades = tradesForStrategy(strategy.id, allTrades)
 
   if (!current) {
     return (
@@ -20,7 +21,8 @@ export function VersionsTab({ strategy }: { strategy: Strategy }): JSX.Element {
 
   const shown = strategy.versions.find((v) => v.number === (selected ?? current.number)) ?? current
   const ordered = strategy.versions.slice().reverse()
-  const tradeCount = (n: number): number => trades.filter((r) => r.trade.strategyVersion === `v${n}`).length
+  // Trades are counted by the exact persisted version id, not the number or a name.
+  const tradeCount = (versionId: string): number => trades.filter((r) => r.trade.strategy?.versionId === versionId).length
 
   return (
     <div className={styles.versionsLayout}>
@@ -60,7 +62,7 @@ export function VersionsTab({ strategy }: { strategy: Strategy }): JSX.Element {
           <span>Published {shown.publishedOn}</span>
           <span>{shown.groups.length} groups</span>
           <span>{ruleCount(shown.groups)} rules</span>
-          <span>{tradeCount(shown.number)} trades on this version</span>
+          <span>{tradeCount(shown.id)} trades on this version</span>
         </div>
 
         <div className={styles.blockTitle}>Changes in this version</div>

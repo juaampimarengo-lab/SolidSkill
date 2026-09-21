@@ -1,5 +1,4 @@
 import type { Database, Rule, RuleKind, Strategy, StrategyVersionDefinition } from '../persistence'
-import type { IpcErrorCode } from '../../shared/ipc/result'
 import type {
   DraftEdit,
   RuleDto,
@@ -9,18 +8,10 @@ import type {
   StrategyDraftDto,
   StrategyVersionDto
 } from '../../shared/ipc/strategies'
+import { ServiceError } from '../serviceError'
 import { draftPublishBlocker, summarizeChanges } from '../../shared/strategyRules'
 
-/** A failure with an application-level code that the IPC layer can return as data. */
-export class ServiceError extends Error {
-  constructor(
-    readonly code: IpcErrorCode,
-    message: string
-  ) {
-    super(message)
-    this.name = 'ServiceError'
-  }
-}
+export { ServiceError }
 
 const KIND_TO_DB: Record<RuleKindDto, RuleKind> = {
   Required: 'REQUIRED',

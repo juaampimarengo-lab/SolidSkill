@@ -26,6 +26,8 @@ export interface RuleGroupDef {
 // A published Version is frozen: its groups are deep-frozen at creation and
 // no code path replaces or edits a published version in place.
 export interface StrategyVersion {
+  // Persisted id: the stable identity Trades associate with (never the number or a name).
+  readonly id: string
   readonly number: number
   readonly publishedOn: string
   readonly groups: readonly RuleGroupDef[]

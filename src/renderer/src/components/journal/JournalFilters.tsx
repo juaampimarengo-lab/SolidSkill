@@ -1,14 +1,13 @@
 import type { JSX } from 'react'
 import { ChevronDown } from 'lucide-react'
-import type { JournalTrade } from '@renderer/types/journal'
+import type { TradeSummary } from '@renderer/types/journal'
 import styles from './JournalFilters.module.css'
 
-// Filter state is UI state only for this checkpoint. Instrument/direction/
-// strategy/outcome/compliance drive trivial local filtering (a straight
-// equality check against fixture fields); account and date range are
-// visual-only, since the dummy fixtures span one account and a handful of
-// dates — see docs/JOURNAL_SPEC.md §4. This is not a generalized filtering
-// engine.
+// Filter state is UI state only. Instrument/direction/strategy/outcome/review
+// drive trivial local filtering over the persisted Trade list (strategy by
+// stable id, shown by name); account and date range are visual-only until the
+// Accounts UI and date-range control exist — see docs/JOURNAL_SPEC.md §4. This
+// is not a generalized filtering engine.
 export interface JournalFilterState {
   instrument: string
   direction: string
@@ -26,14 +25,24 @@ export const defaultJournalFilters: JournalFilterState = {
 }
 
 interface JournalFiltersProps {
-  trades: JournalTrade[]
+  accountName: string
+  trades: readonly TradeSummary[]
   filters: JournalFilterState
   onChange: (filters: JournalFilterState) => void
 }
 
-export function JournalFilters({ trades, filters, onChange }: JournalFiltersProps): JSX.Element {
+interface FilterOption {
+  value: string
+  label: string
+}
+
+export function JournalFilters({ accountName, trades, filters, onChange }: JournalFiltersProps): JSX.Element {
   const instruments = Array.from(new Set(trades.map((t) => t.instrument))).sort()
-  const strategies = Array.from(new Set(trades.map((t) => t.strategy))).sort()
+  const strategyNames = new Map<string, string>()
+  for (const t of trades) if (t.strategy) strategyNames.set(t.strategy.strategyId, t.strategy.strategyName)
+  const strategies: FilterOption[] = Array.from(strategyNames, ([value, label]) => ({ value, label })).sort((a, b) =>
+    a.label.localeCompare(b.label)
+  )
 
   const isDirty = Object.entries(filters).some(
     ([key, value]) => value !== defaultJournalFilters[key as keyof JournalFilterState]
@@ -47,7 +56,7 @@ export function JournalFilters({ trades, filters, onChange }: JournalFiltersProp
     <div className={styles.bar}>
       <span className={styles.field}>
         <span className={styles.label}>Account</span>
-        <SelectField value="Apex 50K" disabled options={['Apex 50K']} onChange={() => {}} />
+        <SelectField value={accountName} disabled options={[accountName]} onChange={() => {}} />
       </span>
 
       <span className={`${styles.field} ${styles.dateRange}`}>
@@ -109,7 +118,7 @@ function FilterField({
 }: {
   label: string
   value: string
-  options: string[]
+  options: (string | FilterOption)[]
   onChange: (value: string) => void
 }): JSX.Element {
   const active = value !== 'All'
@@ -128,7 +137,7 @@ function SelectField({
   disabled
 }: {
   value: string
-  options: string[]
+  options: (string | FilterOption)[]
   onChange: (value: string) => void
   disabled?: boolean
 }): JSX.Element {
@@ -140,11 +149,14 @@ function SelectField({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
+        {options.map((opt) => {
+          const { value: optionValue, label } = typeof opt === 'string' ? { value: opt, label: opt } : opt
+          return (
+            <option key={optionValue} value={optionValue}>
+              {label}
+            </option>
+          )
+        })}
       </select>
       <ChevronDown size={12} strokeWidth={1.75} />
     </span>

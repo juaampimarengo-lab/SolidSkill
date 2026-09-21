@@ -15,6 +15,8 @@ const outDir = resolve('out/smoke')
 await build({
   configFile: false,
   logLevel: 'warn',
+  // The trading smoke also exercises the renderer's pure mapping helpers.
+  resolve: { alias: { '@renderer': resolve('src/renderer/src'), '@shared': resolve('src/shared') } },
   build: {
     ssr: resolve('src/main/persistence/__smoke__/smoke.ts'),
     outDir,

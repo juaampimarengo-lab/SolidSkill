@@ -1,9 +1,11 @@
-// Static shapes for the Checkpoint 005 Calendar workspace's dummy data only.
-// Not a domain model — no calculation, classification, or persistence logic
-// is implied by these types. Real values (result, trade count, win rate,
-// outcome classification) will eventually come from the Trading Domain /
-// Strategy Engine and a configurable break-even threshold (see
-// docs/CALENDAR_SPEC.md §9, §12), not from this workspace.
+// View shapes for the Calendar workspace. Every cell is derived from persisted
+// Trades grouped by their analytical trading date (see lib/calendar.ts) — no
+// fixture data, no timestamp-to-date conversion. Money is an exact decimal
+// string. The break-even classification is a temporary fixed default (see
+// lib/tradeView.ts) until the configurable threshold in docs/CALENDAR_SPEC.md
+// §12 exists.
+
+import type { Decimal } from '@renderer/lib/decimal'
 
 export type CalendarOutcome = 'positive' | 'negative' | 'break-even' | 'no-trade'
 
@@ -12,25 +14,26 @@ export interface CalendarDayCell {
   inMonth: boolean
   isToday?: boolean
   outcome: CalendarOutcome
-  result: number | null
+  result: Decimal | null
   trades: number
   winRate: number | null
   hasJournalEntry?: boolean
-  // Shared-fixture lookup key (e.g. "Sep 15") matching JournalTrade.date —
-  // present only for in-month cells backed by real fixture trades, since
-  // that's the only case a day is navigable to Day Review.
+  // Analytical trading date ('YYYY-MM-DD') — present only for in-month cells
+  // that have persisted trades, since that's the only case a day is navigable
+  // to Day Review.
   dateKey?: string
 }
 
 export interface WeeklySummaryData {
   label: string
   outcome: CalendarOutcome
-  result: number
+  result: Decimal
   tradedDays: number
 }
 
 export interface MonthlyStats {
-  result: number
+  result: Decimal
+  outcome: Exclude<CalendarOutcome, 'no-trade'>
   tradedDays: number
 }
 

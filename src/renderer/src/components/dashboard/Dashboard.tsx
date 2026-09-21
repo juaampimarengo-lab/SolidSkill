@@ -6,14 +6,16 @@ import { ProcessCompliance } from './ProcessCompliance'
 import { JournalPreview } from './JournalPreview'
 import { CalendarPreview } from './CalendarPreview'
 import { StrategyCompliancePreview } from './StrategyCompliancePreview'
+import type { TradingData } from '@renderer/hooks/useTrading'
 import styles from './Dashboard.module.css'
 
 interface DashboardProps {
+  trading: TradingData
   onOpenTradeReview: (tradeId: string) => void
   onOpenDayReview: (date: string) => void
 }
 
-export function Dashboard({ onOpenTradeReview, onOpenDayReview }: DashboardProps): JSX.Element {
+export function Dashboard({ trading, onOpenTradeReview, onOpenDayReview }: DashboardProps): JSX.Element {
   return (
     <div className={styles.page}>
       <div className={styles.rowSplit}>
@@ -26,10 +28,10 @@ export function Dashboard({ onOpenTradeReview, onOpenDayReview }: DashboardProps
         <ProcessCompliance />
       </div>
 
-      <JournalPreview onOpenTradeReview={onOpenTradeReview} />
+      <JournalPreview trades={trading.trades} onOpenTradeReview={onOpenTradeReview} />
 
       <div className={styles.rowSplit}>
-        <CalendarPreview onOpenDayReview={onOpenDayReview} />
+        <CalendarPreview trades={trading.trades} noteDates={trading.noteDates} onOpenDayReview={onOpenDayReview} />
         <StrategyCompliancePreview />
       </div>
     </div>

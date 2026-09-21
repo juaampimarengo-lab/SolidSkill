@@ -12,7 +12,25 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["src/renderer/src/*"],
+      "@shared/*": ["src/shared/*"]
+    }
   },
-  "include": ["electron.vite.config.ts", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"]
+  "include": [
+    "electron.vite.config.ts",
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/shared/**/*",
+    "src/renderer/src/lib/compliance.ts",
+    "src/renderer/src/lib/decimal.ts",
+    "src/renderer/src/lib/dayAggregate.ts",
+    "src/renderer/src/lib/calendar.ts",
+    "src/renderer/src/lib/tradeView.ts",
+    "src/renderer/src/lib/strategyTrades.ts",
+    "src/renderer/src/types/journal.ts",
+    "src/renderer/src/types/calendar.ts"
+  ]
 }

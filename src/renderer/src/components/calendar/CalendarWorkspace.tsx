@@ -1,6 +1,7 @@
 import { useMemo, useState, type JSX } from 'react'
 import { ChevronLeft, ChevronRight, StickyNote } from 'lucide-react'
-import { calendarMonths, currentMonthIndex } from '@renderer/data/calendarDummyData'
+import type { TradingData } from '@renderer/hooks/useTrading'
+import { buildCalendarMonth, calendarRange, groupByDate, monthOfIso, todayIsoDate } from '@renderer/lib/calendar'
 import type { CalendarDayCell, CalendarOutcome, WeeklySummaryData } from '@renderer/types/calendar'
 import { formatUsdCompact, formatUsdCompactK } from '@renderer/lib/format'
 import styles from './CalendarWorkspace.module.css'
@@ -26,19 +27,35 @@ function formatWinRate(value: number): string {
 }
 
 interface CalendarWorkspaceProps {
+  trading: TradingData
   onOpenDayReview: (date: string) => void
 }
 
-export function CalendarWorkspace({ onOpenDayReview }: CalendarWorkspaceProps): JSX.Element {
+export function CalendarWorkspace({ trading, onOpenDayReview }: CalendarWorkspaceProps): JSX.Element {
+  // Every populated day derives from persisted Trades grouped by their
+  // analytical trading date. The navigable months span the persisted trades
+  // and the current month (see lib/calendar.ts).
+  const todayIso = todayIsoDate()
+  const { trades, noteDates } = trading
+  const monthRefs = useMemo(() => calendarRange(trades, todayIso), [trades, todayIso])
+  const months = useMemo(() => {
+    const byDate = groupByDate(trades)
+    return monthRefs.map((ref) => buildCalendarMonth(ref, byDate, noteDates, todayIso))
+  }, [monthRefs, trades, noteDates, todayIso])
+  const currentMonthIndex = useMemo(() => {
+    const current = monthOfIso(todayIso)
+    return Math.max(0, monthRefs.findIndex((m) => m.year === current.year && m.month === current.month))
+  }, [monthRefs, todayIso])
+
   const [monthIndex, setMonthIndex] = useState(currentMonthIndex)
   const [selected, setSelected] = useState<string | null>(null)
 
-  const month = calendarMonths[monthIndex]
+  const month = months[Math.min(monthIndex, months.length - 1)] as (typeof months)[number]
 
   const gridTemplateRows = useMemo(() => `auto repeat(${month.weeks.length}, 1fr)`, [month.weeks.length])
 
   const canGoPrev = monthIndex > 0
-  const canGoNext = monthIndex < calendarMonths.length - 1
+  const canGoNext = monthIndex < months.length - 1
 
   return (
     <div className={styles.page}>
@@ -76,7 +93,7 @@ export function CalendarWorkspace({ onOpenDayReview }: CalendarWorkspaceProps): 
           <span className={styles.statsLabel}>Monthly stats</span>
           <span
             className={`num ${styles.statsValue} ${
-              numClassByOutcome[month.monthlyStats.result > 0 ? 'positive' : month.monthlyStats.result < 0 ? 'negative' : 'break-even']
+              numClassByOutcome[month.monthlyStats.outcome]
             }`}
           >
             {formatUsdCompactK(month.monthlyStats.result)}

@@ -1,27 +1,35 @@
 import { useState, type JSX, type ReactNode } from 'react'
 import { X, Maximize2 } from 'lucide-react'
-import type { JournalTrade, RuleState } from '@renderer/types/journal'
+import type { TradeDetail, TradeSummary } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
-import { countEntries, countExits } from '@renderer/lib/journal'
-import { summarizeRules, tradeSummary } from '@renderer/lib/compliance'
+import { summarizeCounts } from '@shared/compliance'
+import { sumDecimalsOrNull } from '@renderer/lib/decimal'
+import {
+  clockTime,
+  closeTimeLabel,
+  complianceOf,
+  countEntries,
+  countExits,
+  dateLabel,
+  durationLabel,
+  openTimeLabel,
+  outcomeNumClass,
+  strategyName,
+  tradeCosts,
+  tradeOutcome,
+  versionLabel
+} from '@renderer/lib/tradeView'
+import { useTradeDetail, type Loadable } from '@renderer/hooks/useTrading'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
-import { getSeedVersion } from '@renderer/data/strategyDummyData'
+import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { ComplianceReadout, ReviewTag, RuleStateTag } from '@renderer/components/strategies/RuleStateTag'
 import styles from './TradeReview.module.css'
 
 type Tab = 'Overview' | 'Executions' | 'Strategy' | 'Notes'
 const tabs: Tab[] = ['Overview', 'Executions', 'Strategy', 'Notes']
 
-// Accepts CalendarOutcome's superset too ('no-trade') so Day Review / Trade
-// Review can reuse this for day-level aggregate outcomes, not just a single
-// trade's outcome.
-export function outcomeNumClass(outcome: JournalTrade['outcome'] | 'no-trade'): string {
-  if (outcome === 'break-even' || outcome === 'no-trade') return 'num--neutral'
-  return `num--${outcome}`
-}
-
 interface TradeReviewProps {
-  trade: JournalTrade
+  trade: TradeSummary
   onClose: () => void
   // Present when this panel is the Journal's quick preview (Checkpoint 008)
   // — opens the same trade in the canonical, full-page Trade Review.
@@ -31,6 +39,10 @@ interface TradeReviewProps {
 
 export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('Overview')
+  // The list row carries the summary; executions, the exact strategy version
+  // and the notes come from the persisted detail of this trade.
+  const detail = useTradeDetail(trade.id)
+  const outcome = tradeOutcome(trade)
 
   return (
     <div className={styles.panel}>
@@ -41,7 +53,8 @@ export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): J
             <span className={styles.direction}>{trade.direction}</span>
           </div>
           <div className={styles.headerMeta}>
-            {trade.date} · {trade.openTime.slice(0, 5)} – {trade.closeTime.slice(0, 5)} · {trade.duration}
+            {dateLabel(trade.tradeDate)} · {openTimeLabel(trade).slice(0, 5)} – {closeTimeLabel(trade).slice(0, 5)} ·{' '}
+            {durationLabel(trade)}
           </div>
         </div>
         <div className={styles.headerActions}>
@@ -58,13 +71,11 @@ export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): J
       </div>
 
       <div className={styles.resultLine}>
-        <span className={`num ${styles.resultValue} ${outcomeNumClass(trade.outcome)}`}>
-          {formatUsd(trade.netPnl)}
+        <span className={`num ${styles.resultValue} ${outcomeNumClass(outcome)}`}>
+          {trade.netPnl === null ? '—' : formatUsd(trade.netPnl)}
         </span>
         {trade.realizedR !== null && (
-          <span className={`num ${styles.resultR} ${outcomeNumClass(trade.outcome)}`}>
-            {formatR(trade.realizedR)}
-          </span>
+          <span className={`num ${styles.resultR} ${outcomeNumClass(outcome)}`}>{formatR(trade.realizedR)}</span>
         )}
       </div>
 
@@ -85,12 +96,32 @@ export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): J
 
       <div className={styles.content}>
         {tab === 'Overview' && <OverviewTab trade={trade} />}
-        {tab === 'Executions' && <ExecutionsTab trade={trade} />}
-        {tab === 'Strategy' && <StrategyTab trade={trade} />}
-        {tab === 'Notes' && <NotesTab trade={trade} />}
+        {tab === 'Executions' && (
+          <DetailGate state={detail.state} onRetry={detail.retry} render={(d) => <ExecutionsTab detail={d} />} />
+        )}
+        {tab === 'Strategy' && (
+          <DetailGate state={detail.state} onRetry={detail.retry} render={(d) => <StrategyTab detail={d} />} />
+        )}
+        {tab === 'Notes' && (
+          <DetailGate state={detail.state} onRetry={detail.retry} render={(d) => <NotesTab detail={d} />} />
+        )}
       </div>
     </div>
   )
+}
+
+// Shows the restrained loading/error state until the trade's persisted detail is ready.
+function DetailGate({
+  state,
+  onRetry,
+  render
+}: {
+  state: Loadable<TradeDetail>
+  onRetry: () => void
+  render: (detail: TradeDetail) => JSX.Element
+}): JSX.Element {
+  if (state.status !== 'ready') return <DataStatus what="Trade details" state={state} onRetry={onRetry} />
+  return render(state.data)
 }
 
 function Field({ label, value }: { label: string; value: ReactNode }): JSX.Element {
@@ -102,7 +133,8 @@ function Field({ label, value }: { label: string; value: ReactNode }): JSX.Eleme
   )
 }
 
-export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
+export function OverviewTab({ trade }: { trade: TradeSummary }): JSX.Element {
+  const costs = tradeCosts(trade)
   return (
     <div>
       <div className={styles.group}>
@@ -110,10 +142,10 @@ export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
         <div className={styles.fieldGrid}>
           <Field label="Instrument" value={trade.instrument} />
           <Field label="Direction" value={trade.direction} />
-          <Field label="Account" value={trade.account} />
-          <Field label="Duration" value={trade.duration} />
-          <Field label="Open time" value={trade.openTime} />
-          <Field label="Close time" value={trade.closeTime} />
+          <Field label="Account" value={trade.accountName} />
+          <Field label="Duration" value={durationLabel(trade)} />
+          <Field label="Open time" value={openTimeLabel(trade)} />
+          <Field label="Close time" value={closeTimeLabel(trade)} />
         </div>
       </div>
 
@@ -121,17 +153,17 @@ export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
         <div className={styles.groupTitle}>Position</div>
         <div className={styles.fieldGrid}>
           <Field label="Avg Entry" value={formatPrice(trade.avgEntry)} />
-          <Field label="Avg Exit" value={formatPrice(trade.avgExit)} />
-          <Field label="Quantity" value={String(trade.qty)} />
+          <Field label="Avg Exit" value={trade.avgExit === null ? '—' : formatPrice(trade.avgExit)} />
+          <Field label="Quantity" value={trade.quantity} />
         </div>
       </div>
 
       <div className={styles.group}>
         <div className={styles.groupTitle}>Result</div>
         <div className={styles.fieldGrid}>
-          <Field label="Gross P&L" value={formatUsd(trade.grossPnl)} />
-          <Field label="Fees / Commission" value={formatUsd(-trade.fees)} />
-          <Field label="Net P&L" value={formatUsd(trade.netPnl)} />
+          <Field label="Gross P&L" value={trade.grossPnl === null ? '—' : formatUsd(trade.grossPnl)} />
+          <Field label="Fees / Commission" value={costs === null ? '—' : formatUsd(costs)} />
+          <Field label="Net P&L" value={trade.netPnl === null ? '—' : formatUsd(trade.netPnl)} />
           <Field label="Planned R" value={trade.plannedR === null ? 'Not available' : formatR(trade.plannedR)} />
           <Field label="Realized R" value={trade.realizedR === null ? 'Not available' : formatR(trade.realizedR)} />
         </div>
@@ -140,18 +172,20 @@ export function OverviewTab({ trade }: { trade: JournalTrade }): JSX.Element {
       <div className={styles.group}>
         <div className={styles.groupTitle}>Process</div>
         <div className={styles.fieldGrid}>
-          <Field label="Strategy" value={trade.strategy} />
-          <Field label="Strategy version" value={trade.strategyVersion} />
-          <Field label="Compliance" value={<CompactCompliance summary={tradeSummary(trade.complianceRules)} />} />
+          <Field label="Strategy" value={strategyName(trade)} />
+          <Field label="Strategy version" value={versionLabel(trade)} />
+          <Field label="Compliance" value={<CompactCompliance summary={complianceOf(trade)} />} />
         </div>
       </div>
     </div>
   )
 }
 
-export function ExecutionsTab({ trade }: { trade: JournalTrade }): JSX.Element {
-  const entries = countEntries(trade)
-  const exits = countExits(trade)
+export function ExecutionsTab({ detail }: { detail: TradeDetail }): JSX.Element {
+  const { trade, executions } = detail
+  // Direction is the persisted fact; it is never read off the last execution.
+  const entries = countEntries(executions, trade.direction)
+  const exits = countExits(executions, trade.direction)
 
   return (
     <div>
@@ -181,56 +215,42 @@ export function ExecutionsTab({ trade }: { trade: JournalTrade }): JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {trade.executions.map((execution) => (
-            <tr key={execution.id} className={styles.execRow}>
-              <td className={`num ${styles.execTdLeft}`}>{execution.time}</td>
-              <td className={`${styles.execTdLeft} ${execution.side === 'BUY' ? styles.sideBuy : styles.sideSell}`}>
-                {execution.side}
-              </td>
-              <td className={`num ${styles.execTdRight}`}>{execution.qty}</td>
-              <td className={`num ${styles.execTdRight}`}>{formatPrice(execution.price)}</td>
-              <td className={`num ${styles.execTdRight}`}>{formatUsd(-execution.fee)}</td>
-            </tr>
-          ))}
+          {executions.map((execution) => {
+            const cost = sumDecimalsOrNull([execution.commission, execution.fees, execution.swap])
+            return (
+              <tr key={execution.id} className={styles.execRow}>
+                <td className={`num ${styles.execTdLeft}`}>{clockTime(execution.executedAt, trade.timezone)}</td>
+                <td className={`${styles.execTdLeft} ${execution.side === 'BUY' ? styles.sideBuy : styles.sideSell}`}>
+                  {execution.side}
+                </td>
+                <td className={`num ${styles.execTdRight}`}>{execution.quantity}</td>
+                <td className={`num ${styles.execTdRight}`}>{formatPrice(execution.price)}</td>
+                <td className={`num ${styles.execTdRight}`}>{cost === null ? '—' : formatUsd(cost)}</td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
   )
 }
 
-interface RuleRow {
-  name: string
-  state: RuleState
-}
-
-// Groups the trade's saved rule results by the group each rule belonged to
-// in the trade's SAVED strategy version (the static fixture snapshot — never
-// the live workspace session state, so editing/publishing a strategy can
-// not change how a historical trade renders).
-function groupSavedRules(trade: JournalTrade): { name: string; rules: RuleRow[] }[] {
-  const saved = getSeedVersion(trade.strategy, trade.strategyVersion)
-  const groups: { name: string; rules: RuleRow[] }[] = []
-  for (const result of trade.complianceRules) {
-    const groupName = saved?.groups.find((g) => g.rules.some((r) => r.name === result.name))?.name ?? 'Ungrouped'
-    let group = groups.find((g) => g.name === groupName)
-    if (!group) {
-      group = { name: groupName, rules: [] }
-      groups.push(group)
-    }
-    group.rules.push({ name: result.name, state: result.state })
+// The saved version at time of evaluation, read by its persisted id: the rule
+// wording and grouping are those of the exact published version the trade was
+// evaluated against — not the live Strategy, and not affected by a rename or a
+// newer published version.
+export function StrategyTab({ detail }: { detail: TradeDetail }): JSX.Element {
+  const { trade, strategy } = detail
+  if (strategy === null) {
+    return <div className={styles.versionNote}>This trade is not associated with a strategy.</div>
   }
-  return groups
-}
-
-export function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
-  const summary = summarizeRules(trade.complianceRules.map((r) => r.state))
-  const groups = groupSavedRules(trade)
+  const summary = summarizeCounts(trade.compliance)
 
   return (
     <div>
       <div className={styles.strategyHead}>
-        <span className={styles.strategyName}>{trade.strategy}</span>
-        <span className={styles.versionBadge}>{trade.strategyVersion}</span>
+        <span className={styles.strategyName}>{strategy.strategyName}</span>
+        <span className={styles.versionBadge}>v{strategy.versionNumber}</span>
       </div>
       <div className={styles.versionNote}>
         Saved version at time of evaluation — frozen. Not the current strategy definition.
@@ -249,12 +269,12 @@ export function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
         </span>
       </div>
 
-      {groups.map((group) => (
-        <div key={group.name} className={styles.ruleGroup}>
+      {strategy.groups.map((group) => (
+        <div key={group.groupId} className={styles.ruleGroup}>
           <div className={styles.ruleGroupTitle}>{group.name}</div>
           <div className={styles.ruleList}>
             {group.rules.map((rule) => (
-              <div key={rule.name} className={styles.ruleRow}>
+              <div key={rule.ruleId} className={styles.ruleRow}>
                 <span className={styles.ruleName}>{rule.name}</span>
                 <RuleStateTag state={rule.state} />
               </div>
@@ -266,18 +286,18 @@ export function StrategyTab({ trade }: { trade: JournalTrade }): JSX.Element {
   )
 }
 
-function NotesTab({ trade }: { trade: JournalTrade }): JSX.Element {
+function NotesTab({ detail }: { detail: TradeDetail }): JSX.Element {
   return (
     <div>
       <div className={styles.noteBlock}>
         <div className={styles.noteTitle}>Trade Notes</div>
-        <p className={styles.noteText}>{trade.tradeNote}</p>
+        <p className={styles.noteText}>{detail.tradeNote || 'No trade notes recorded.'}</p>
       </div>
 
-      {trade.dayNote && (
+      {detail.dayNote && (
         <div className={styles.noteBlock}>
           <div className={styles.noteTitle}>Day Notes</div>
-          <p className={styles.noteText}>{trade.dayNote}</p>
+          <p className={styles.noteText}>{detail.dayNote}</p>
         </div>
       )}
     </div>

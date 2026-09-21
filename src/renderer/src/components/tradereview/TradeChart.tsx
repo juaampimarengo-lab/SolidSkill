@@ -1,12 +1,13 @@
 import type { JSX } from 'react'
-import type { JournalExecution, JournalTrade } from '@renderer/types/journal'
+import { toNumber } from '@renderer/lib/decimal'
+import type { ExecutionSide, TradeExecution, TradeSummary } from '@renderer/types/journal'
 import styles from './TradeChart.module.css'
 
 // A restrained, clearly-illustrative execution/price visualization — NOT
 // real market data. The path is a deterministic pseudo-random walk seeded
 // from the trade's own id so it stays stable across re-renders, anchored at
-// the trade's actual avg entry/exit prices with each real execution plotted
-// at its proportional time along the trade's open→close window (see
+// the trade's actual avg entry/exit prices with each real persisted execution
+// plotted at its proportional time along the trade's open→close window (see
 // CLAUDE.md checkpoint instructions, "TRADE REVIEW — CHART / EXECUTION
 // VISUALIZATION").
 
@@ -27,11 +28,6 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-function timeToSeconds(time: string): number {
-  const [h, m, s] = time.split(':').map(Number)
-  return h * 3600 + m * 60 + (s ?? 0)
-}
-
 interface PathPoint {
   x: number
   y: number
@@ -40,39 +36,51 @@ interface PathPoint {
 interface Marker {
   x: number
   y: number
-  side: JournalExecution['side']
+  side: ExecutionSide
 }
 
 const WIDTH = 560
 const HEIGHT = 140
 const PAD = 10
 
-export function TradeChart({ trade }: { trade: JournalTrade }): JSX.Element {
-  const openSec = timeToSeconds(trade.openTime)
-  const closeSec = Math.max(timeToSeconds(trade.closeTime), openSec + 1)
+export function TradeChart({
+  trade,
+  executions
+}: {
+  trade: TradeSummary
+  executions: readonly TradeExecution[]
+}): JSX.Element {
+  // Plot coordinates only: prices are converted from exact decimal strings to
+  // numbers for drawing, never written back.
+  const avgEntry = toNumber(trade.avgEntry)
+  const avgExit = trade.avgExit === null ? avgEntry : toNumber(trade.avgExit)
+  const openSec = trade.openedAt / 1000
+  const lastExecution = executions[executions.length - 1]
+  const closeMs = trade.closedAt ?? lastExecution?.executedAt ?? trade.openedAt
+  const closeSec = Math.max(closeMs / 1000, openSec + 1)
   const span = closeSec - openSec
 
   const rand = mulberry32(hashSeed(trade.id))
-  const priceRange = Math.max(Math.abs(trade.avgExit - trade.avgEntry), trade.avgEntry * 0.001)
-  const lo = Math.min(trade.avgEntry, trade.avgExit) - priceRange * 0.6
-  const hi = Math.max(trade.avgEntry, trade.avgExit) + priceRange * 0.6
+  const priceRange = Math.max(Math.abs(avgExit - avgEntry), avgEntry * 0.001)
+  const lo = Math.min(avgEntry, avgExit) - priceRange * 0.6
+  const hi = Math.max(avgEntry, avgExit) + priceRange * 0.6
 
   const steps = 24
   const path: PathPoint[] = []
   for (let i = 0; i <= steps; i++) {
     const t = i / steps
-    const base = trade.avgEntry + (trade.avgExit - trade.avgEntry) * t
+    const base = avgEntry + (avgExit - avgEntry) * t
     const noise = (rand() - 0.5) * priceRange * 0.9
     path.push({ x: t, y: base + noise })
   }
   // Anchor the walk's actual endpoints to the real avg entry/exit so the
   // markers below always land on the line.
-  path[0].y = trade.avgEntry
-  path[steps].y = trade.avgExit
+  path[0].y = avgEntry
+  path[steps].y = avgExit
 
-  const markers: Marker[] = trade.executions.map((execution) => ({
-    x: Math.min(1, Math.max(0, (timeToSeconds(execution.time) - openSec) / span)),
-    y: execution.price,
+  const markers: Marker[] = executions.map((execution) => ({
+    x: Math.min(1, Math.max(0, (execution.executedAt / 1000 - openSec) / span)),
+    y: toNumber(execution.price),
     side: execution.side
   }))
 
