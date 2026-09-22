@@ -2,11 +2,11 @@
 // application-level Strategy API — no raw ipcRenderer, no generic channel
 // access, no filesystem/process/SQL. Each method invokes exactly one named
 // channel and returns the main process's serializable IpcResult.
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import type { SolidSkillApi } from '../shared/ipc/api'
 import { STRATEGY_CHANNELS } from '../shared/ipc/strategies'
 import { ACCOUNT_CHANNELS } from '../shared/ipc/accounts'
-import { TRADE_CHANNELS } from '../shared/ipc/trades'
+import { TRADE_CHANNELS, TRADE_DATA_CHANGED_CHANNEL, type TradingDataChangedDto } from '../shared/ipc/trades'
 
 const C = STRATEGY_CHANNELS
 const T = TRADE_CHANNELS
@@ -31,7 +31,12 @@ const api: SolidSkillApi = {
     getDay: (request) => ipcRenderer.invoke(T.getDay, request),
     updateTradeNote: (request) => ipcRenderer.invoke(T.updateTradeNote, request),
     updateDayNote: (request) => ipcRenderer.invoke(T.updateDayNote, request),
-    updateRuleEvaluation: (request) => ipcRenderer.invoke(T.updateRuleEvaluation, request)
+    updateRuleEvaluation: (request) => ipcRenderer.invoke(T.updateRuleEvaluation, request),
+    onDataChanged: (listener) => {
+      const handler = (_event: IpcRendererEvent, payload: TradingDataChangedDto): void => listener(payload)
+      ipcRenderer.on(TRADE_DATA_CHANGED_CHANNEL, handler)
+      return () => ipcRenderer.removeListener(TRADE_DATA_CHANGED_CHANNEL, handler)
+    }
   },
   accounts: {
     list: () => ipcRenderer.invoke(A.list),

@@ -321,14 +321,21 @@ through the explicit gate.
 
 ## 18. What remains before automatic sync
 
+**Automatic sync now exists (Checkpoint 012B-4, opt-in, development builds
+only): see `MT5_RECONCILIATION.md`.** It reuses this exact importer via
+`importFromLiveStaging` — no second Trade importer was built — triggered
+after a complete history sync and after each live deal, serialized and
+debounced per account. This section's remaining items are what is still open
+*after* that checkpoint:
+
 - Snapshots stay dry-run only (their identity is a pseudonym); the live path
-  (§14) is the only real-data source. Automatic sync must reuse it, replacing the
-  request file with a real trigger, scheduling and error surfacing.
+  (§14) is the only real-data source.
 - Account **currency** now comes from hello; the trading **timezone** is still
   NULL and needs an account setting.
 - Session/day-boundary policy for the analytical date (§10).
 - Commission-only/charge deals: confirm broker behavior before trusting totals.
 - Open-trade support; lifecycles whose opening deal predates the synced window.
 - Netting/exchange reversal segmentation and OUT_BY (needs real captures).
-- Accounts UI / selector; explicit reconciliation tooling for conflicts;
-  triggering, scheduling and error surfacing for automatic sync.
+- Accounts UI / selector; explicit reconciliation tooling for conflicts; a
+  settings/Integrations UI to replace the `SOLID_SKILL_MT5_AUTO_IMPORT`
+  environment gate with a real per-account opt-in.

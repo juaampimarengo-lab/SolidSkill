@@ -3,11 +3,16 @@ import { join } from 'node:path'
 import { Database } from './persistence'
 import { startMt5BridgeFromEnvironment, type Mt5Receiver } from './integrations/mt5'
 import { startDevImportGateFromEnvironment, type DevImportGate } from './integrations/mt5/import/devImportGate'
+import {
+  createMt5ReconciliationCoordinatorFromEnvironment,
+  type Mt5ReconciliationCoordinator
+} from './integrations/mt5/reconciliation'
 import { AccountService } from './accounts/accountService'
 import { FileActiveAccountStore } from './accounts/activeAccountStore'
 import { registerAccountIpc } from './ipc/registerAccountIpc'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
+import { notifyTradingDataChanged } from './ipc/tradingEvents'
 import { seedDevelopmentStrategies } from './strategies/devSeed'
 import { StrategyService } from './strategies/strategyService'
 import { seedDevelopmentTrading } from './trading/devSeed'
@@ -34,6 +39,10 @@ let mt5Bridge: Mt5Receiver | null = null
 // DEVELOPMENT-ONLY explicit live-staging import gate (docs/MT5_IMPORT.md §14). Started only for an
 // unpackaged build with SOLID_SKILL_MT5_DEV_IMPORT=1; it acts only on a fresh, confirmed request file.
 let devImportGate: DevImportGate | null = null
+// DEVELOPMENT-ONLY automatic reconciliation (docs/MT5_RECONCILIATION.md, Checkpoint 012B-4). Wired only
+// for an unpackaged build with SOLID_SKILL_MT5_AUTO_IMPORT=1; otherwise the bridge/history observation
+// still works but nothing is ever imported automatically. Coexists with the manual gate above (QA/fallback).
+let reconciliationCoordinator: Mt5ReconciliationCoordinator | null = null
 
 function initializePersistence(): void {
   const path = join(app.getPath('userData'), DATABASE_FILENAME)
@@ -134,10 +143,18 @@ app.whenReady().then(() => {
     getService: () => accountService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
   })
-  void startMt5BridgeFromEnvironment(process.env, (message) => console.info(`[mt5] ${message}`), {
-    isDevelopment: !app.isPackaged,
-    baseDir: process.cwd()
-  }).then((receiver) => {
+  reconciliationCoordinator = createMt5ReconciliationCoordinatorFromEnvironment(process.env, !app.isPackaged, {
+    getDatabase: () => database,
+    getReceiver: () => mt5Bridge,
+    log: (message) => console.info(`[mt5-reconcile] ${message}`),
+    onDataChanged: (event) => notifyTradingDataChanged(event)
+  })
+  void startMt5BridgeFromEnvironment(
+    process.env,
+    (message) => console.info(`[mt5] ${message}`),
+    { isDevelopment: !app.isPackaged, baseDir: process.cwd() },
+    { onInternalEvent: (event) => reconciliationCoordinator?.handleEvent(event) }
+  ).then((receiver) => {
     mt5Bridge = receiver
   })
   devImportGate = startDevImportGateFromEnvironment(process.env, !app.isPackaged, {
@@ -156,6 +173,7 @@ app.whenReady().then(() => {
 app.on('will-quit', () => {
   devImportGate?.stop()
   devImportGate = null
+  reconciliationCoordinator = null
   void mt5Bridge?.stop()
   mt5Bridge = null
   closePersistence()

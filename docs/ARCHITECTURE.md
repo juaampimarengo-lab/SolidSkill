@@ -169,9 +169,9 @@ Trading Domain / SQLite
 The Receiver and the Normalizer exist. The Receiver stages **raw deals** in
 memory; the Normalizer is a pure function from raw deals to lifecycle
 candidates (completed / open / unresolved) and touches no SQLite, Electron,
-IPC, or renderer state. The Import Service (012B-2) maps only completed, proven candidates into Account/Trade/Executions through the repositories, idempotently by source lifecycle key (migration 002 adds the unique Trade source identity). It is **not invoked by the application**: only an explicit development command (dry run by default) and tests call it, so startup and reconnect never import. Automatic sync is a later checkpoint. The integration is **read-only**: the EA has no trading code and no
+IPC, or renderer state. The Import Service (012B-2) maps only completed, proven candidates into Account/Trade/Executions through the repositories, idempotently by source lifecycle key (migration 002 adds the unique Trade source identity). It is invoked in two ways: an explicit development command (dry run by default, `MT5_IMPORT.md` §14, always available as QA/fallback) and, since Checkpoint 012B-4, an **opt-in, development-build-only** automatic reconciliation path (`MT5_RECONCILIATION.md`) that reuses the exact same importer after a complete history sync or a live deal, serialized/debounced per account. Neither startup nor reconnect ever imports unless one of these two explicit gates is enabled; a packaged production build never enables automatic reconciliation by default. The integration is **read-only**: the EA has no trading code and no
 inbound channel, and Solid Skill never controls the account. See
-`MT5_INTEGRATION_SPIKE.md` and `MT5_NORMALIZATION.md`.
+`MT5_INTEGRATION_SPIKE.md`, `MT5_NORMALIZATION.md`, and `MT5_RECONCILIATION.md`.
 
 ## Cross-cutting rules
 

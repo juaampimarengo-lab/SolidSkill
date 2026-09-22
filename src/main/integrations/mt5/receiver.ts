@@ -18,6 +18,7 @@ import {
   type Mt5DealMessage,
   type Mt5HelloMessage,
   type Mt5Message,
+  type Mt5Origin,
   type PositionAccounting
 } from './protocol'
 import { RawDealStaging, type StagedDeal } from './rawDealStaging'
@@ -41,6 +42,8 @@ export interface Mt5ReceiverOptions {
   readonly maxRejectsPerConnection?: number
   readonly maxStagedDeals?: number
   readonly onEvent?: (event: Mt5BridgeEvent) => void
+  /** Internal-only, real-identity companion channel. See `Mt5InternalEvent`. */
+  readonly onInternalEvent?: (event: Mt5InternalEvent) => void
   readonly now?: () => number
 }
 
@@ -80,6 +83,19 @@ export type Mt5BridgeEvent =
   | { readonly kind: 'frame_rejected'; readonly connectionId: number; readonly reason: string }
   | { readonly kind: 'dropped'; readonly connectionId: number; readonly reason: string }
   | { readonly kind: 'disconnected'; readonly connectionId: number; readonly account: string | null }
+
+/**
+ * Internal-only companion events for in-process routing (automatic
+ * reconciliation). Unlike `Mt5BridgeEvent` these carry REAL identity
+ * (`accountKey`) and are delivered ONLY through `onInternalEvent`, never
+ * through `onEvent`/logs, and never reach the renderer. Kept as a strictly
+ * separate channel/type so the masked, loggable `Mt5BridgeEvent` stream can
+ * never accidentally leak raw identity.
+ */
+export type Mt5InternalEvent =
+  | { readonly kind: 'history_end'; readonly accountKey: string; readonly status: 'complete' | 'incomplete' }
+  | { readonly kind: 'deal_accepted'; readonly accountKey: string; readonly origin: Mt5Origin }
+  | { readonly kind: 'disconnected'; readonly accountKey: string }
 
 export interface SyncSummary {
   readonly syncId: string
@@ -209,6 +225,7 @@ export class Mt5Receiver {
   private readonly idleTimeoutMs: number
   private readonly maxRejects: number
   private readonly onEvent: (event: Mt5BridgeEvent) => void
+  private readonly onInternalEvent: (event: Mt5InternalEvent) => void
   private readonly now: () => number
 
   private server: Server | null = null
@@ -243,6 +260,7 @@ export class Mt5Receiver {
     this.idleTimeoutMs = options.idleTimeoutMs ?? 60_000
     this.maxRejects = options.maxRejectsPerConnection ?? 10
     this.onEvent = options.onEvent ?? (() => undefined)
+    this.onInternalEvent = options.onInternalEvent ?? (() => undefined)
     this.now = options.now ?? Date.now
     this.staging = new RawDealStaging(options.maxStagedDeals)
   }
@@ -308,6 +326,14 @@ export class Mt5Receiver {
       this.onEvent(event)
     } catch {
       // A faulty diagnostics sink must never affect ingestion.
+    }
+  }
+
+  private emitInternal(event: Mt5InternalEvent): void {
+    try {
+      this.onInternalEvent(event)
+    } catch {
+      // A faulty internal sink must never affect ingestion.
     }
   }
 
@@ -517,6 +543,7 @@ export class Mt5Receiver {
           accepted: sync.accepted,
           duplicates: sync.duplicates
         })
+        this.emitInternal({ kind: 'history_end', accountKey: account.key, status: sync.status })
         return
       }
       case 'deal':
@@ -550,6 +577,7 @@ export class Mt5Receiver {
         this.counters.dealsAccepted += 1
         if (sync !== null) sync.accepted += 1
         this.emit({ kind: 'deal_accepted', account: masked })
+        this.emitInternal({ kind: 'deal_accepted', accountKey: account.key, origin: message.origin })
         return
       case 'duplicate':
         account.unresolved.delete(deal.dealTicket)
@@ -600,6 +628,7 @@ export class Mt5Receiver {
       connectionId: connection.id,
       account: account === null ? null : maskAccount(account.login)
     })
+    if (account !== null) this.emitInternal({ kind: 'disconnected', accountKey: account.key })
   }
 
   private toAccountStatus(a: AccountRecord): Mt5AccountStatus {

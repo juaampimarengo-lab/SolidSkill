@@ -150,3 +150,18 @@ The MT5 read-only raw-deal bridge (Checkpoint 012, `MT5_INTEGRATION_SPIKE.md`)
 lives entirely in the main process and adds **no** renderer IPC channel and
 nothing to `window.solidSkill`. Raw MT5 deals are never sent to renderer
 state. No IPC operation anywhere may place, modify, cancel, or close orders.
+
+## 8. Trading data-changed push (Checkpoint 012B-4)
+
+One exception to "every operation is a request/response call" (§3b): after
+automatic MT5 reconciliation (`MT5_RECONCILIATION.md`) persists new Trades,
+main pushes a `trades:dataChanged` message to every renderer window carrying
+exactly `{ accountId: string; reason: 'mt5-reconciliation' }` — never MT5
+login, server, deal tickets, or any other raw source identity.
+`TradesApi.onDataChanged(listener)` subscribes and returns an unsubscribe
+function. Unlike every other Trading operation, this is **not**
+`ipcMain.handle`d and is deliberately not one of `TRADE_CHANNELS` (see
+`TRADE_DATA_CHANGED_CHANNEL` in `src/shared/ipc/trades.ts`); it is a
+one-directional main → renderer notification, not a call the renderer
+invokes. `useTrading` is the only current subscriber and performs a silent
+re-read of `trades.list()` on receipt.

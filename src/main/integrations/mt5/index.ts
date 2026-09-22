@@ -1,12 +1,13 @@
 import { DEFAULT_MT5_BRIDGE_PORT } from './protocol'
 import { writeDevSnapshots } from './devSnapshot'
-import { Mt5Receiver, type Mt5BridgeEvent } from './receiver'
+import { Mt5Receiver, type Mt5BridgeEvent, type Mt5InternalEvent } from './receiver'
 
 export * from './protocol'
 export * from './rawDealStaging'
 export * from './receiver'
 export * from './devSnapshot'
 export * from './normalizer'
+export * from './reconciliation'
 
 /**
  * Compact, non-sensitive log line for a bridge event. Per-deal events are
@@ -64,7 +65,8 @@ export function describeBridgeEvent(event: Mt5BridgeEvent): string | null {
 export async function startMt5BridgeFromEnvironment(
   env: NodeJS.ProcessEnv,
   log: (message: string) => void,
-  dev: { readonly isDevelopment: boolean; readonly baseDir: string } = { isDevelopment: false, baseDir: process.cwd() }
+  dev: { readonly isDevelopment: boolean; readonly baseDir: string } = { isDevelopment: false, baseDir: process.cwd() },
+  extra: { readonly onInternalEvent?: (event: Mt5InternalEvent) => void } = {}
 ): Promise<Mt5Receiver | null> {
   if (env['SOLID_SKILL_MT5_BRIDGE'] !== '1') return null
   const snapshotEnabled = dev.isDevelopment && env['SOLID_SKILL_MT5_DEV_SNAPSHOT'] === '1'
@@ -86,7 +88,12 @@ export async function startMt5BridgeFromEnvironment(
           log(`MT5 dev snapshot failed: ${error instanceof Error ? error.message : String(error)}`)
         }
       }
-    }
+    },
+    // Internal-only, real-identity wiring seam (e.g. automatic reconciliation).
+    // Deliberately a SEPARATE channel from `onEvent`/logs so the masked event
+    // stream can never accidentally carry raw account identity. Only ever
+    // supplied from src/main/index.ts; never reaches the renderer.
+    onInternalEvent: (event) => extra.onInternalEvent?.(event)
   })
   try {
     await receiver.start()

@@ -74,6 +74,17 @@ export function useTrading(activeAccountId: string | null): UseTrading {
     () => (query.state.status === 'ready' ? { status: 'ready', data: toTradingData(query.state.data, activeAccountId) } : query.state),
     [query.state, activeAccountId]
   )
+
+  // Automatic MT5 reconciliation (Checkpoint 012B-4) pushes this after it
+  // persists new Trades. A silent re-read keeps Journal/Calendar/Dashboard
+  // current without the user switching accounts or sections.
+  const refreshRef = useRef(query.refresh)
+  refreshRef.current = query.refresh
+  useEffect(() => {
+    const unsubscribe = window.solidSkill?.trades.onDataChanged(() => refreshRef.current())
+    return unsubscribe
+  }, [])
+
   return { state, refresh: query.refresh, retry: query.retry }
 }
 

@@ -143,6 +143,17 @@ export interface RuleEvaluationResultDto {
   compliance: ComplianceCounts
 }
 
+/**
+ * Pushed from main after automatic MT5 reconciliation persists new Trades
+ * (Checkpoint 012B-4). Carries only the Solid Skill account id: no MT5 login,
+ * server, deal tickets, or other raw source identity ever crosses this
+ * boundary. Not a request/response call — see `TradesApi.onDataChanged`.
+ */
+export interface TradingDataChangedDto {
+  accountId: string
+  reason: 'mt5-reconciliation'
+}
+
 /** The Trading operations the renderer may call. Nothing here touches a broker. */
 export interface TradesApi {
   list(request?: TradeListRequest): Promise<IpcResult<TradeListDto>>
@@ -160,6 +171,12 @@ export interface TradesApi {
     ruleId: string
     state: RuleStateDto
   }): Promise<IpcResult<RuleEvaluationResultDto>>
+  /**
+   * Subscribes to `TradingDataChangedDto` pushes (e.g. automatic MT5
+   * reconciliation). Returns an unsubscribe function. Not a request/response
+   * call, and not one of `TRADE_CHANNELS` (main never `ipcMain.handle`s it).
+   */
+  onDataChanged(listener: (event: TradingDataChangedDto) => void): () => void
 }
 
 export const TRADE_CHANNELS = {
@@ -170,5 +187,8 @@ export const TRADE_CHANNELS = {
   updateDayNote: 'trades:updateDayNote',
   updateRuleEvaluation: 'trades:updateRuleEvaluation'
 } as const
+
+/** Push-only channel (main -> renderer). Deliberately not part of `TRADE_CHANNELS`: never `ipcMain.handle`d. */
+export const TRADE_DATA_CHANGED_CHANNEL = 'trades:dataChanged'
 
 export type TradeChannel = (typeof TRADE_CHANNELS)[keyof typeof TRADE_CHANNELS]
