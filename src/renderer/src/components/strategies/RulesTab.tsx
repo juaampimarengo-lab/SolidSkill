@@ -1,5 +1,6 @@
 import { useState, type JSX } from 'react'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Trans, useTranslation } from 'react-i18next'
 import { ruleKinds, type RuleGroupDef, type RuleKind, type Strategy } from '@renderer/types/strategy'
 import type { DraftEdit } from '@shared/ipc/strategies'
 import type { StrategyActions } from '@renderer/hooks/useStrategies'
@@ -25,6 +26,7 @@ interface EditTarget {
 }
 
 export function RulesTab({ strategy, actions }: RulesTabProps): JSX.Element {
+  const { t } = useTranslation('strategy')
   const draft = strategy.draft
   const published = currentVersion(strategy)
 
@@ -33,19 +35,23 @@ export function RulesTab({ strategy, actions }: RulesTabProps): JSX.Element {
       <div>
         <div className={styles.captionRow}>
           <div className={styles.tabCaption}>
-            Published <span className="num">v{published.number}</span> · read-only. Published versions are frozen —
-            changes are made in a Draft.
+            <Trans
+              i18nKey="readOnlyBanner"
+              t={t}
+              values={{ version: published.number }}
+              components={[<span key="num" className="num" />]}
+            />
           </div>
           {strategy.status === 'Active' && (
             <button type="button" className={styles.buttonPrimary} onClick={() => void actions.beginDraft(strategy.id)}>
-              Edit Rules
+              {t('actions.editRules')}
             </button>
           )}
         </div>
         <ReadOnlyGroups groups={published.groups} />
       </div>
     ) : (
-      <div className={styles.empty}>No published version.</div>
+      <div className={styles.empty}>{t('empty.noPublishedVersion')}</div>
     )
   }
 
@@ -61,6 +67,8 @@ function DraftEditor({
   groups: RuleGroupDef[]
   actions: StrategyActions
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const edit = (e: DraftEdit): Promise<boolean> => actions.editDraft(strategy.id, e)
   const [editing, setEditing] = useState<EditTarget | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -70,19 +78,19 @@ function DraftEditor({
     <div>
       <div className={styles.tabCaption}>
         {strategy.draft?.basedOn != null ? (
-          <>
-            Editing unpublished changes based on <span className="num">v{strategy.draft.basedOn}</span>. Published{' '}
-            <span className="num">v{strategy.draft.basedOn}</span> remains unchanged.
-          </>
+          <Trans
+            i18nKey="draft.basedOn"
+            t={t}
+            values={{ version: strategy.draft.basedOn }}
+            components={[<span key="num" className="num" />]}
+          />
         ) : (
-          <>Editing the first Draft — no version exists until it is published.</>
+          t('draft.firstDraft')
         )}{' '}
-        <span className={styles.staticNote}>Applicability conditions — coming later</span>
+        <span className={styles.staticNote}>{t('comingLater.applicability')}</span>
       </div>
 
-      {groups.length === 0 && !addingGroup && (
-        <div className={styles.empty}>No groups yet. Add a group, then add rules to it.</div>
-      )}
+      {groups.length === 0 && !addingGroup && <div className={styles.empty}>{t('empty.noGroups')}</div>}
 
       {groups.map((group, gi) => (
         <div key={group.id} className={styles.group}>
@@ -90,8 +98,8 @@ function DraftEditor({
             {renamingId === group.id ? (
               <InlineNameForm
                 initial={group.name}
-                placeholder="Group name"
-                submitLabel="Save"
+                placeholder={t('groupNamePlaceholder')}
+                submitLabel={tCommon('save')}
                 onSubmit={async (name) => {
                   if (await edit({ type: 'renameGroup', groupId: group.id, name })) setRenamingId(null)
                 }}
@@ -101,28 +109,28 @@ function DraftEditor({
               <>
                 <span className={styles.groupName}>{group.name}</span>
                 <span className={styles.groupCount}>
-                  {group.rules.length} {group.rules.length === 1 ? 'rule' : 'rules'}
+                  {group.rules.length} {t('rule', { count: group.rules.length })}
                 </span>
                 <span className={styles.spacer} />
                 <div className={styles.rowActions}>
                   <IconButton
-                    label="Move group up"
+                    label={t('actions.moveGroupUp')}
                     disabled={gi === 0}
                     onClick={() => void edit({ type: 'moveGroup', groupId: group.id, delta: -1 })}
                   >
                     <ArrowUp size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton
-                    label="Move group down"
+                    label={t('actions.moveGroupDown')}
                     disabled={gi === groups.length - 1}
                     onClick={() => void edit({ type: 'moveGroup', groupId: group.id, delta: 1 })}
                   >
                     <ArrowDown size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Rename group" onClick={() => setRenamingId(group.id)}>
+                  <IconButton label={t('actions.renameGroup')} onClick={() => setRenamingId(group.id)}>
                     <Pencil size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Delete group" onClick={() => void edit({ type: 'deleteGroup', groupId: group.id })}>
+                  <IconButton label={t('actions.deleteGroup')} onClick={() => void edit({ type: 'deleteGroup', groupId: group.id })}>
                     <Trash2 size={13} strokeWidth={1.75} />
                   </IconButton>
                 </div>
@@ -135,7 +143,7 @@ function DraftEditor({
               <RuleForm
                 key={rule.id}
                 initial={{ name: rule.name, kind: rule.kind, description: rule.description }}
-                submitLabel="Save rule"
+                submitLabel={t('actions.saveRule')}
                 onSubmit={async (input) => {
                   if (await edit({ type: 'updateRule', ruleId: rule.id, ...input })) setEditing(null)
                 }}
@@ -148,23 +156,23 @@ function DraftEditor({
                 <span className={styles.ruleDesc}>{rule.description}</span>
                 <div className={styles.rowActions}>
                   <IconButton
-                    label="Move rule up"
+                    label={t('actions.moveRuleUp')}
                     disabled={ri === 0}
                     onClick={() => void edit({ type: 'moveRule', ruleId: rule.id, delta: -1 })}
                   >
                     <ArrowUp size={13} strokeWidth={1.75} />
                   </IconButton>
                   <IconButton
-                    label="Move rule down"
+                    label={t('actions.moveRuleDown')}
                     disabled={ri === group.rules.length - 1}
                     onClick={() => void edit({ type: 'moveRule', ruleId: rule.id, delta: 1 })}
                   >
                     <ArrowDown size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Edit rule" onClick={() => setEditing({ groupId: group.id, ruleId: rule.id })}>
+                  <IconButton label={t('actions.editRule')} onClick={() => setEditing({ groupId: group.id, ruleId: rule.id })}>
                     <Pencil size={13} strokeWidth={1.75} />
                   </IconButton>
-                  <IconButton label="Delete rule" onClick={() => void edit({ type: 'deleteRule', ruleId: rule.id })}>
+                  <IconButton label={t('actions.deleteRule')} onClick={() => void edit({ type: 'deleteRule', ruleId: rule.id })}>
                     <Trash2 size={13} strokeWidth={1.75} />
                   </IconButton>
                 </div>
@@ -175,7 +183,7 @@ function DraftEditor({
           {editing?.groupId === group.id && editing.ruleId === null ? (
             <RuleForm
               initial={{ name: '', kind: 'Required', description: '' }}
-              submitLabel="Add rule"
+              submitLabel={t('actions.addRule')}
               onSubmit={async (input) => {
                 if (await edit({ type: 'addRule', groupId: group.id, ...input })) setEditing(null)
               }}
@@ -188,7 +196,7 @@ function DraftEditor({
               onClick={() => setEditing({ groupId: group.id, ruleId: null })}
             >
               <Plus size={12} strokeWidth={1.75} />
-              Add rule
+              {t('actions.addRule')}
             </button>
           )}
         </div>
@@ -199,8 +207,8 @@ function DraftEditor({
           <div className={styles.groupHead}>
             <InlineNameForm
               initial=""
-              placeholder="Group name"
-              submitLabel="Add group"
+              placeholder={t('groupNamePlaceholder')}
+              submitLabel={t('actions.addGroup')}
               onSubmit={async (name) => {
                 if (await edit({ type: 'addGroup', name })) setAddingGroup(false)
               }}
@@ -211,7 +219,7 @@ function DraftEditor({
       ) : (
         <button type="button" className={styles.buttonSecondary} onClick={() => setAddingGroup(true)}>
           <Plus size={12} strokeWidth={1.75} />
-          Add rule group
+          {t('actions.addRuleGroup')}
         </button>
       )}
     </div>
@@ -249,6 +257,7 @@ function InlineNameForm({
   onSubmit: (name: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
+  const { t } = useTranslation('common')
   const [name, setName] = useState(initial)
   const valid = name.trim() !== ''
   return (
@@ -273,7 +282,7 @@ function InlineNameForm({
         {submitLabel}
       </button>
       <button type="button" className={styles.buttonSecondary} onClick={onCancel}>
-        Cancel
+        {t('cancel')}
       </button>
     </form>
   )
@@ -290,6 +299,8 @@ function RuleForm({
   onSubmit: (input: RuleInput) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const [name, setName] = useState(initial.name)
   const [kind, setKind] = useState<RuleKind>(initial.kind)
   const [description, setDescription] = useState(initial.description)
@@ -307,8 +318,8 @@ function RuleForm({
         <input
           className={styles.input}
           value={name}
-          placeholder="Rule name"
-          aria-label="Rule name"
+          placeholder={t('ruleNamePlaceholder')}
+          aria-label={t('ruleNamePlaceholder')}
           autoFocus
           onChange={(e) => setName(e.target.value)}
         />
@@ -328,8 +339,8 @@ function RuleForm({
       <textarea
         className={styles.textarea}
         value={description}
-        placeholder="Description"
-        aria-label="Rule description"
+        placeholder={t('ruleDescriptionPlaceholder')}
+        aria-label={t('ruleDescriptionPlaceholder')}
         rows={2}
         onChange={(e) => setDescription(e.target.value)}
       />
@@ -338,10 +349,10 @@ function RuleForm({
           {submitLabel}
         </button>
         <button type="button" className={styles.buttonSecondary} onClick={onCancel}>
-          Cancel
+          {tCommon('cancel')}
         </button>
         <span className={styles.spacer} />
-        <span className={styles.staticNote}>Conditions — coming later</span>
+        <span className={styles.staticNote}>{t('comingLater.conditions')}</span>
       </div>
     </form>
   )

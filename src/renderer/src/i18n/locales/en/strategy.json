@@ -1,0 +1,77 @@
+{
+  "create": {
+    "namePlaceholder": "Strategy name",
+    "descriptionPlaceholder": "Description",
+    "submit": "Create draft",
+    "versionNote": "No version exists until the first Publish (→ v1)."
+  },
+  "nameDuplicate": "A strategy with this name already exists.",
+  "empty": {
+    "noStrategies": "No strategies. Create one to begin.",
+    "noPublishedVersion": "No published version.",
+    "noGroups": "No groups yet. Add a group, then add rules to it.",
+    "noAssociatedTrades": "No associated trades yet.",
+    "noTrades": "No trades are associated with this strategy yet."
+  },
+  "archivedBanner": "Archived — read-only. Versions, history and trade association are retained.",
+  "publishConfirm": {
+    "question": "Publish these changes as <0>v{{version}}</0>? It becomes the current version and is frozen.",
+    "questionWithPrevious": "Publish these changes as <0>v{{version}}</0>? It becomes the current version and is frozen; <0>v{{previous}}</0> stays in Version History unchanged."
+  },
+  "deleteConfirm": "Delete this unpublished strategy? It has no versions or trades.",
+  "draft": {
+    "basedOn": "Editing unpublished changes based on <0>v{{version}}</0>. Published <0>v{{version}}</0> remains unchanged.",
+    "firstDraft": "Editing the first Draft — no version exists until it is published.",
+    "unpublishedNote": "Draft — not yet published. No version exists until the first Publish (→ v1)."
+  },
+  "publishedBanner": "Published <0>v{{version}}</0> — frozen, read-only. Rule changes are made in a Draft (Rules → Edit Rules).",
+  "readOnlyBanner": "Published <0>v{{version}}</0> · read-only. Published versions are frozen — changes are made in a Draft.",
+  "actions": {
+    "editRules": "Edit Rules",
+    "editDetails": "Edit details",
+    "saveDetails": "Save details",
+    "confirmPublish": "Confirm publish",
+    "confirmDelete": "Confirm delete",
+    "deleteStrategy": "Delete Strategy",
+    "discardChanges": "Discard changes",
+    "publishChangesAs": "Publish changes as <0>v{{version}}</0>",
+    "moveGroupUp": "Move group up",
+    "moveGroupDown": "Move group down",
+    "renameGroup": "Rename group",
+    "deleteGroup": "Delete group",
+    "moveRuleUp": "Move rule up",
+    "moveRuleDown": "Move rule down",
+    "editRule": "Edit rule",
+    "deleteRule": "Delete rule",
+    "addRule": "Add rule",
+    "addRuleGroup": "Add rule group",
+    "saveRule": "Save rule",
+    "addGroup": "Add group"
+  },
+  "groupNamePlaceholder": "Group name",
+  "ruleNamePlaceholder": "Rule name",
+  "ruleDescriptionPlaceholder": "Description",
+  "rule_one": "rule",
+  "rule_other": "rules",
+  "comingLater": {
+    "applicability": "Applicability conditions — coming later",
+    "conditions": "Conditions — coming later"
+  },
+  "overview": {
+    "definition": "Definition",
+    "publishedVersion": "Published version",
+    "noneYet": "None yet",
+    "ruleGroups": "Rule groups",
+    "rules": "Rules",
+    "tradesAssociated": "Trades associated",
+    "detailsNote": "Name and description are saved directly. They do not create a Draft or a new version, and never change published versions.",
+    "complianceTitle": "Process compliance — fixture data",
+    "reviewLine": "Review: {{reviewed}} of {{total}} trades fully reviewed",
+    "pooledNote": "Pooled over rule results. An observation, not evidence that any rule causes any outcome.",
+    "outcomeTitle": "Outcome context — secondary",
+    "netPnlLabel": "Net P&L across these trades",
+    "pnlDisclaimer": "Shown for context only. P&L is not an input to compliance and does not indicate process quality.",
+    "exampleTitle": "Evaluation example — illustrative, not a real trade",
+    "complianceLabel": "Compliance:"
+  }
+}

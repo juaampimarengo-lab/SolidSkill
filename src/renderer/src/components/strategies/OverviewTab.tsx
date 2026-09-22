@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Strategy } from '@renderer/types/strategy'
 import type { RuleState, TradeSummary } from '@renderer/types/journal'
 import { summarizeRules } from '@renderer/lib/compliance'
@@ -22,6 +23,8 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: OverviewTabProps): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const [editingDetails, setEditingDetails] = useState(false)
   const version = currentVersion(strategy)
   const shownGroups = version?.groups ?? strategy.draft?.groups ?? []
@@ -36,10 +39,10 @@ export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: Ove
     <div className={styles.overviewGrid}>
       <section>
         <div className={styles.blockTitle}>
-          Definition
+          {t('overview.definition')}
           {!editingDetails && strategy.status === 'Active' && (
             <button type="button" className={styles.buttonSecondary} onClick={() => setEditingDetails(true)}>
-              Edit details
+              {t('actions.editDetails')}
             </button>
           )}
         </div>
@@ -56,39 +59,36 @@ export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: Ove
         <dl className={styles.facts}>
           {!editingDetails && (
             <>
-              <dt>Name</dt>
+              <dt>{tCommon('name')}</dt>
               <dd>{strategy.name}</dd>
-              <dt>Description</dt>
+              <dt>{tCommon('description')}</dt>
               <dd>{strategy.description || '—'}</dd>
             </>
           )}
-          <dt>Status</dt>
+          <dt>{tCommon('status')}</dt>
           <dd>{strategy.status}</dd>
-          <dt>Published version</dt>
-          <dd className="num">{version ? `v${version.number}` : 'None yet'}</dd>
-          <dt>Rule groups</dt>
+          <dt>{t('overview.publishedVersion')}</dt>
+          <dd className="num">{version ? `v${version.number}` : t('overview.noneYet')}</dd>
+          <dt>{t('overview.ruleGroups')}</dt>
           <dd className="num">
             {shownGroups.length}
             {!version && ' (draft)'}
           </dd>
-          <dt>Rules</dt>
+          <dt>{t('overview.rules')}</dt>
           <dd className="num">
             {ruleCount(shownGroups)}
             {!version && ' (draft)'}
           </dd>
-          <dt>Trades associated</dt>
+          <dt>{t('overview.tradesAssociated')}</dt>
           <dd className="num">{agg.tradeCount}</dd>
         </dl>
-        <div className={styles.staticNote}>
-          Name and description are saved directly. They do not create a Draft or a new version, and never change
-          published versions.
-        </div>
+        <div className={styles.staticNote}>{t('overview.detailsNote')}</div>
       </section>
 
       <section>
-        <div className={styles.blockTitle}>Process compliance — fixture data</div>
+        <div className={styles.blockTitle}>{t('overview.complianceTitle')}</div>
         {agg.tradeCount === 0 ? (
-          <div className={styles.empty}>No associated trades yet.</div>
+          <div className={styles.empty}>{t('empty.noAssociatedTrades')}</div>
         ) : (
           <>
             <div className={styles.complianceLine}>
@@ -96,31 +96,25 @@ export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: Ove
               <span className={styles.staticNote}>{sampleLabel(agg.tradeCount)}</span>
             </div>
             <div className={styles.facts2}>
-              <span>
-                Review: {agg.fullyReviewed} of {agg.tradeCount} trades fully reviewed
-              </span>
+              <span>{t('overview.reviewLine', { reviewed: agg.fullyReviewed, total: agg.tradeCount })}</span>
               <span className="num">
                 {agg.pooled.pass}P {agg.pooled.fail}F {agg.pooled.na}N/A {agg.pooled.unreviewed}U
               </span>
             </div>
-            <div className={styles.staticNote}>
-              Pooled over rule results. An observation, not evidence that any rule causes any outcome.
-            </div>
+            <div className={styles.staticNote}>{t('overview.pooledNote')}</div>
 
-            <div className={styles.blockTitle}>Outcome context — secondary</div>
+            <div className={styles.blockTitle}>{t('overview.outcomeTitle')}</div>
             <div className={styles.facts2}>
-              <span>Net P&L across these trades</span>
+              <span>{t('overview.netPnlLabel')}</span>
               <span className={`num ${styles.mutedNum}`}>{formatUsd(agg.netPnl)}</span>
             </div>
-            <div className={styles.staticNote}>
-              Shown for context only. P&L is not an input to compliance and does not indicate process quality.
-            </div>
+            <div className={styles.staticNote}>{t('overview.pnlDisclaimer')}</div>
           </>
         )}
 
         {version && (
           <>
-            <div className={styles.blockTitle}>Evaluation example — illustrative, not a real trade</div>
+            <div className={styles.blockTitle}>{t('overview.exampleTitle')}</div>
             <div className={styles.exampleList}>
               {example.map(({ rule, state }) => (
                 <div key={rule.id} className={styles.exampleRow}>
@@ -131,7 +125,7 @@ export function OverviewTab({ strategy, trades, onSaveDetails, otherNames }: Ove
             </div>
             <div className={styles.exampleFoot}>
               <span>
-                Compliance: <ComplianceReadout summary={exampleSummary} showBasis />
+                {t('overview.complianceLabel')} <ComplianceReadout summary={exampleSummary} showBasis />
               </span>
               <ReviewTag summary={exampleSummary} />
             </div>
@@ -153,6 +147,8 @@ function DetailsForm({
   onSave: (name: string, description: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const [name, setName] = useState(strategy.name)
   const [description, setDescription] = useState(strategy.description)
   const trimmed = name.trim()
@@ -170,29 +166,29 @@ function DetailsForm({
       <input
         className={styles.input}
         value={name}
-        aria-label="Strategy name"
-        placeholder="Strategy name"
+        aria-label={t('create.namePlaceholder')}
+        placeholder={t('create.namePlaceholder')}
         autoFocus
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel()
         }}
       />
-      {duplicate && <div className={styles.fieldError}>A strategy with this name already exists.</div>}
+      {duplicate && <div className={styles.fieldError}>{t('nameDuplicate')}</div>}
       <textarea
         className={styles.textarea}
         value={description}
-        aria-label="Strategy description"
-        placeholder="Description"
+        aria-label={t('create.descriptionPlaceholder')}
+        placeholder={t('create.descriptionPlaceholder')}
         rows={3}
         onChange={(e) => setDescription(e.target.value)}
       />
       <div className={styles.formRow}>
         <button type="submit" className={styles.buttonPrimary} disabled={!valid}>
-          Save details
+          {t('actions.saveDetails')}
         </button>
         <button type="button" className={styles.buttonSecondary} onClick={onCancel}>
-          Cancel
+          {tCommon('cancel')}
         </button>
       </div>
     </form>

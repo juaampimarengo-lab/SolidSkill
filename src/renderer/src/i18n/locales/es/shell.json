@@ -1,0 +1,10 @@
+{
+  "settings": {
+    "title": "Configuración",
+    "language": {
+      "label": "Idioma",
+      "helper": "Solo cambia el texto del producto. Los datos de Trading, el formato numérico y tu cuenta activa no se modifican."
+    }
+  },
+  "placeholder": "Este espacio de trabajo se implementará en un checkpoint posterior."
+}

@@ -8,11 +8,13 @@ import { DayReviewWorkspace } from '@renderer/components/dayreview/DayReviewWork
 import { TradeReviewWorkspace } from '@renderer/components/tradereview/TradeReviewWorkspace'
 import { StrategiesWorkspace } from '@renderer/components/strategies/StrategiesWorkspace'
 import { Placeholder } from '@renderer/components/shell/Placeholder'
+import { SettingsWorkspace } from '@renderer/components/settings/SettingsWorkspace'
 import type { NavEntry } from '@renderer/types/navigation'
 import { StrategiesStatus } from '@renderer/components/strategies/StrategiesStatus'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { useStrategies } from '@renderer/hooks/useStrategies'
 import { useAccounts } from '@renderer/hooks/useAccounts'
+import { useLanguage } from '@renderer/hooks/useLanguage'
 import { useTrading, type TradingData } from '@renderer/hooks/useTrading'
 
 function App(): JSX.Element {
@@ -37,6 +39,7 @@ function App(): JSX.Element {
   // The active account (chosen in the Topbar, docs/ACTIVE_ACCOUNT.md) scopes
   // Dashboard, Calendar, Journal and Day Review. Strategies stay global.
   const accounts = useAccounts()
+  const language = useLanguage()
   const activeAccountId = accounts.state.status === 'ready' ? accounts.state.data.activeAccountId : null
   const trading = useTrading(activeAccountId)
   const strategiesState = strategyData.state
@@ -140,10 +143,12 @@ function App(): JSX.Element {
               />
             ), false)
           ))}
+        {active === 'Settings' && <SettingsWorkspace language={language} />}
         {active !== 'Dashboard' &&
           active !== 'Calendar' &&
           active !== 'Journal' &&
-          active !== 'Strategies' && <Placeholder />}
+          active !== 'Strategies' &&
+          active !== 'Settings' && <Placeholder />}
       </div>
 
       {overlay && overlay.kind === 'dayReview' && (

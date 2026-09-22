@@ -54,6 +54,12 @@ full scope.
 
 ## Engineering discipline
 
+- **Localization.** New user-facing product prose must use the localization
+  resources (`src/renderer/src/i18n`), not a hardcoded English string.
+  Trading/domain terminology (what stays canonical vs. what gets translated)
+  follows `docs/LOCALIZATION.md`. User-created and imported data (Strategy
+  names, Rule text, Notes, Account names, symbols, broker metadata) is never
+  translated automatically.
 - TypeScript strict mode everywhere; explicit types over inference where it
   aids clarity at module boundaries.
 - Keep domain boundaries clean: Broker Adapters → Normalization → Trading

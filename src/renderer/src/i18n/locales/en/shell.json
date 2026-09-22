@@ -1,0 +1,10 @@
+{
+  "settings": {
+    "title": "Settings",
+    "language": {
+      "label": "Language",
+      "helper": "Changes product copy only. Trading data, number formatting and your active account are unchanged."
+    }
+  },
+  "placeholder": "This workspace will be implemented in a later checkpoint."
+}

@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { StrategiesState } from '@renderer/hooks/useStrategies'
 import styles from './Strategies.module.css'
 
@@ -11,15 +12,16 @@ export function StrategiesStatus({
   state: Exclude<StrategiesState, { status: 'ready' }>
   onRetry: () => void
 }): JSX.Element {
+  const { t } = useTranslation('common')
   if (state.status === 'loading') {
-    return <div className={styles.empty}>Loading Strategies…</div>
+    return <div className={styles.empty}>{t('loading', { what: 'Strategies' })}</div>
   }
   return (
     <div className={styles.empty} role="alert">
-      <div className={styles.fieldError}>Strategies could not be loaded.</div>
+      <div className={styles.fieldError}>{t('couldNotBeLoaded', { what: 'Strategies' })}</div>
       <div>{state.message}</div>
       <button type="button" className={styles.buttonSecondary} onClick={onRetry}>
-        Retry
+        {t('retry')}
       </button>
     </div>
   )

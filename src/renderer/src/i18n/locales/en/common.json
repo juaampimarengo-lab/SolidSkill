@@ -1,0 +1,17 @@
+{
+  "loading": "Loading {{what}}…",
+  "couldNotBeLoaded": "{{what}} could not be loaded.",
+  "retry": "Retry",
+  "dismiss": "Dismiss",
+  "cancel": "Cancel",
+  "save": "Save",
+  "create": "Create",
+  "edit": "Edit",
+  "delete": "Delete",
+  "archive": "Archive",
+  "restore": "Restore",
+  "description": "Description",
+  "name": "Name",
+  "status": "Status",
+  "noData": "No data"
+}

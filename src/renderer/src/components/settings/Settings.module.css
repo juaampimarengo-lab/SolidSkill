@@ -1,0 +1,81 @@
+.workspace {
+  padding: var(--page-gutter);
+  max-width: 480px;
+}
+
+.section {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--widget-padding);
+}
+
+.sectionTitle {
+  font-size: var(--text-section-title-size);
+  line-height: var(--text-section-title-lh);
+  color: var(--text-primary);
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 4px;
+}
+
+.label {
+  font-size: var(--text-body-size);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.helper {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 100%;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.option {
+  height: var(--button-height-md);
+  padding: 0 14px;
+  border: none;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.option:not(:last-child) {
+  border-right: 1px solid var(--border-strong);
+}
+
+.option:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.optionActive {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.optionActive:hover {
+  background: var(--surface-elevated);
+}

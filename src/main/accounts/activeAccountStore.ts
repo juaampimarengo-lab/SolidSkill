@@ -1,10 +1,12 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readPreferencesFile, writePreferencesFile } from '../preferences/preferencesFile'
 
 /**
  * Local user preference: which account the trading screens show. It is app
  * preference, not trading data, so it lives in a small JSON file in userData
  * beside the database — never in a trading table and never in a migration.
+ * That file is shared with other preferences (e.g. language), so reads/writes
+ * go through preferencesFile's merge-safe helpers rather than touching the
+ * file directly.
  */
 export interface ActiveAccountStore {
   read(): string | null
@@ -16,23 +18,12 @@ export class FileActiveAccountStore implements ActiveAccountStore {
 
   /** Missing, unreadable, or malformed files all read as "no preference". */
   read(): string | null {
-    try {
-      const parsed: unknown = JSON.parse(readFileSync(this.path, 'utf8'))
-      if (typeof parsed === 'object' && parsed !== null) {
-        const value = (parsed as Record<string, unknown>)['activeAccountId']
-        if (typeof value === 'string' && value !== '') return value
-      }
-    } catch {
-      // fall through
-    }
-    return null
+    const value = readPreferencesFile(this.path).activeAccountId
+    return typeof value === 'string' && value !== '' ? value : null
   }
 
   write(accountId: string): void {
-    mkdirSync(dirname(this.path), { recursive: true })
-    const temp = `${this.path}.tmp`
-    writeFileSync(temp, JSON.stringify({ activeAccountId: accountId }), 'utf8')
-    renameSync(temp, this.path)
+    writePreferencesFile(this.path, { activeAccountId: accountId })
   }
 }
 

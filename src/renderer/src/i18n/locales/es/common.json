@@ -1,0 +1,17 @@
+{
+  "loading": "Cargando {{what}}…",
+  "couldNotBeLoaded": "No se pudo cargar {{what}}.",
+  "retry": "Reintentar",
+  "dismiss": "Descartar",
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "create": "Crear",
+  "edit": "Editar",
+  "delete": "Eliminar",
+  "archive": "Archivar",
+  "restore": "Restaurar",
+  "description": "Descripción",
+  "name": "Nombre",
+  "status": "Estado",
+  "noData": "Sin datos"
+}

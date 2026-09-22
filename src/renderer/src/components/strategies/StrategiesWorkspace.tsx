@@ -1,5 +1,6 @@
 import { useState, type JSX } from 'react'
 import { Plus } from 'lucide-react'
+import { Trans, useTranslation } from 'react-i18next'
 import type { Strategy } from '@renderer/types/strategy'
 import type { TradeSummary } from '@renderer/types/journal'
 import type { StrategyActions } from '@renderer/hooks/useStrategies'
@@ -39,6 +40,8 @@ export function StrategiesWorkspace({
   const [tab, setTab] = useState<Tab>('Overview')
   const [creating, setCreating] = useState(false)
 
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const selected = strategies.find((s) => s.id === selectedId) ?? strategies[0] ?? null
   const active = strategies.filter((s) => s.status === 'Active')
   const archived = strategies.filter((s) => s.status === 'Archived')
@@ -50,7 +53,7 @@ export function StrategiesWorkspace({
           <span className={styles.paneTitle}>Strategies</span>
           <button type="button" className={styles.buttonSecondary} onClick={() => setCreating(true)}>
             <Plus size={12} strokeWidth={1.75} />
-            Create
+            {tCommon('create')}
           </button>
         </div>
 
@@ -97,7 +100,7 @@ export function StrategiesWorkspace({
         ) : (
           <>
             <ErrorBanner message={actionError} onDismiss={onDismissError} />
-            <div className={styles.empty}>No strategies. Create one to begin.</div>
+            <div className={styles.empty}>{t('empty.noStrategies')}</div>
           </>
         )}
       </section>
@@ -148,6 +151,8 @@ function CreateForm({
   onCreate: (name: string, description: string) => void | Promise<void>
   onCancel: () => void
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const trimmed = name.trim()
@@ -164,41 +169,42 @@ function CreateForm({
     >
       <input
         className={styles.input}
-        placeholder="Strategy name"
-        aria-label="Strategy name"
+        placeholder={t('create.namePlaceholder')}
+        aria-label={t('create.namePlaceholder')}
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      {duplicate && <div className={styles.fieldError}>A strategy with this name already exists.</div>}
+      {duplicate && <div className={styles.fieldError}>{t('nameDuplicate')}</div>}
       <textarea
         className={styles.textarea}
-        placeholder="Description"
-        aria-label="Strategy description"
+        placeholder={t('create.descriptionPlaceholder')}
+        aria-label={t('create.descriptionPlaceholder')}
         rows={2}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
       <div className={styles.formRow}>
         <button type="submit" className={styles.buttonPrimary} disabled={!valid}>
-          Create draft
+          {t('create.submit')}
         </button>
         <button type="button" className={styles.buttonSecondary} onClick={onCancel}>
-          Cancel
+          {tCommon('cancel')}
         </button>
       </div>
-      <div className={styles.staticNote}>No version exists until the first Publish (→ v1).</div>
+      <div className={styles.staticNote}>{t('create.versionNote')}</div>
     </form>
   )
 }
 
 function ErrorBanner({ message, onDismiss }: { message: string | null; onDismiss: () => void }): JSX.Element | null {
+  const { t } = useTranslation('common')
   if (!message) return null
   return (
     <div className={styles.actionError} role="alert">
       <span>{message}</span>
       <button type="button" className={styles.buttonSecondary} onClick={onDismiss}>
-        Dismiss
+        {t('dismiss')}
       </button>
     </div>
   )
@@ -227,12 +233,15 @@ function StrategyDetail({
   otherNames: string[]
   onOpenTradeReview: (tradeId: string) => void
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const { t: tCommon } = useTranslation('common')
   const [confirm, setConfirm] = useState<Confirm>(null)
   const version = currentVersion(strategy)
   const draft = strategy.draft
   const blocker = publishBlocker(strategy)
   const nextNumber = (version?.number ?? 0) + 1
   const canArchive = strategy.status === 'Active' && strategy.versions.length > 0 && !draft
+  const numSpan = [<span key="num" className="num" />]
 
   return (
     <div className={styles.detail}>
@@ -251,7 +260,7 @@ function StrategyDetail({
         <div className={styles.headActions}>
           {canArchive && (
             <button type="button" className={styles.buttonSecondary} onClick={() => void actions.setArchived(strategy.id, true)}>
-              Archive
+              {tCommon('archive')}
             </button>
           )}
         </div>
@@ -261,23 +270,25 @@ function StrategyDetail({
       <div className={draft ? `${styles.strip} ${styles.stripDraft}` : styles.strip}>
         {strategy.status === 'Archived' ? (
           <>
-            <span>Archived — read-only. Versions, history and trade association are retained.</span>
+            <span>{t('archivedBanner')}</span>
             <button type="button" className={styles.buttonSecondary} onClick={() => void actions.setArchived(strategy.id, false)}>
-              Restore
+              {tCommon('restore')}
             </button>
           </>
         ) : draft ? (
           confirm === 'publish' ? (
             <>
               <span>
-                Publish these changes as <span className="num">v{nextNumber}</span>? It becomes the current version and is
-                frozen
-                {version && (
-                  <>
-                    ; <span className="num">v{version.number}</span> stays in Version History unchanged
-                  </>
+                {version ? (
+                  <Trans
+                    i18nKey="publishConfirm.questionWithPrevious"
+                    t={t}
+                    values={{ version: nextNumber, previous: version.number }}
+                    components={numSpan}
+                  />
+                ) : (
+                  <Trans i18nKey="publishConfirm.question" t={t} values={{ version: nextNumber }} components={numSpan} />
                 )}
-                .
               </span>
               <span className={styles.stripActions}>
                 <button
@@ -288,22 +299,22 @@ function StrategyDetail({
                     setConfirm(null)
                   }}
                 >
-                  Confirm publish
+                  {t('actions.confirmPublish')}
                 </button>
                 <button type="button" className={styles.buttonSecondary} onClick={() => setConfirm(null)}>
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
               </span>
             </>
           ) : confirm === 'delete' ? (
             <>
-              <span>Delete this unpublished strategy? It has no versions or trades.</span>
+              <span>{t('deleteConfirm')}</span>
               <span className={styles.stripActions}>
                 <button type="button" className={styles.buttonPrimary} onClick={() => void actions.removeUnpublished(strategy.id)}>
-                  Confirm delete
+                  {t('actions.confirmDelete')}
                 </button>
                 <button type="button" className={styles.buttonSecondary} onClick={() => setConfirm(null)}>
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
               </span>
             </>
@@ -311,23 +322,20 @@ function StrategyDetail({
             <>
               <span>
                 {draft.basedOn !== null ? (
-                  <>
-                    Editing unpublished changes based on <span className="num">v{draft.basedOn}</span>. Published{' '}
-                    <span className="num">v{draft.basedOn}</span> remains unchanged.
-                  </>
+                  <Trans i18nKey="draft.basedOn" t={t} values={{ version: draft.basedOn }} components={numSpan} />
                 ) : (
-                  <>Draft — not yet published. No version exists until the first Publish (→ v1).</>
+                  t('draft.unpublishedNote')
                 )}
                 {blocker && <span className={styles.blocker}> {blocker}.</span>}
               </span>
               <span className={styles.stripActions}>
                 {version ? (
                   <button type="button" className={styles.buttonSecondary} onClick={() => void actions.discardDraft(strategy.id)}>
-                    Discard changes
+                    {t('actions.discardChanges')}
                   </button>
                 ) : (
                   <button type="button" className={styles.buttonSecondary} onClick={() => setConfirm('delete')}>
-                    Delete Strategy
+                    {t('actions.deleteStrategy')}
                   </button>
                 )}
                 <button
@@ -336,18 +344,15 @@ function StrategyDetail({
                   disabled={blocker !== null}
                   onClick={() => setConfirm('publish')}
                 >
-                  Publish changes as <span className="num">v{nextNumber}</span>
+                  <Trans i18nKey="actions.publishChangesAs" t={t} values={{ version: nextNumber }} components={numSpan} />
                 </button>
               </span>
             </>
           )
         ) : (
-          <>
-            <span>
-              Published <span className="num">v{version?.number}</span> — frozen, read-only. Rule changes are made in a
-              Draft (Rules → Edit Rules).
-            </span>
-          </>
+          <span>
+            <Trans i18nKey="publishedBanner" t={t} values={{ version: version?.number }} components={numSpan} />
+          </span>
         )}
       </div>
 

@@ -7,10 +7,19 @@ import type { SolidSkillApi } from '../shared/ipc/api'
 import { STRATEGY_CHANNELS } from '../shared/ipc/strategies'
 import { ACCOUNT_CHANNELS } from '../shared/ipc/accounts'
 import { TRADE_CHANNELS, TRADE_DATA_CHANGED_CHANNEL, type TradingDataChangedDto } from '../shared/ipc/trades'
+import { SETTINGS_CHANNELS, SETTINGS_LANGUAGE_SYNC_CHANNEL, isLanguage, type Language } from '../shared/ipc/settings'
 
 const C = STRATEGY_CHANNELS
 const T = TRADE_CHANNELS
 const A = ACCOUNT_CHANNELS
+const S = SETTINGS_CHANNELS
+
+// Read once, synchronously, before any renderer script runs, so i18next can
+// be initialized with the correct language on the very first paint — no
+// flash back to English while the async settings API resolves. The only
+// synchronous IPC call in the app; everything else is invoke/async.
+const initialLanguageRaw: unknown = ipcRenderer.sendSync(SETTINGS_LANGUAGE_SYNC_CHANNEL)
+const initialLanguage: Language = isLanguage(initialLanguageRaw) ? initialLanguageRaw : 'en'
 
 const api: SolidSkillApi = {
   strategies: {
@@ -41,7 +50,12 @@ const api: SolidSkillApi = {
   accounts: {
     list: () => ipcRenderer.invoke(A.list),
     setActive: (accountId) => ipcRenderer.invoke(A.setActive, accountId)
-  }
+  },
+  settings: {
+    getLanguage: () => ipcRenderer.invoke(S.getLanguage),
+    setLanguage: (language) => ipcRenderer.invoke(S.setLanguage, language)
+  },
+  initialLanguage
 }
 
 contextBridge.exposeInMainWorld('solidSkill', api)

@@ -15,20 +15,24 @@
     "smoke:mt5-normalizer": "node scripts/mt5-normalizer-smoke.mjs",
     "smoke:mt5-import": "node scripts/mt5-import-smoke.mjs",
     "smoke:mt5-reconciliation": "node scripts/mt5-reconciliation-smoke.mjs",
+    "smoke:i18n": "node scripts/i18n-smoke.mjs",
     "qa:mt5-snapshot": "node scripts/mt5-snapshot-report.mjs",
     "qa:mt5-import": "node scripts/mt5-import-qa.mjs --dry-run",
     "dev:mt5-import": "node scripts/mt5-import-qa.mjs --import",
     "dev:mt5-live-import": "node scripts/mt5-live-import.mjs",
     "qa:strategies-restart": "node scripts/strategy-restart-qa.mjs",
     "qa:trading-restart": "node scripts/trading-restart-qa.mjs",
-    "qa:active-account": "node scripts/active-account-qa.mjs"
+    "qa:active-account": "node scripts/active-account-qa.mjs",
+    "qa:i18n": "node scripts/i18n-qa.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/instrument-sans": "^5.3.0",
+    "i18next": "^26.4.2",
     "lucide-react": "^1.46.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-i18next": "^17.0.15"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",

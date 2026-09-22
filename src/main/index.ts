@@ -9,7 +9,10 @@ import {
 } from './integrations/mt5/reconciliation'
 import { AccountService } from './accounts/accountService'
 import { FileActiveAccountStore } from './accounts/activeAccountStore'
+import { SettingsService } from './settings/settingsService'
+import { FileLanguageStore } from './settings/languageStore'
 import { registerAccountIpc } from './ipc/registerAccountIpc'
+import { registerSettingsIpc } from './ipc/registerSettingsIpc'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
 import { notifyTradingDataChanged } from './ipc/tradingEvents'
@@ -33,6 +36,9 @@ let database: Database | null = null
 let strategyService: StrategyService | null = null
 let tradingService: TradingService | null = null
 let accountService: AccountService | null = null
+// Presentation preference only (docs/LOCALIZATION.md) — no database dependency,
+// so it is created once at startup rather than tied to persistence lifecycle.
+let settingsService: SettingsService | null = null
 // MT5 read-only raw-deal bridge (spike). Opt-in via SOLID_SKILL_MT5_BRIDGE=1;
 // never exposed to the renderer and never wired into the Trade repositories.
 let mt5Bridge: Mt5Receiver | null = null
@@ -131,6 +137,11 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   initializePersistence()
+  settingsService = new SettingsService(new FileLanguageStore(join(app.getPath('userData'), 'preferences.json')))
+  registerSettingsIpc({
+    service: settingsService,
+    log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
   registerStrategyIpc({
     getService: () => strategyService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)

@@ -1,0 +1,77 @@
+{
+  "create": {
+    "namePlaceholder": "Nombre de la Strategy",
+    "descriptionPlaceholder": "Descripción",
+    "submit": "Crear draft",
+    "versionNote": "No existe ninguna versión hasta el primer Publish (→ v1)."
+  },
+  "nameDuplicate": "Ya existe una Strategy con este nombre.",
+  "empty": {
+    "noStrategies": "No hay Strategies. Creá una para empezar.",
+    "noPublishedVersion": "No hay versión publicada.",
+    "noGroups": "Todavía no hay grupos. Agregá un grupo y después agregá reglas.",
+    "noAssociatedTrades": "Todavía no hay Trades asociados.",
+    "noTrades": "Todavía no hay Trades asociados a esta Strategy."
+  },
+  "archivedBanner": "Archivada — solo lectura. Las versiones, el historial y la asociación con Trades se conservan.",
+  "publishConfirm": {
+    "question": "¿Publicar estos cambios como <0>v{{version}}</0>? Pasa a ser la versión actual y queda congelada.",
+    "questionWithPrevious": "¿Publicar estos cambios como <0>v{{version}}</0>? Pasa a ser la versión actual y queda congelada; <0>v{{previous}}</0> permanece sin cambios en el historial de versiones."
+  },
+  "deleteConfirm": "¿Eliminar esta Strategy no publicada? No tiene versiones ni Trades.",
+  "draft": {
+    "basedOn": "Editando cambios no publicados basados en <0>v{{version}}</0>. La versión publicada <0>v{{version}}</0> permanece sin cambios.",
+    "firstDraft": "Editando el primer Draft — no existe ninguna versión hasta que se publique.",
+    "unpublishedNote": "Draft — todavía no publicado. No existe ninguna versión hasta el primer Publish (→ v1)."
+  },
+  "publishedBanner": "Publicada <0>v{{version}}</0> — congelada, solo lectura. Los cambios de reglas se hacen en un Draft (Rules → Edit Rules).",
+  "readOnlyBanner": "Publicada <0>v{{version}}</0> · solo lectura. Las versiones publicadas están congeladas — los cambios se hacen en un Draft.",
+  "actions": {
+    "editRules": "Editar reglas",
+    "editDetails": "Editar detalles",
+    "saveDetails": "Guardar detalles",
+    "confirmPublish": "Confirmar publicación",
+    "confirmDelete": "Confirmar eliminación",
+    "deleteStrategy": "Eliminar Strategy",
+    "discardChanges": "Descartar cambios",
+    "publishChangesAs": "Publicar cambios como <0>v{{version}}</0>",
+    "moveGroupUp": "Subir grupo",
+    "moveGroupDown": "Bajar grupo",
+    "renameGroup": "Renombrar grupo",
+    "deleteGroup": "Eliminar grupo",
+    "moveRuleUp": "Subir regla",
+    "moveRuleDown": "Bajar regla",
+    "editRule": "Editar regla",
+    "deleteRule": "Eliminar regla",
+    "addRule": "Agregar regla",
+    "addRuleGroup": "Agregar grupo de reglas",
+    "saveRule": "Guardar regla",
+    "addGroup": "Agregar grupo"
+  },
+  "groupNamePlaceholder": "Nombre del grupo",
+  "ruleNamePlaceholder": "Nombre de la regla",
+  "ruleDescriptionPlaceholder": "Descripción",
+  "rule_one": "regla",
+  "rule_other": "reglas",
+  "comingLater": {
+    "applicability": "Condiciones de aplicabilidad — disponible más adelante",
+    "conditions": "Condiciones — disponible más adelante"
+  },
+  "overview": {
+    "definition": "Definición",
+    "publishedVersion": "Versión publicada",
+    "noneYet": "Ninguna todavía",
+    "ruleGroups": "Grupos de reglas",
+    "rules": "Reglas",
+    "tradesAssociated": "Trades asociados",
+    "detailsNote": "El nombre y la descripción se guardan directamente. No crean un Draft ni una nueva versión, y nunca modifican versiones publicadas.",
+    "complianceTitle": "Cumplimiento del proceso — datos de ejemplo",
+    "reviewLine": "Revisión: {{reviewed}} de {{total}} Trades revisados por completo",
+    "pooledNote": "Agrupado sobre los resultados de las reglas. Es una observación, no evidencia de que una regla cause un resultado.",
+    "outcomeTitle": "Contexto de resultado — secundario",
+    "netPnlLabel": "P&L neto de estos Trades",
+    "pnlDisclaimer": "Se muestra solo como contexto. El P&L no es un insumo del cumplimiento y no indica calidad del proceso.",
+    "exampleTitle": "Ejemplo de evaluación — ilustrativo, no es un Trade real",
+    "complianceLabel": "Cumplimiento:"
+  }
+}

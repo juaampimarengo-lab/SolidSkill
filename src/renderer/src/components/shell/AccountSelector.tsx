@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, type JSX } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { UseAccounts } from '@renderer/hooks/useAccounts'
 import styles from './AccountSelector.module.css'
 
 // Minimal active-account control (docs/ACTIVE_ACCOUNT.md). Shows persisted
 // display names only; the value it acts on is the Solid Skill account id.
 export function AccountSelector({ accounts }: { accounts: UseAccounts }): JSX.Element {
+  const { t } = useTranslation('accounts')
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const listId = useId()
@@ -29,7 +31,7 @@ export function AccountSelector({ accounts }: { accounts: UseAccounts }): JSX.El
 
   if (state.status !== 'ready' || state.data.accounts.length === 0) {
     const label =
-      state.status === 'loading' ? 'Loading…' : state.status === 'error' ? 'Accounts unavailable' : 'No accounts'
+      state.status === 'loading' ? t('loading') : state.status === 'error' ? t('unavailable') : t('noAccounts')
     return (
       <button
         type="button"
@@ -56,7 +58,7 @@ export function AccountSelector({ accounts }: { accounts: UseAccounts }): JSX.El
         title={active?.displayName}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={styles.name}>{active?.displayName ?? 'Select account'}</span>
+        <span className={styles.name}>{active?.displayName ?? t('selectAccount')}</span>
         {active && <span className={styles.currency}>{active.currency}</span>}
         <ChevronDown size={14} strokeWidth={1.75} />
       </button>
