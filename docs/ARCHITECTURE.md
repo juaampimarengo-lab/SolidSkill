@@ -173,6 +173,32 @@ IPC, or renderer state. The Import Service (012B-2) maps only completed, proven 
 inbound channel, and Solid Skill never controls the account. See
 `MT5_INTEGRATION_SPIKE.md`, `MT5_NORMALIZATION.md`, and `MT5_RECONCILIATION.md`.
 
+### Tradovate adapter path (Checkpoint 013, spike)
+
+```
+Tradovate API (REST + WebSocket)
+ ↓
+Tradovate Adapter           src/main/integrations/tradovate/adapter.ts (built; read-only by construction)
+ ↓
+Raw Tradovate Facts         docs/TRADOVATE_RAW_CONTRACT.md
+ ↓
+Tradovate Raw Staging       src/main/integrations/tradovate/rawStaging.ts (built; in-memory)
+ ↓
+Tradovate Normalizer        src/main/integrations/tradovate/normalizer/ (built; pure; docs/TRADOVATE_INTEGRATION_SPIKE.md)
+ ↓  ── not built yet ──
+future Tradovate Import Service → Trading Domain / SQLite
+```
+
+Proven only against a fake transport and synthetic fixtures (no real
+Tradovate account access was available); see `TRADOVATE_INTEGRATION_SPIKE.md`
+for what remains before any real connection or persistence. Tradovate is a
+**separate** adapter and normalizer from MT5 — it has its own raw-fact
+contract and does not import MT5's raw types, and MT5 does not import
+Tradovate's, per this document's "no upward knowledge" and "replaceability"
+rules. `TradovateTransport` has no method that can place, modify, cancel, or
+close an order or touch a position/bracket, so the adapter cannot expose
+trading capability regardless of what a future real client library exposes.
+
 ## Cross-cutting rules
 
 - **Replaceability**: any single layer above should be replaceable (a new

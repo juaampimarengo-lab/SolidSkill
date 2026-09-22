@@ -15,6 +15,7 @@
     "smoke:mt5-normalizer": "node scripts/mt5-normalizer-smoke.mjs",
     "smoke:mt5-import": "node scripts/mt5-import-smoke.mjs",
     "smoke:mt5-reconciliation": "node scripts/mt5-reconciliation-smoke.mjs",
+    "smoke:tradovate": "node scripts/tradovate-smoke.mjs",
     "smoke:i18n": "node scripts/i18n-smoke.mjs",
     "qa:mt5-snapshot": "node scripts/mt5-snapshot-report.mjs",
     "qa:mt5-import": "node scripts/mt5-import-qa.mjs --dry-run",
