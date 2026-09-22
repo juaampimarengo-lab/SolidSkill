@@ -28,10 +28,12 @@ import enCommon from '../../../renderer/src/i18n/locales/en/common.json'
 import enShell from '../../../renderer/src/i18n/locales/en/shell.json'
 import enStrategy from '../../../renderer/src/i18n/locales/en/strategy.json'
 import enAccounts from '../../../renderer/src/i18n/locales/en/accounts.json'
+import enJournal from '../../../renderer/src/i18n/locales/en/journal.json'
 import esCommon from '../../../renderer/src/i18n/locales/es/common.json'
 import esShell from '../../../renderer/src/i18n/locales/es/shell.json'
 import esStrategy from '../../../renderer/src/i18n/locales/es/strategy.json'
 import esAccounts from '../../../renderer/src/i18n/locales/es/accounts.json'
+import esJournal from '../../../renderer/src/i18n/locales/es/journal.json'
 
 const outFile = process.env['SMOKE_OUT']
 if (outFile !== undefined) writeFileSync(outFile, '')
@@ -166,7 +168,8 @@ const namespaces: Array<[string, Tree, Tree]> = [
   ['common', enCommon, esCommon],
   ['shell', enShell, esShell],
   ['strategy', enStrategy, esStrategy],
-  ['accounts', enAccounts, esAccounts]
+  ['accounts', enAccounts, esAccounts],
+  ['journal', enJournal, esJournal]
 ]
 
 for (const [ns, en, es] of namespaces) {

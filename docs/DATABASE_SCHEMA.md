@@ -272,9 +272,28 @@ is the default `NO ACTION` (**restrict**): **nothing cascades**. Consequences
 
 Expected additions, each as a new numbered migration (never by editing 001):
 Strategy presentation identity, rule conditions/dependencies, asset class
-and planned risk on trades, tags, attachments, Analytics/Weekly Review
-tables, and any change to executions' immutability needed by reconciliation
-(which must be a deliberate migration with its own justification, not a
-silent relaxation). Renaming/retyping a column follows SQLite's
-create-copy-swap pattern inside the migration's transaction, with foreign
-keys re-verified (`PRAGMA foreign_key_check`).
+and planned risk on trades, tags, Analytics/Weekly Review tables, and any
+change to executions' immutability needed by reconciliation (which must be a
+deliberate migration with its own justification, not a silent relaxation).
+Renaming/retyping a column follows SQLite's create-copy-swap pattern inside
+the migration's transaction, with foreign keys re-verified (`PRAGMA
+foreign_key_check`). Attachments shipped as migration 003 (§19).
+
+## 19. Trade Media (migration 003, Checkpoint 014)
+
+`trade_media`: Chart Evidence metadata for a Trade or a Day (never both on
+the same row — a `CHECK` ties `owner_type` to exactly one of `trade_id` /
+`analytical_date`). Columns: `id`, `owner_type` (`TRADE`/`DAY`), `trade_id`
+(nullable, composite FK to `trades (id, account_id)`), `account_id`,
+`analytical_date` (nullable `YYYY-MM-DD`), `managed_path` (relative to the
+`userData/media/` root — never absolute, never user-controlled), `format`
+(`PNG`/`JPEG`/`WEBP`), `timeframe` (`M1…W1, OTHER`), `stage`
+(`PRE_TRADE…POST_TRADE`), `caption` (nullable), `is_featured` (Trade-only —
+`CHECK` forbids it on a Day row; at most one per Trade via a partial
+`UNIQUE` index), `created_at`. Rows are insert/delete only — a trigger
+blocks `UPDATE` of every column except `is_featured` (the one field that can
+change after insert, to move which Trade image is the Overview's featured
+chart), so a changed caption is still a delete + re-add, not an in-place
+edit. Image bytes are never a column here; see `docs/TRADE_MEDIA.md` §12b
+for the featured-chart invariant and §3 for the file layout and the
+read/delete path safety guarantees.

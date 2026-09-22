@@ -203,6 +203,27 @@ rules. `TradovateTransport` has no method that can place, modify, cancel, or
 close an order or touch a position/bracket, so the adapter cannot expose
 trading capability regardless of what a future real client library exposes.
 
+### Chart Evidence / Trade Media (Checkpoint 014)
+
+```
+Renderer (upload picker / capture canvas)
+ ↓
+media IPC (src/main/ipc/registerMediaIpc.ts, mediaHandlers.ts)  — the only place besides the persistence/UI boundary that touches native dialogs/desktopCapturer
+ ↓
+MediaService (src/main/media/mediaService.ts)   — no Electron imports; stage → validate → write → persist
+ ↓
+MediaStorage (src/main/media/mediaStorage.ts) + MediaRepository (src/main/persistence/repositories/media.ts)
+ ↓
+userData/media/ files + SQLite trade_media table
+```
+
+A Journal/Review-layer concern, not a Trading Domain concern: it attaches
+evidence to a Trade or a Day, and carries no methodology and no broker
+knowledge. Images are read back by the renderer through a dedicated
+`ssmedia://` protocol (main-process only, read-only, scoped to rows that
+exist in the database), never through a generic filesystem API or IPC
+channel. See `docs/TRADE_MEDIA.md`.
+
 ## Cross-cutting rules
 
 - **Replaceability**: any single layer above should be replaceable (a new

@@ -1,6 +1,10 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
 import { Database } from './persistence'
+import { MediaService } from './media/mediaService'
+import { MediaStorage } from './media/mediaStorage'
+import { registerMediaProtocolHandler, registerMediaProtocolScheme } from './media/protocol'
+import { registerMediaIpc } from './ipc/registerMediaIpc'
 import { startMt5BridgeFromEnvironment, type Mt5Receiver } from './integrations/mt5'
 import { startDevImportGateFromEnvironment, type DevImportGate } from './integrations/mt5/import/devImportGate'
 import {
@@ -36,6 +40,11 @@ let database: Database | null = null
 let strategyService: StrategyService | null = null
 let tradingService: TradingService | null = null
 let accountService: AccountService | null = null
+// Chart Evidence (Checkpoint 014). mediaStorage owns the userData/media/ file
+// tree and outlives a single persistence open (it is not itself a database
+// resource), so it is created once at startup like settingsService.
+let mediaStorage: MediaStorage | null = null
+let mediaService: MediaService | null = null
 // Presentation preference only (docs/LOCALIZATION.md) — no database dependency,
 // so it is created once at startup rather than tied to persistence lifecycle.
 let settingsService: SettingsService | null = null
@@ -57,6 +66,8 @@ function initializePersistence(): void {
     strategyService = new StrategyService(database)
     tradingService = new TradingService(database)
     accountService = new AccountService(database, new FileActiveAccountStore(join(app.getPath('userData'), 'preferences.json')))
+    mediaStorage = new MediaStorage(join(app.getPath('userData'), 'media'))
+    mediaService = new MediaService(database, mediaStorage)
     const { schemaVersion, migrationsAppliedThisOpen, journalMode, foreignKeys } = database.health
     console.info(
       `[persistence] opened ${path} (schema v${schemaVersion}, journal=${journalMode}, ` +
@@ -86,6 +97,8 @@ function initializePersistence(): void {
     strategyService = null
     tradingService = null
     accountService = null
+    mediaStorage = null
+    mediaService = null
     console.error(`[persistence] failed to initialize database at ${path}`, error)
   }
 }
@@ -102,7 +115,11 @@ function closePersistence(): void {
   strategyService = null
   tradingService = null
   accountService = null
+  mediaStorage = null
+  mediaService = null
 }
+
+registerMediaProtocolScheme()
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -153,6 +170,14 @@ app.whenReady().then(() => {
   registerAccountIpc({
     getService: () => accountService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
+  registerMediaIpc({
+    getService: () => mediaService,
+    log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
+  registerMediaProtocolHandler({
+    getDatabase: () => database,
+    getStorage: () => mediaStorage
   })
   reconciliationCoordinator = createMt5ReconciliationCoordinatorFromEnvironment(process.env, !app.isPackaged, {
     getDatabase: () => database,

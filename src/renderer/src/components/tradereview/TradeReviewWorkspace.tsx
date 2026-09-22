@@ -1,9 +1,13 @@
 import { useMemo, useRef, useState, type JSX } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
+import type { MediaItemDto } from '@shared/ipc/media'
 import { useTradeDetail } from '@renderer/hooks/useTrading'
+import { useTradeMedia } from '@renderer/hooks/useMedia'
 import { aggregateDay } from '@renderer/lib/dayAggregate'
 import { fromScaled, toScaled } from '@renderer/lib/decimal'
 import { formatR, formatUsd } from '@renderer/lib/format'
+import { stageI18nKey, timeframeLabel } from '@renderer/lib/media'
 import {
   closeTimeLabel,
   dateLabel,
@@ -15,13 +19,16 @@ import {
 } from '@renderer/lib/tradeView'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { ExecutionsTab, OverviewTab, StrategyTab } from '@renderer/components/journal/TradeReview'
+import { ChartGallery } from '@renderer/components/journal/ChartGallery'
+import { AddChartModal } from '@renderer/components/journal/AddChartModal'
+import { ChartLightbox } from '@renderer/components/journal/ChartLightbox'
 import detailStyles from '@renderer/components/journal/TradeReview.module.css'
 import type { TradeDetail } from '@renderer/types/journal'
 import { TradeChart } from './TradeChart'
 import styles from './TradeReviewWorkspace.module.css'
 
-type DetailTab = 'Overview' | 'Executions' | 'Strategy'
-const detailTabs: DetailTab[] = ['Overview', 'Executions', 'Strategy']
+type DetailTab = 'Overview' | 'Executions' | 'Strategy' | 'Charts'
+const detailTabs: DetailTab[] = ['Overview', 'Executions', 'Strategy', 'Charts']
 
 interface TradeReviewWorkspaceProps {
   tradeId: string
@@ -72,9 +79,35 @@ function TradeReview({
   onBack: () => void
   onSwitchTrade: (tradeId: string) => void
 }): JSX.Element {
+  const { t } = useTranslation('journal')
   const [tab, setTab] = useState<DetailTab>('Overview')
   const { trade, siblings } = detail
   const outcome = tradeOutcome(trade)
+  // One shared fetch for the whole page — both the Charts tab gallery and the
+  // Overview panel's featured chart read this same state, so setting a new
+  // featured image from the gallery is reflected in Overview immediately
+  // (two independent fetches would each cache their own stale isFeatured view).
+  const media = useTradeMedia(trade.id)
+  const tradeMedia = media.state.status === 'ready' ? media.state.data : []
+  const [activeMediaId, setActiveMediaId] = useState<string | null>(null)
+  const [mediaPreview, setMediaPreview] = useState<MediaItemDto | null>(null)
+  const [addingMedia, setAddingMedia] = useState(false)
+  const featured = tradeMedia.find((m) => m.isFeatured) ?? tradeMedia[0] ?? null
+  const displayed = tradeMedia.find((m) => m.id === activeMediaId) ?? featured
+
+  async function handleDeleteMedia(mediaId: string): Promise<void> {
+    const api = window.solidSkill?.media
+    if (!api) return
+    await api.delete(mediaId)
+    media.refresh()
+  }
+
+  async function handleSetFeaturedMedia(mediaId: string): Promise<void> {
+    const api = window.solidSkill?.media
+    if (!api) return
+    await api.setFeaturedTradeMedia({ tradeId: trade.id, mediaId })
+    media.refresh()
+  }
 
   const dayAgg = useMemo(() => aggregateDay(siblings), [siblings])
 
@@ -165,14 +198,71 @@ function TradeReview({
             {tab === 'Overview' && <OverviewTab trade={trade} />}
             {tab === 'Executions' && <ExecutionsTab detail={detail} />}
             {tab === 'Strategy' && <StrategyTab detail={detail} />}
+            {tab === 'Charts' && (
+              <>
+                <ChartGallery
+                  state={media.state}
+                  retry={media.retry}
+                  onAdd={() => setAddingMedia(true)}
+                  onDelete={handleDeleteMedia}
+                  onSetFeatured={handleSetFeaturedMedia}
+                />
+                {addingMedia && (
+                  <AddChartModal
+                    owner={{ kind: 'trade', tradeId: trade.id }}
+                    onClose={() => setAddingMedia(false)}
+                    onAdded={() => media.refresh()}
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
 
         {/* MAIN ANALYSIS REGION */}
         <div className={styles.analysisRegion}>
           <div className={styles.analysisBlock}>
-            <div className={styles.blockTitle}>Execution Visualization</div>
-            <TradeChart trade={trade} executions={detail.executions} />
+            {displayed !== null ? (
+              <>
+                <div className={styles.chartEvidenceMeta}>
+                  <div className={`${styles.blockTitle} ${styles.chartEvidenceTitle}`}>{t('chartEvidence')}</div>
+                  <span className={styles.chartEvidenceLabel}>
+                    {timeframeLabel(displayed.timeframe) || t('timeframe.other')} · {t(stageI18nKey(displayed.stage))}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={styles.chartEvidenceImageButton}
+                  onClick={() => setMediaPreview(displayed)}
+                >
+                  <img className={styles.chartEvidenceImage} src={displayed.url} alt="" />
+                </button>
+                {tradeMedia.length > 1 && (
+                  <div className={styles.chartEvidenceThumbs}>
+                    {tradeMedia.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={
+                          item.id === displayed.id
+                            ? `${styles.chartEvidenceThumb} ${styles.chartEvidenceThumbActive}`
+                            : styles.chartEvidenceThumb
+                        }
+                        onClick={() => setActiveMediaId(item.id)}
+                        aria-label={`${timeframeLabel(item.timeframe) || t('timeframe.other')} · ${t(stageI18nKey(item.stage))}`}
+                      >
+                        <img className={styles.chartEvidenceThumbImg} src={item.url} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className={styles.blockTitle}>Execution Visualization</div>
+                <TradeChart trade={trade} executions={detail.executions} />
+              </>
+            )}
           </div>
 
           <div className={styles.analysisBlock}>
@@ -205,6 +295,8 @@ function TradeReview({
           </div>
         </div>
       </div>
+
+      {mediaPreview && <ChartLightbox item={mediaPreview} onClose={() => setMediaPreview(null)} />}
     </div>
   )
 }

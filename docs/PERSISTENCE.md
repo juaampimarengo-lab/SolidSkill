@@ -357,6 +357,16 @@ closes it gracefully between runs to verify restart persistence end to end
 (metadata, draft, publish, version history, create, archive/restore, seed
 idempotency, and the persistence-failure error state).
 
+## Trade Media (Checkpoint 014)
+
+Migration 003 adds `trade_media`: metadata only, in SQLite, for Chart
+Evidence attached to a Trade or a Day. Image bytes are never a SQLite BLOB —
+they live under `userData/media/` as files, addressed by a repository-owned
+relative path. See `docs/TRADE_MEDIA.md` for the full storage architecture,
+migration detail, capture implementation, and security model.
+`smoke:trade-media` covers this layer the same way `smoke:persistence`
+covers the rest.
+
 ## 11. Backup / export (later)
 
 Not implemented. Considerations for later: use SQLite's online backup

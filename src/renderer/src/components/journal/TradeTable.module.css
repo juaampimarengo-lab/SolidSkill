@@ -52,6 +52,11 @@
   background: var(--surface-hover);
 }
 
+.row:focus-visible {
+  outline: 2px solid var(--accent-cool);
+  outline-offset: -2px;
+}
+
 .rowSelected,
 .rowSelected:hover {
   background: var(--selection);

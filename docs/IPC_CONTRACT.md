@@ -94,6 +94,33 @@ Exactly two channels. Details in `ACTIVE_ACCOUNT.md`.
 
 No source login, server, credentials or broker metadata cross this surface.
 
+## 3d. Trade Media / Chart Evidence operations (Checkpoint 014)
+
+DTOs and channels: `src/shared/ipc/media.ts`; handlers/registration:
+`src/main/ipc/mediaHandlers.ts` + `registerMediaIpc.ts`; logic:
+`src/main/media/mediaService.ts`. Eight named channels, nothing generic —
+there is no filesystem/path parameter anywhere on this surface. Full detail
+in `docs/TRADE_MEDIA.md`.
+
+| Method | Effect |
+|---|---|
+| `listForTrade(tradeId)` | this Trade's Chart Evidence, chronological |
+| `listForDay({accountId, date})` | this (account, analytical date)'s Chart Evidence |
+| `pickImageFile()` | opens a native file dialog (PNG/JPEG/WebP) in main, validates the chosen file, and stages it — the original path never reaches the renderer |
+| `stageCapturedImage(bytes)` | validates a PNG frame captured by the renderer's own canvas and stages it |
+| `listCaptureSources()` | screens/windows available to capture, with thumbnails, for Solid Skill's own picker |
+| `addTradeMedia({tradeId, token, timeframe, stage, caption})` | finalizes a staged image onto a Trade |
+| `addDayMedia({accountId, date, token, timeframe, stage, caption})` | finalizes a staged image onto a Day |
+| `delete(mediaId)` | removes the metadata row and the managed file |
+
+A staged image (`pickImageFile` / `stageCapturedImage`) is validated bytes
+held briefly in main-process memory behind an opaque token, not yet written
+to disk — this lets Add Chart preview before Save without creating a file
+the user might cancel. Reading an already-saved image is **not** an IPC
+call: the renderer uses `ssmedia://<mediaId>` (a read-only, scoped custom
+protocol; §12 of `TRADE_MEDIA.md`), so image bytes never round-trip through
+IPC on read, only on the two staging writes above.
+
 ## 4. Error / result shape
 
 ```ts

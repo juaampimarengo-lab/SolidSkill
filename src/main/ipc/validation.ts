@@ -2,6 +2,14 @@ import { RULE_KINDS } from '../../shared/ipc/strategies'
 import type { DraftEdit, RuleKindDto } from '../../shared/ipc/strategies'
 import { RULE_STATES } from '../../shared/ipc/trades'
 import type { RuleStateDto, TradeListRequest } from '../../shared/ipc/trades'
+import { MEDIA_STAGES, MEDIA_TIMEFRAMES } from '../../shared/ipc/media'
+import type {
+  AddDayMediaRequest,
+  AddTradeMediaRequest,
+  MediaStageDto,
+  MediaTimeframeDto,
+  SetFeaturedTradeMediaRequest
+} from '../../shared/ipc/media'
 import { ServiceError } from '../serviceError'
 
 /**
@@ -189,4 +197,71 @@ export function ruleEvaluationInput(payload: unknown): { tradeId: string; ruleId
     ruleId: id(p['ruleId'], 'Rule id'),
     state: ruleState(p['state'])
   }
+}
+
+// ---- Media payloads ---------------------------------------------------------
+
+const MAX_CAPTION_INPUT = 500
+const MAX_TOKEN = 200
+
+function mediaTimeframe(value: unknown): MediaTimeframeDto {
+  if (typeof value !== 'string' || !(MEDIA_TIMEFRAMES as readonly string[]).includes(value)) invalid('Timeframe is invalid')
+  return value as MediaTimeframeDto
+}
+
+function mediaStage(value: unknown): MediaStageDto {
+  if (typeof value !== 'string' || !(MEDIA_STAGES as readonly string[]).includes(value)) invalid('Stage is invalid')
+  return value as MediaStageDto
+}
+
+function mediaCaption(value: unknown): string {
+  if (value === undefined || value === null) return ''
+  if (typeof value !== 'string') invalid('Caption must be text')
+  if (value.length > MAX_CAPTION_INPUT) invalid('Caption is too long')
+  return value
+}
+
+function mediaToken(value: unknown): string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_TOKEN) invalid('Staged image token is invalid')
+  return value
+}
+
+export function mediaTradeIdInput(payload: unknown): string {
+  return id(payload, 'Trade id')
+}
+
+export function mediaDayInput(payload: unknown): { accountId: string; date: string } {
+  return dayInput(payload)
+}
+
+export function addTradeMediaInput(payload: unknown): AddTradeMediaRequest {
+  const p = record(payload, 'Request')
+  return {
+    tradeId: id(p['tradeId'], 'Trade id'),
+    token: mediaToken(p['token']),
+    timeframe: mediaTimeframe(p['timeframe']),
+    stage: mediaStage(p['stage']),
+    caption: mediaCaption(p['caption'])
+  }
+}
+
+export function addDayMediaInput(payload: unknown): AddDayMediaRequest {
+  const p = record(payload, 'Request')
+  return {
+    accountId: id(p['accountId'], 'Account id'),
+    date: isoDate(p['date'], 'Date'),
+    token: mediaToken(p['token']),
+    timeframe: mediaTimeframe(p['timeframe']),
+    stage: mediaStage(p['stage']),
+    caption: mediaCaption(p['caption'])
+  }
+}
+
+export function mediaIdInput(payload: unknown): string {
+  return id(payload, 'Media id')
+}
+
+export function setFeaturedTradeMediaInput(payload: unknown): SetFeaturedTradeMediaRequest {
+  const p = record(payload, 'Request')
+  return { tradeId: id(p['tradeId'], 'Trade id'), mediaId: id(p['mediaId'], 'Media id') }
 }

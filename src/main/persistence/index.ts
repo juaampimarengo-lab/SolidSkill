@@ -16,3 +16,4 @@ export type {
 } from './repositories/tradeReadModel'
 export type { NewTrade, NewExecution, TradeFilter } from './repositories/trades'
 export type { NewAccount } from './repositories/accounts'
+export type { NewTradeMedia, NewDayMedia } from './repositories/media'

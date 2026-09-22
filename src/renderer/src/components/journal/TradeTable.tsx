@@ -2,6 +2,7 @@ import type { JSX, ReactNode } from 'react'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import type { TradeSummary } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
+import { decideRowActivation } from '@renderer/lib/journalRowActivation'
 import {
   complianceOf,
   dateLabel,
@@ -53,9 +54,12 @@ interface TradeTableProps {
   trades: readonly TradeSummary[]
   selectedId: string | null
   onSelect: (id: string) => void
+  // Same navigation helper the quick preview's "Open full review" button uses
+  // (App.tsx's openTradeReview) — invoked by double-click or Enter on a row.
+  onOpenFull: (id: string) => void
 }
 
-export function TradeTable({ trades, selectedId, onSelect }: TradeTableProps): JSX.Element {
+export function TradeTable({ trades, selectedId, onSelect, onOpenFull }: TradeTableProps): JSX.Element {
   return (
     <>
       <div className={styles.scroll}>
@@ -79,7 +83,16 @@ export function TradeTable({ trades, selectedId, onSelect }: TradeTableProps): J
                 className={
                   trade.id === selectedId ? `${styles.row} ${styles.rowSelected}` : styles.row
                 }
+                tabIndex={0}
                 onClick={() => onSelect(trade.id)}
+                onDoubleClick={(event) => {
+                  if (decideRowActivation('doubleClick', event.target as Element) === 'openFull') onOpenFull(trade.id)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return
+                  event.preventDefault()
+                  if (decideRowActivation('enterKey', event.target as Element) === 'openFull') onOpenFull(trade.id)
+                }}
               >
                 {columns.map((col) => {
                   const isNumeric = col.key === 'qty' || col.key === 'netPnl' || col.key === 'r' || col.key === 'duration' || col.key === 'avgEntry' || col.key === 'avgExit'

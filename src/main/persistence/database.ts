@@ -6,6 +6,7 @@ import { runMigrations } from './migrator'
 import type { Migration, MigrationResult } from './migrator'
 import { AccountRepository } from './repositories/accounts'
 import { EvaluationRepository } from './repositories/evaluations'
+import { MediaRepository } from './repositories/media'
 import { NoteRepository } from './repositories/notes'
 import { StrategyRepository } from './repositories/strategies'
 import { StrategyVersionRepository } from './repositories/strategyVersions'
@@ -21,6 +22,7 @@ export interface Repositories {
   strategyVersions: StrategyVersionRepository
   evaluations: EvaluationRepository
   notes: NoteRepository
+  media: MediaRepository
 }
 
 export interface DatabaseHealth {
@@ -86,7 +88,8 @@ export class Database {
         strategies: new StrategyRepository(sql, now),
         strategyVersions: new StrategyVersionRepository(sql, now),
         evaluations: new EvaluationRepository(sql, now),
-        notes: new NoteRepository(sql, now)
+        notes: new NoteRepository(sql, now),
+        media: new MediaRepository(sql, now)
       }
       return new Database(connection, sql, repositories, {
         path,

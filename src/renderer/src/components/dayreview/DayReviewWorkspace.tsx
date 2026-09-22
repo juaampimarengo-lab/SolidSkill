@@ -6,6 +6,7 @@ import { formatPercent, formatR, formatUsd } from '@renderer/lib/format'
 import { complianceOf, longDateLabel, openTimeLabel, outcomeNumClass, strategyName, tradeOutcome } from '@renderer/lib/tradeView'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
+import { DayCharts } from '@renderer/components/journal/DayCharts'
 import type { DayDto } from '@shared/ipc/trades'
 import { IntradayPnlChart } from './IntradayPnlChart'
 import styles from './DayReviewWorkspace.module.css'
@@ -143,6 +144,10 @@ function DayReview({
           <div className={styles.notesRegion}>
             <div className={styles.noteTitle}>Day Notes</div>
             <p className={styles.noteText}>{day.dayNote || 'No day notes recorded.'}</p>
+          </div>
+
+          <div className={styles.notesRegion}>
+            <DayCharts accountId={day.accountId} date={day.date} />
           </div>
         </div>
       </div>

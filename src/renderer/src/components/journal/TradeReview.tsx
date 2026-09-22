@@ -23,10 +23,11 @@ import { useTradeDetail, type Loadable } from '@renderer/hooks/useTrading'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { ComplianceReadout, ReviewTag, RuleStateTag } from '@renderer/components/strategies/RuleStateTag'
+import { TradeCharts } from './TradeCharts'
 import styles from './TradeReview.module.css'
 
-type Tab = 'Overview' | 'Executions' | 'Strategy' | 'Notes'
-const tabs: Tab[] = ['Overview', 'Executions', 'Strategy', 'Notes']
+type Tab = 'Overview' | 'Executions' | 'Strategy' | 'Charts' | 'Notes'
+const tabs: Tab[] = ['Overview', 'Executions', 'Strategy', 'Charts', 'Notes']
 
 interface TradeReviewProps {
   trade: TradeSummary
@@ -102,6 +103,7 @@ export function TradeReview({ trade, onClose, onOpenFull }: TradeReviewProps): J
         {tab === 'Strategy' && (
           <DetailGate state={detail.state} onRetry={detail.retry} render={(d) => <StrategyTab detail={d} />} />
         )}
+        {tab === 'Charts' && <TradeCharts tradeId={trade.id} />}
         {tab === 'Notes' && (
           <DetailGate state={detail.state} onRetry={detail.retry} render={(d) => <NotesTab detail={d} />} />
         )}

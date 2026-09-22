@@ -46,7 +46,12 @@ export function JournalWorkspace({ trading, onOpenTradeReview }: JournalWorkspac
 
       <div className={styles.body}>
         <div className={styles.tableRegion}>
-          <TradeTable trades={filteredTrades} selectedId={selectedTrade?.id ?? null} onSelect={setPickedId} />
+          <TradeTable
+            trades={filteredTrades}
+            selectedId={selectedTrade?.id ?? null}
+            onSelect={setPickedId}
+            onOpenFull={onOpenTradeReview}
+          />
         </div>
 
         {selectedTrade && (

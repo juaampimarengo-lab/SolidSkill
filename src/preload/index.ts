@@ -7,10 +7,12 @@ import type { SolidSkillApi } from '../shared/ipc/api'
 import { STRATEGY_CHANNELS } from '../shared/ipc/strategies'
 import { ACCOUNT_CHANNELS } from '../shared/ipc/accounts'
 import { TRADE_CHANNELS, TRADE_DATA_CHANGED_CHANNEL, type TradingDataChangedDto } from '../shared/ipc/trades'
+import { MEDIA_CHANNELS } from '../shared/ipc/media'
 import { SETTINGS_CHANNELS, SETTINGS_LANGUAGE_SYNC_CHANNEL, isLanguage, type Language } from '../shared/ipc/settings'
 
 const C = STRATEGY_CHANNELS
 const T = TRADE_CHANNELS
+const M = MEDIA_CHANNELS
 const A = ACCOUNT_CHANNELS
 const S = SETTINGS_CHANNELS
 
@@ -46,6 +48,17 @@ const api: SolidSkillApi = {
       ipcRenderer.on(TRADE_DATA_CHANGED_CHANNEL, handler)
       return () => ipcRenderer.removeListener(TRADE_DATA_CHANGED_CHANNEL, handler)
     }
+  },
+  media: {
+    listForTrade: (tradeId) => ipcRenderer.invoke(M.listForTrade, tradeId),
+    listForDay: (request) => ipcRenderer.invoke(M.listForDay, request),
+    pickImageFile: () => ipcRenderer.invoke(M.pickImageFile),
+    stageCapturedImage: (bytes) => ipcRenderer.invoke(M.stageCapturedImage, bytes),
+    listCaptureSources: () => ipcRenderer.invoke(M.listCaptureSources),
+    addTradeMedia: (request) => ipcRenderer.invoke(M.addTradeMedia, request),
+    addDayMedia: (request) => ipcRenderer.invoke(M.addDayMedia, request),
+    delete: (mediaId) => ipcRenderer.invoke(M.delete, mediaId),
+    setFeaturedTradeMedia: (request) => ipcRenderer.invoke(M.setFeaturedTradeMedia, request)
   },
   accounts: {
     list: () => ipcRenderer.invoke(A.list),

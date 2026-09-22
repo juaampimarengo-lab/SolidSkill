@@ -32,6 +32,7 @@
     "src/renderer/src/lib/tradingScope.ts",
     "src/renderer/src/lib/tradeView.ts",
     "src/renderer/src/lib/strategyTrades.ts",
+    "src/renderer/src/lib/journalRowActivation.ts",
     "src/renderer/src/types/journal.ts",
     "src/renderer/src/types/calendar.ts"
   ]

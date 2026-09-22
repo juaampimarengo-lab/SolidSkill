@@ -165,3 +165,25 @@ export interface DayNote {
   createdAt: number
   updatedAt: number
 }
+
+export type MediaOwnerType = 'TRADE' | 'DAY'
+export type MediaFormat = 'PNG' | 'JPEG' | 'WEBP'
+export type MediaTimeframe = 'M1' | 'M3' | 'M5' | 'M15' | 'M30' | 'H1' | 'H2' | 'H4' | 'D1' | 'W1' | 'OTHER'
+export type MediaStage = 'PRE_TRADE' | 'ENTRY' | 'MANAGEMENT' | 'EXIT' | 'POST_TRADE'
+
+/** Chart Evidence metadata row. Image bytes live on disk; `managedPath` is relative to the media root. */
+export interface TradeMedia {
+  id: string
+  ownerType: MediaOwnerType
+  tradeId: string | null
+  accountId: string
+  analyticalDate: string | null
+  managedPath: string
+  format: MediaFormat
+  timeframe: MediaTimeframe
+  stage: MediaStage
+  caption: string | null
+  /** Trade-level only; a Day media row is never featured. At most one featured row per Trade. */
+  isFeatured: boolean
+  createdAt: number
+}
