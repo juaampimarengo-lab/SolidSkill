@@ -6,6 +6,15 @@ futures account. It does **not** persist real Tradovate history. Raw fact
 contract: `TRADOVATE_RAW_CONTRACT.md`. Code:
 `src/main/integrations/tradovate/`.
 
+> **Checkpoint 013B** (`docs/TRADOVATE_REAL_QA.md`) added the first REAL
+> (HTTP) `TradovateTransport` implementation (`realTransport.ts`) and a
+> gated, manual real-connectivity QA command
+> (`npm run dev:tradovate-real-qa`). Everything below this notice describes
+> the 013 spike as originally built (fake transport + synthetic fixtures
+> only); it remains accurate for the adapter/normalizer boundary, which 013B
+> did not change. See `TRADOVATE_REAL_QA.md` for what 013B added and its
+> result (blocked: no real credentials were available in that environment).
+
 > **READ-ONLY.** Solid Skill's Tradovate integration must never place,
 > modify, cancel, or close an order, move a stop/target, or flatten a
 > position, even though Tradovate's real API does expose such endpoints.
@@ -615,10 +624,11 @@ is now proven at the FillFee level instead.
 
 ## QA
 
-Run: `npm run smoke:tradovate` (32/32), `npm run smoke:persistence`
-(111/111), `npm run smoke:mt5` (38/38), `npm run smoke:mt5-normalizer`
-(35/35), `npm run smoke:mt5-import` (39/39), `npm run
-smoke:mt5-reconciliation` (22/22), `npm run smoke:i18n` (22/22), `npm run
-qa:active-account` (17/17), `npm run typecheck`, `npm run build`. All pass.
-MT5 behavior is completely unchanged — `src/main/integrations/tradovate/`
-has zero imports from and zero imports into `src/main/integrations/mt5/`.
+Run: `npm run smoke:tradovate` (32/32 as of 013; 45/45 as of 013B — see
+`TRADOVATE_REAL_QA.md`), `npm run smoke:persistence` (111/111), `npm run
+smoke:mt5` (38/38), `npm run smoke:mt5-normalizer` (35/35), `npm run
+smoke:mt5-import` (39/39), `npm run smoke:mt5-reconciliation` (22/22), `npm
+run smoke:i18n` (22/22), `npm run qa:active-account` (17/17), `npm run
+typecheck`, `npm run build`. All pass. MT5 behavior is completely unchanged —
+`src/main/integrations/tradovate/` has zero imports from and zero imports
+into `src/main/integrations/mt5/`.

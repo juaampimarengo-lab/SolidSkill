@@ -10,7 +10,7 @@
  * write methods, because `TradovateTransport` (transport.ts) has no such
  * method to call in the first place.
  */
-import type { RawTradovateAccount, RawTradovateFill } from './protocol'
+import type { RawTradovateAccount, RawTradovateFill, RawTradovateFillFee, RawTradovateFillPair, RawTradovateOrder, RawTradovatePosition } from './protocol'
 import type { HistoricalFillRange, TradovateCredentials, TradovateSession, TradovateTransport } from './transport'
 import { TradovateRawStaging } from './rawStaging'
 
@@ -59,6 +59,30 @@ export class TradovateAdapter {
   async listAccounts(): Promise<readonly RawTradovateAccount[]> {
     const session = this.requireSession()
     return this.transport.listAccounts(session)
+  }
+
+  /** Reconciliation-only read. Never consumed by the normalizer — see docs/TRADOVATE_RAW_CONTRACT.md §6-§9. */
+  async listOrders(accountId: string): Promise<readonly RawTradovateOrder[]> {
+    const session = this.requireSession()
+    return this.transport.listOrders(session, accountId)
+  }
+
+  /** Reconciliation-only read. Never Trade identity — see docs/TRADOVATE_RAW_CONTRACT.md §6. */
+  async listPositions(accountId: string): Promise<readonly RawTradovatePosition[]> {
+    const session = this.requireSession()
+    return this.transport.listPositions(session, accountId)
+  }
+
+  /** Reconciliation-only read. Never Trade identity — see docs/TRADOVATE_RAW_CONTRACT.md §7. */
+  async listFillPairs(accountId: string): Promise<readonly RawTradovateFillPair[]> {
+    const session = this.requireSession()
+    return this.transport.listFillPairs(session, accountId)
+  }
+
+  /** Reconciliation-only read. Fill linkage unresolved — see docs/TRADOVATE_RAW_CONTRACT.md §9a. */
+  async listFillFees(fillIds: readonly string[]): Promise<readonly RawTradovateFillFee[]> {
+    const session = this.requireSession()
+    return this.transport.listFillFees(session, fillIds)
   }
 
   /**

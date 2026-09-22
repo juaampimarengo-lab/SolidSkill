@@ -189,9 +189,13 @@ Tradovate Normalizer        src/main/integrations/tradovate/normalizer/ (built; 
 future Tradovate Import Service → Trading Domain / SQLite
 ```
 
-Proven only against a fake transport and synthetic fixtures (no real
-Tradovate account access was available); see `TRADOVATE_INTEGRATION_SPIKE.md`
-for what remains before any real connection or persistence. Tradovate is a
+Proven against a fake transport and synthetic fixtures (013); a real, `fetch`-based
+`HttpTradovateTransport` implementing the identical read-only interface was
+added in Checkpoint 013B (`realTransport.ts`), reachable only through the
+manual `npm run dev:tradovate-real-qa` command — never from app startup or
+any IPC path. No real Tradovate account access was available when 013B ran;
+see `docs/TRADOVATE_REAL_QA.md` for what remains before any real connection
+or persistence. Tradovate is a
 **separate** adapter and normalizer from MT5 — it has its own raw-fact
 contract and does not import MT5's raw types, and MT5 does not import
 Tradovate's, per this document's "no upward knowledge" and "replaceability"

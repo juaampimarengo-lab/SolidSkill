@@ -6,6 +6,14 @@ adapter reads before any normalization. Reference implementation:
 `src/main/integrations/tradovate/protocol.ts`. Context and decisions:
 `TRADOVATE_INTEGRATION_SPIKE.md`.
 
+> **Checkpoint 013B** (`docs/TRADOVATE_REAL_QA.md`) attempted to validate
+> every "PROVEN BY OFFICIAL DOCS" claim below against a real account and
+> could not: no real Tradovate credentials were available in that
+> environment (see `TRADOVATE_REAL_QA.md`, "Result: BLOCKED"). Every schema
+> claim in this document therefore remains exactly what it was at the end of
+> 013 — proven against official documentation, **not** against a live
+> response. Nothing below was changed by 013B.
+
 > **READ-ONLY.** This contract describes facts Solid Skill *reads* from
 > Tradovate. It defines no operation that can place, modify, cancel, or close
 > anything, and the adapter/transport interface (`transport.ts`) has no

@@ -5,7 +5,15 @@
  *
  * Also has no write-capable method, for the same reason `transport.ts` does not.
  */
-import type { RawTradovateAccount, RawTradovateContract, RawTradovateFill } from './protocol'
+import type {
+  RawTradovateAccount,
+  RawTradovateContract,
+  RawTradovateFill,
+  RawTradovateFillFee,
+  RawTradovateFillPair,
+  RawTradovateOrder,
+  RawTradovatePosition
+} from './protocol'
 import type {
   HistoricalFillRange,
   TradovateCredentials,
@@ -18,6 +26,10 @@ export interface FakeTradovateTransportOptions {
   readonly contracts?: readonly RawTradovateContract[]
   /** Fills returned by listHistoricalFills, filtered by accountId + range at call time. */
   readonly history?: readonly RawTradovateFill[]
+  readonly orders?: readonly RawTradovateOrder[]
+  readonly positions?: readonly RawTradovatePosition[]
+  readonly fillPairs?: readonly RawTradovateFillPair[]
+  readonly fillFees?: readonly RawTradovateFillFee[]
   readonly rejectAuth?: boolean
 }
 
@@ -25,6 +37,10 @@ export class FakeTradovateTransport implements TradovateTransport {
   private readonly accounts: readonly RawTradovateAccount[]
   private readonly contracts: readonly RawTradovateContract[]
   private readonly history: readonly RawTradovateFill[]
+  private readonly orders: readonly RawTradovateOrder[]
+  private readonly positions: readonly RawTradovatePosition[]
+  private readonly fillPairs: readonly RawTradovateFillPair[]
+  private readonly fillFees: readonly RawTradovateFillFee[]
   private readonly rejectAuth: boolean
   private readonly liveSubscribers = new Map<string, Set<(fill: RawTradovateFill) => void>>()
   private authenticateCalls = 0
@@ -34,6 +50,10 @@ export class FakeTradovateTransport implements TradovateTransport {
     this.accounts = options.accounts
     this.contracts = options.contracts ?? []
     this.history = options.history ?? []
+    this.orders = options.orders ?? []
+    this.positions = options.positions ?? []
+    this.fillPairs = options.fillPairs ?? []
+    this.fillFees = options.fillFees ?? []
     this.rejectAuth = options.rejectAuth ?? false
   }
 
@@ -77,6 +97,22 @@ export class FakeTradovateTransport implements TradovateTransport {
     return (): void => {
       this.liveSubscribers.get(accountId)?.delete(onFill)
     }
+  }
+
+  async listOrders(_session: TradovateSession, accountId: string): Promise<readonly RawTradovateOrder[]> {
+    return this.orders.filter((o) => o.accountId === accountId)
+  }
+
+  async listPositions(_session: TradovateSession, accountId: string): Promise<readonly RawTradovatePosition[]> {
+    return this.positions.filter((p) => p.accountId === accountId)
+  }
+
+  async listFillPairs(_session: TradovateSession, _accountId: string): Promise<readonly RawTradovateFillPair[]> {
+    return this.fillPairs
+  }
+
+  async listFillFees(_session: TradovateSession, fillIds: readonly string[]): Promise<readonly RawTradovateFillFee[]> {
+    return this.fillFees.filter((f) => f.attributedFillId !== null && fillIds.includes(f.attributedFillId))
   }
 
   async disconnect(): Promise<void> {

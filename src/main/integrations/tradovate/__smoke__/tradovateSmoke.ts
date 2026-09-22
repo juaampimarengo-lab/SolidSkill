@@ -11,6 +11,11 @@ import { FakeTradovateTransport } from '../fakeTransport'
 import { TradovateRawStaging } from '../rawStaging'
 import { rawFillIdentity, rawFillPairIdentity, rawFillFeeIdentity, rawPositionIdentity, canonicalizeDecimal, type RawTradovateAccount } from '../protocol'
 import { normalizeTradovateFills } from '../normalizer'
+import type { TradovateTransport, TradovateSession } from '../transport'
+import { HttpTradovateTransport, TradovateAuthError, TradovateRateLimitError, TradovateMalformedPayloadError } from '../realTransport'
+import { loadTradovateCredentialsFromEnv, describeMissingTradovateEnv, maskTradovateCredentialName } from '../credentials'
+import { maskTradovateAccountId } from '../structuralReport'
+import { devSnapshotDirectory } from '../devSnapshot'
 import {
   ACCOUNT_A,
   ACCOUNT_B,
@@ -61,6 +66,27 @@ async function check(name: string, body: () => Promise<void> | void): Promise<vo
     lines.push(`FAIL  ${name}\n        ${error instanceof Error ? error.message : String(error)}`)
   }
 }
+
+/** Walks every .ts file under a directory, calling `visit(fullPath, contents)`. Shared by all static-scan tests. */
+function walkTsFiles(dir: string, visit: (fullPath: string, text: string) => void): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = resolve(dir, entry.name)
+    if (entry.isDirectory()) walkTsFiles(full, visit)
+    else if (entry.isFile() && entry.name.endsWith('.ts')) visit(full, readFileSync(full, 'utf8'))
+  }
+}
+
+function fakeJsonFetch(status: number, body: unknown, headers: Record<string, string> = {}): typeof fetch {
+  return (async () =>
+    ({
+      status,
+      ok: status >= 200 && status < 300,
+      headers: { get: (key: string) => headers[key] ?? null },
+      text: async () => (typeof body === 'string' ? body : JSON.stringify(body))
+    }) as unknown as Response) as unknown as typeof fetch
+}
+
+const FAKE_SESSION: TradovateSession = { accessToken: 'fake-token', mdAccessToken: null, expiresAtMsc: Date.now() + 60_000, userId: 'user-1' }
 
 const FAKE_ACCOUNT_A: RawTradovateAccount = {
   id: ACCOUNT_A,
@@ -147,20 +173,171 @@ async function main(): Promise<void> {
       /position\/liquidateposition/i
     ]
     const violations: string[] = []
-    const walk = (folder: string): void => {
-      for (const entry of readdirSync(folder, { withFileTypes: true })) {
-        const full = resolve(folder, entry.name)
-        if (entry.isDirectory()) walk(full)
-        else if (entry.isFile() && entry.name.endsWith('.ts')) {
-          const text = readFileSync(full, 'utf8')
-          for (const pattern of forbidden) {
-            if (pattern.test(text)) violations.push(`${full}: matches ${pattern}`)
-          }
-        }
+    walkTsFiles(dir, (full, text) => {
+      for (const pattern of forbidden) {
+        if (pattern.test(text)) violations.push(`${full}: matches ${pattern}`)
       }
-    }
-    walk(dir)
+    })
     assert(violations.length === 0, `forbidden trading capability found: ${violations.join('; ')}`)
+  })
+
+  // ------------------------------------------------------------------ 013B: real-transport boundary requirements
+  await check('token/password/secret values are never passed to a logging call anywhere in the integration source', () => {
+    const dir = resolve('src/main/integrations/tradovate')
+    const forbidden = [/console\.(log|error|warn|info)\([^)]*\b(password|accessToken|\.sec\b|credentials\.sec)\b/i]
+    const violations: string[] = []
+    walkTsFiles(dir, (full, text) => {
+      for (const pattern of forbidden) if (pattern.test(text)) violations.push(`${full}: matches ${pattern}`)
+    })
+    assert(violations.length === 0, `credential/token value passed to a log call: ${violations.join('; ')}`)
+  })
+
+  await check('account identity masking never reveals the full account id or credential name', () => {
+    equal(maskTradovateAccountId('1234567'), '***567', 'account id masked to last 3 chars')
+    equal(maskTradovateCredentialName('trader1'), '***er1', 'credential name masked to last 3 chars')
+    equal(maskTradovateCredentialName('ab'), '***', 'very short name is fully masked, never partially exposed')
+  })
+
+  await check('credential loader reports missing env var NAMES only, and never returns a partial credential object', () => {
+    const result = loadTradovateCredentialsFromEnv({})
+    assert(result.credentials === null, 'no credentials when required vars are missing')
+    equal(result.missing.length, 6, 'all six required vars reported missing')
+    assert(result.missing.every((m) => m.startsWith('SOLID_SKILL_TRADOVATE_')), 'missing entries are env var names, not values')
+    const guidance = describeMissingTradovateEnv(result.missing).join('\n')
+    assert(!guidance.includes('undefined') && guidance.length > 0, 'guidance is human-readable and contains no leaked undefined value')
+  })
+
+  await check('credential loader resolves full credentials only when every required var is present', () => {
+    const env = {
+      SOLID_SKILL_TRADOVATE_NAME: 'trader1',
+      SOLID_SKILL_TRADOVATE_PASSWORD: 'secret',
+      SOLID_SKILL_TRADOVATE_APP_ID: 'app',
+      SOLID_SKILL_TRADOVATE_APP_VERSION: '1.0',
+      SOLID_SKILL_TRADOVATE_CID: 'cid',
+      SOLID_SKILL_TRADOVATE_SEC: 'sec'
+    }
+    const result = loadTradovateCredentialsFromEnv(env)
+    assert(result.credentials !== null, 'credentials resolved when all six are set')
+    equal(result.missing, [], 'nothing missing')
+    equal(result.environment, 'demo', 'defaults to demo when SOLID_SKILL_TRADOVATE_ENVIRONMENT is unset')
+  })
+
+  await check('401/403 from Tradovate is handled explicitly as TradovateAuthError, never a generic crash', async () => {
+    for (const status of [401, 403]) {
+      const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl: fakeJsonFetch(status, {}) })
+      let threw = false
+      try {
+        await transport.listAccounts(FAKE_SESSION)
+      } catch (error) {
+        threw = error instanceof TradovateAuthError
+      }
+      assert(threw, `HTTP ${status} must throw TradovateAuthError`)
+    }
+  })
+
+  await check('a 429 rate-limit response is handled safely, never retried in a loop, Retry-After preserved', async () => {
+    const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl: fakeJsonFetch(429, '', { 'Retry-After': '30' }) })
+    let error: unknown = null
+    try {
+      await transport.listAccounts(FAKE_SESSION)
+    } catch (e) {
+      error = e
+    }
+    assert(error instanceof TradovateRateLimitError, 'rate limit surfaces as TradovateRateLimitError')
+    equal((error as TradovateRateLimitError).retryAfterSeconds, 30, 'Retry-After header value is preserved')
+  })
+
+  await check('a malformed (non-JSON) payload is rejected explicitly, never partially parsed', async () => {
+    const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl: fakeJsonFetch(200, 'this is not json') })
+    let threw = false
+    try {
+      await transport.listAccounts(FAKE_SESSION)
+    } catch (error) {
+      threw = error instanceof TradovateMalformedPayloadError
+    }
+    assert(threw, 'non-JSON body must throw TradovateMalformedPayloadError')
+  })
+
+  await check('a well-formed but shape-wrong payload (object instead of array) is rejected explicitly', async () => {
+    const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl: fakeJsonFetch(200, { unexpected: true }) })
+    let threw = false
+    try {
+      await transport.listAccounts(FAKE_SESSION)
+    } catch (error) {
+      threw = error instanceof TradovateMalformedPayloadError
+    }
+    assert(threw, 'non-array account/list body must throw TradovateMalformedPayloadError')
+  })
+
+  await check('a raw network failure is normalized to an Error and never hangs or leaks a raw thrown value', async () => {
+    const fetchImpl = (async () => {
+      throw 'raw string throw with sensitive-looking text p@ssw0rd'
+    }) as unknown as typeof fetch
+    const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl })
+    let caught: unknown = null
+    try {
+      await transport.listAccounts(FAKE_SESSION)
+    } catch (e) {
+      caught = e
+    }
+    assert(caught instanceof Error, 'a raw thrown value is normalized to an Error instance')
+    assert(caught instanceof Error && !caught.message.includes('p@ssw0rd'), 'the raw thrown value text is not passed through verbatim')
+  })
+
+  await check('real transport account isolation: listOrders/listPositions filter strictly by accountId', async () => {
+    const orders = [
+      { id: 'o1', accountId: ACCOUNT_A, action: 'Buy', ordStatus: 'Filled', timestamp: '2026-01-01T00:00:00.000Z', contractId: CONTRACT_MNQ },
+      { id: 'o2', accountId: ACCOUNT_B, action: 'Sell', ordStatus: 'Filled', timestamp: '2026-01-01T00:00:00.000Z', contractId: CONTRACT_MNQ }
+    ]
+    const transport = new HttpTradovateTransport({ environment: 'demo', fetchImpl: fakeJsonFetch(200, orders) })
+    const result = await transport.listOrders(FAKE_SESSION, ACCOUNT_A)
+    equal(result.length, 1, 'only the requested account\'s orders are returned')
+    equal(result[0]?.id, 'o1', 'correct order returned')
+  })
+
+  await check('real transport can be replaced by fake transport: identical adapter behavior over the same TradovateTransport contract', async () => {
+    const tokenResponse = { accessToken: 'tok-1', expirationTime: new Date(Date.now() + 80 * 60 * 1000).toISOString(), userId: 'user-9' }
+    const accountsResponse = [{ id: ACCOUNT_A, name: 'Real Account', userId: 'user-9', accountType: 'Demo', active: true, clearingHouseId: null, legalStatus: null }]
+    let call = 0
+    const sequence = [tokenResponse, accountsResponse]
+    const fetchImpl = (async () => {
+      const body = sequence[call]
+      call += 1
+      return { status: 200, ok: true, headers: { get: () => null }, text: async () => JSON.stringify(body) } as unknown as Response
+    }) as unknown as typeof fetch
+
+    const httpTransport: TradovateTransport = new HttpTradovateTransport({ environment: 'demo', fetchImpl })
+    const fakeTransportInstance: TradovateTransport = new FakeTradovateTransport({ accounts: [FAKE_ACCOUNT_A] })
+    for (const transport of [httpTransport, fakeTransportInstance]) {
+      const adapter = new TradovateAdapter({ transport })
+      await adapter.connect({ name: 'demo', password: 'x', appId: 'a', appVersion: '1', cid: 'c', sec: 's' })
+      const accounts = await adapter.listAccounts()
+      assert(accounts.length === 1, 'each transport implementation returns one account through the identical adapter API')
+    }
+  })
+
+  await check('no non-test file under the tradovate integration imports a database/write-capable persistence module', () => {
+    // fixedPoint.ts is a pure decimal-math helper (no SQLite) shared with MT5's normalizer and
+    // is explicitly allowed; the actual write-capable surface is database.ts/sql.ts/migrations/repositories.
+    const dir = resolve('src/main/integrations/tradovate')
+    const forbidden = [
+      /from ['"].*\/persistence\/(database|sql|migrations|repositories)/i,
+      /from ['"].*\/trading\//i,
+      /['"]node:sqlite['"]/
+    ]
+    const violations: string[] = []
+    walkTsFiles(dir, (full, text) => {
+      if (full.includes(`${resolve('src/main/integrations/tradovate/__smoke__')}`)) return // test source, not production code
+      for (const pattern of forbidden) if (pattern.test(text)) violations.push(`${full}: matches ${pattern}`)
+    })
+    assert(violations.length === 0, `forbidden persistence/trading import found: ${violations.join('; ')}`)
+  })
+
+  await check('Tradovate dev snapshot path stays under the gitignored .dev-data directory', () => {
+    const gitignore = readFileSync(resolve('.gitignore'), 'utf8')
+    assert(gitignore.includes('.dev-data/'), '.gitignore must ignore .dev-data/')
+    const dir = devSnapshotDirectory(resolve('.'))
+    assert(dir.includes('.dev-data') && dir.includes('tradovate'), 'snapshot directory is under .dev-data/tradovate')
   })
 
   // ------------------------------------------------------------------ raw staging: dedup / conflict / capacity

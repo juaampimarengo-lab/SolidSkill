@@ -12,7 +12,15 @@
  * No credentials are logged or included in any event this interface can
  * produce. See docs/TRADOVATE_INTEGRATION_SPIKE.md, "Auth / secrets".
  */
-import type { RawTradovateAccount, RawTradovateContract, RawTradovateFill } from './protocol'
+import type {
+  RawTradovateAccount,
+  RawTradovateContract,
+  RawTradovateFill,
+  RawTradovateFillFee,
+  RawTradovateFillPair,
+  RawTradovateOrder,
+  RawTradovatePosition
+} from './protocol'
 
 export interface TradovateCredentials {
   readonly name: string
@@ -63,5 +71,21 @@ export interface TradovateTransport {
    * (never anything account-affecting).
    */
   subscribeToFills(session: TradovateSession, accountId: string, onFill: (fill: RawTradovateFill) => void): () => void
+
+  // -- Reconciliation-only reads (013B). None of these are consumed by the
+  // normalizer (docs/TRADOVATE_RAW_CONTRACT.md §6-§9) — they exist only so a
+  // real connectivity checkpoint can capture structural evidence about
+  // Position/FillPair/FillFee/Order without inventing a one-off script that
+  // bypasses this boundary.
+
+  /** Orders for one account — the documented join Solid Skill uses to attribute a Fill's accountId (RawTradovateFill has none natively). */
+  listOrders(session: TradovateSession, accountId: string): Promise<readonly RawTradovateOrder[]>
+  /** Position snapshot rows (per account/contract/tradeDate) for one account. Never Trade identity — see protocol.ts. */
+  listPositions(session: TradovateSession, accountId: string): Promise<readonly RawTradovatePosition[]>
+  /** Tradovate's own buy/sell matching records for one account. Never Trade identity — see protocol.ts. */
+  listFillPairs(session: TradovateSession, accountId: string): Promise<readonly RawTradovateFillPair[]>
+  /** Fee/commission breakdown rows for a set of fills. Linkage to fillId is unresolved — see protocol.ts §9a. */
+  listFillFees(session: TradovateSession, fillIds: readonly string[]): Promise<readonly RawTradovateFillFee[]>
+
   disconnect(session: TradovateSession): Promise<void>
 }

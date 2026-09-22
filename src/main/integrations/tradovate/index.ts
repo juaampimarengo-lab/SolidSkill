@@ -4,6 +4,10 @@ export * from './transport'
 export * from './adapter'
 export * from './fakeTransport'
 export * from './normalizer'
+export * from './credentials'
+export * from './realTransport'
+export * from './devSnapshot'
+export * from './structuralReport'
 
 import type { TradovateAdapterEvent } from './adapter'
 
@@ -29,16 +33,13 @@ export function describeTradovateAdapterEvent(event: TradovateAdapterEvent): str
 }
 
 /**
- * NOT WIRED YET — no real TradovateTransport implementation exists in this
- * spike (see docs/TRADOVATE_INTEGRATION_SPIKE.md, "Real access gate"). This
+ * NOT WIRED INTO APP STARTUP — `realTransport.ts` (013B) exists and is
+ * exercised only by `scripts/tradovate-real-qa.mjs` (a manual, gated
+ * development command), never by `src/main/index.ts` or any IPC path. This
  * function documents the intended environment-gated shape (mirroring the MT5
- * bridge's `SOLID_SKILL_MT5_BRIDGE` pattern) so a future checkpoint that adds
- * a real HTTP/WebSocket `TradovateTransport` only has to supply that
- * transport, never redesign the gate.
- *
- * Deliberately returns null always in this checkpoint: no real connection is
- * attempted, and no credentials are read from the environment, because there
- * is nothing yet that would consume them safely.
+ * bridge's `SOLID_SKILL_MT5_BRIDGE` pattern) for a future checkpoint that
+ * wires real Tradovate connectivity into the running app; that checkpoint is
+ * explicitly not this one (no SQLite import path exists for Tradovate yet).
  */
 export function isTradovateAdapterEnabled(env: NodeJS.ProcessEnv): boolean {
   return env['SOLID_SKILL_TRADOVATE_ADAPTER'] === '1'
