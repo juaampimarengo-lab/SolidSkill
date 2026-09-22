@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { Topbar, type Representation } from './Topbar'
+import type { UseAccounts } from '@renderer/hooks/useAccounts'
 import styles from './AppShell.module.css'
 
 interface AppShellProps {
@@ -12,6 +13,7 @@ interface AppShellProps {
   // instructions, "GOAL 1 — CONTEXTUAL PAGE TITLE."
   pageTitle?: string
   onSelect: (label: string) => void
+  accounts: UseAccounts
   representation: Representation
   onChangeRepresentation: (representation: Representation) => void
   children: ReactNode
@@ -21,6 +23,7 @@ export function AppShell({
   active,
   pageTitle,
   onSelect,
+  accounts,
   representation,
   onChangeRepresentation,
   children
@@ -31,6 +34,7 @@ export function AppShell({
       <div className={styles.main}>
         <Topbar
           pageTitle={pageTitle ?? active}
+          accounts={accounts}
           representation={representation}
           onChangeRepresentation={onChangeRepresentation}
         />

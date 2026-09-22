@@ -30,34 +30,6 @@
   gap: 8px;
 }
 
-.accountSelector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: var(--button-height-md);
-  padding: 0 10px;
-  background: var(--surface-primary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.accountSelector:hover {
-  background: var(--surface-hover);
-}
-
-.accountName {
-  font-size: var(--text-body-sm-size);
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.accountBroker {
-  font-size: var(--text-caption-size);
-  color: var(--text-muted);
-}
-
 .dateRange {
   display: flex;
   align-items: center;

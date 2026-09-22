@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { IpcResult } from '@shared/ipc/result'
-import type { AccountDto, DayDto, TradeDetailDto, TradeListDto, TradesApi } from '@shared/ipc/trades'
-import type { TradeSummary } from '@renderer/types/journal'
+import type { DayDto, TradeDetailDto, TradeListDto, TradesApi } from '@shared/ipc/trades'
+import { toTradingData, type TradingData } from '@renderer/lib/tradingScope'
+
+export type { TradingData }
 
 // SQLite (in the main process) is the source of truth for trading data. These
 // hooks hold no authoritative state: they request coherent list / detail / day
@@ -59,36 +61,6 @@ function useTradesQuery<T>(
   return { state, refresh: () => run(true), retry: () => run(false) }
 }
 
-/** The single Trade universe every summary surface reads. */
-export interface TradingData {
-  accounts: AccountDto[]
-  /** Every persisted trade, chronological. Strategy views filter this by stable strategy id. */
-  allTrades: TradeSummary[]
-  /**
-   * The active account context. There is no Accounts UI yet, so this is the
-   * first account that has trades (else the first account). Dashboard,
-   * Calendar, Journal and Day Review show this account's trades.
-   */
-  account: AccountDto | null
-  trades: TradeSummary[]
-  /** Analytical dates (of the active account) that have a Day Note. */
-  noteDates: ReadonlySet<string>
-}
-
-function toTradingData(list: TradeListDto): TradingData {
-  const withTrades = new Set(list.trades.map((t) => t.accountId))
-  const account = list.accounts.find((a) => withTrades.has(a.id)) ?? list.accounts[0] ?? null
-  return {
-    accounts: list.accounts,
-    allTrades: list.trades,
-    account,
-    trades: account === null ? [] : list.trades.filter((t) => t.accountId === account.id),
-    noteDates: new Set(
-      list.daysWithNotes.filter((d) => account !== null && d.accountId === account.id).map((d) => d.date)
-    )
-  }
-}
-
 export interface UseTrading {
   state: Loadable<TradingData>
   /** Silent re-read (keeps showing current data meanwhile). */
@@ -96,11 +68,11 @@ export interface UseTrading {
   retry: () => void
 }
 
-export function useTrading(): UseTrading {
+export function useTrading(activeAccountId: string | null): UseTrading {
   const query = useTradesQuery<TradeListDto>((api) => api.list(), 'list')
   const state = useMemo<Loadable<TradingData>>(
-    () => (query.state.status === 'ready' ? { status: 'ready', data: toTradingData(query.state.data) } : query.state),
-    [query.state]
+    () => (query.state.status === 'ready' ? { status: 'ready', data: toTradingData(query.state.data, activeAccountId) } : query.state),
+    [query.state, activeAccountId]
   )
   return { state, refresh: query.refresh, retry: query.retry }
 }

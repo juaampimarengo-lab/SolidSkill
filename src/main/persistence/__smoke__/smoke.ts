@@ -20,6 +20,7 @@ import type { EvaluationState, StrategyVersion } from '../types'
 import { createStrategyHandlers } from '../../ipc/strategyHandlers'
 import type { StrategyHandler } from '../../ipc/strategyHandlers'
 import { seedDevelopmentStrategies } from '../../strategies/devSeed'
+import { runAccountsSmoke } from './accountsSmoke'
 import { runTradingSmoke } from './tradingSmoke'
 import { StrategyService } from '../../strategies/strategyService'
 import type { IpcResult } from '../../../shared/ipc/result'
@@ -1191,6 +1192,9 @@ session.db.close()
 
 // ---- Checkpoint 011B-2: trading application / IPC layer ---------------------
 runTradingSmoke({ check, equal, throws, newDbPath, makeClock })
+
+// ---- Checkpoint 012B-3: active account ----
+runAccountsSmoke({ check, equal, throws, newDbPath, makeClock })
 
 rmSync(workDir, { recursive: true, force: true })
 log(`\n${passed} passed, ${failed} failed`)

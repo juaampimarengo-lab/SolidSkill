@@ -193,7 +193,7 @@ try {
 
   // ======================= RUN 1 — baseline (clean dev DB) ===================
   let cdp = await launch()
-  check('preload bridge exposes only strategies + trades', JSON.stringify(await cdp.eval('Object.keys(window.solidSkill)')) === '["strategies","trades"]')
+  check('preload bridge exposes only strategies + trades + accounts', JSON.stringify(await cdp.eval('Object.keys(window.solidSkill)')) === '["strategies","trades","accounts"]')
   check('trades API exposes exactly the six application operations',
     JSON.stringify(await cdp.eval('Object.keys(window.solidSkill.trades).sort()')) ===
       JSON.stringify(['getDay', 'getDetail', 'list', 'updateDayNote', 'updateRuleEvaluation', 'updateTradeNote']))
@@ -437,7 +437,7 @@ try {
     await sleep(400)
     text = await body(cdp)
     check(`J ${section}: visible controlled error, no fixture/fake trades`,
-      /Trades could not be loaded/.test(text) && !/Demo Account|Strategy Alpha|Opening Model|NQ|MNQ/.test(text), text.slice(0, 300))
+      /(Trades|Accounts) could not be loaded/.test(text) && !/Demo Account|Strategy Alpha|Opening Model|NQ|MNQ/.test(text), text.slice(0, 300))
   }
   await nav(cdp, 'Strategies')
   text = await body(cdp)

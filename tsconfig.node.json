@@ -28,6 +28,8 @@
     "src/renderer/src/lib/decimal.ts",
     "src/renderer/src/lib/dayAggregate.ts",
     "src/renderer/src/lib/calendar.ts",
+    "src/renderer/src/lib/latest.ts",
+    "src/renderer/src/lib/tradingScope.ts",
     "src/renderer/src/lib/tradeView.ts",
     "src/renderer/src/lib/strategyTrades.ts",
     "src/renderer/src/types/journal.ts",

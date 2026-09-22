@@ -1,5 +1,7 @@
 import { useState, type JSX } from 'react'
 import { ChevronDown, Eye, EyeOff } from 'lucide-react'
+import type { UseAccounts } from '@renderer/hooks/useAccounts'
+import { AccountSelector } from './AccountSelector'
 import styles from './Topbar.module.css'
 
 export const representations = ['$', '%', 'R', 'PTS'] as const
@@ -7,11 +9,12 @@ export type Representation = (typeof representations)[number]
 
 interface TopbarProps {
   pageTitle: string
+  accounts: UseAccounts
   representation: Representation
   onChangeRepresentation: (representation: Representation) => void
 }
 
-export function Topbar({ pageTitle, representation, onChangeRepresentation }: TopbarProps): JSX.Element {
+export function Topbar({ pageTitle, accounts, representation, onChangeRepresentation }: TopbarProps): JSX.Element {
   const [privacyOn, setPrivacyOn] = useState(false)
 
   return (
@@ -21,11 +24,7 @@ export function Topbar({ pageTitle, representation, onChangeRepresentation }: To
       </div>
 
       <div className={styles.right}>
-        <button type="button" className={styles.accountSelector}>
-          <span className={styles.accountName}>Apex 50K</span>
-          <span className={styles.accountBroker}>Tradovate</span>
-          <ChevronDown size={14} strokeWidth={1.75} />
-        </button>
+        <AccountSelector accounts={accounts} />
 
         <button type="button" className={styles.dateRange}>
           <span>This Week</span>

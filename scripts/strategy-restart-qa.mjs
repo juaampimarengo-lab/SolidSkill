@@ -151,7 +151,7 @@ try {
   // ============================== RUN 1 (clean dev DB) =====================
   let cdp = await launch()
   check('preload bridge exposes only the strategies + trades APIs',
-    JSON.stringify(await cdp.eval('Object.keys(window.solidSkill)')) === '["strategies","trades"]')
+    JSON.stringify(await cdp.eval('Object.keys(window.solidSkill)')) === '["strategies","trades","accounts"]')
   check('renderer has no raw ipc / require / process access',
     (await cdp.eval('typeof require + "," + typeof process + "," + typeof ipcRenderer')) === 'undefined,undefined,undefined')
   check('DB created under the userData dir; first start applied migration 1 + dev seed',

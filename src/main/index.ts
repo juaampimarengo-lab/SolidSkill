@@ -3,6 +3,9 @@ import { join } from 'node:path'
 import { Database } from './persistence'
 import { startMt5BridgeFromEnvironment, type Mt5Receiver } from './integrations/mt5'
 import { startDevImportGateFromEnvironment, type DevImportGate } from './integrations/mt5/import/devImportGate'
+import { AccountService } from './accounts/accountService'
+import { FileActiveAccountStore } from './accounts/activeAccountStore'
+import { registerAccountIpc } from './ipc/registerAccountIpc'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
 import { seedDevelopmentStrategies } from './strategies/devSeed'
@@ -24,6 +27,7 @@ if (!app.isPackaged && !app.commandLine.hasSwitch('user-data-dir')) {
 let database: Database | null = null
 let strategyService: StrategyService | null = null
 let tradingService: TradingService | null = null
+let accountService: AccountService | null = null
 // MT5 read-only raw-deal bridge (spike). Opt-in via SOLID_SKILL_MT5_BRIDGE=1;
 // never exposed to the renderer and never wired into the Trade repositories.
 let mt5Bridge: Mt5Receiver | null = null
@@ -37,6 +41,7 @@ function initializePersistence(): void {
     database = Database.open(path)
     strategyService = new StrategyService(database)
     tradingService = new TradingService(database)
+    accountService = new AccountService(database, new FileActiveAccountStore(join(app.getPath('userData'), 'preferences.json')))
     const { schemaVersion, migrationsAppliedThisOpen, journalMode, foreignKeys } = database.health
     console.info(
       `[persistence] opened ${path} (schema v${schemaVersion}, journal=${journalMode}, ` +
@@ -65,6 +70,7 @@ function initializePersistence(): void {
     database = null
     strategyService = null
     tradingService = null
+    accountService = null
     console.error(`[persistence] failed to initialize database at ${path}`, error)
   }
 }
@@ -80,6 +86,7 @@ function closePersistence(): void {
   database = null
   strategyService = null
   tradingService = null
+  accountService = null
 }
 
 function createWindow(): void {
@@ -121,6 +128,10 @@ app.whenReady().then(() => {
   })
   registerTradeIpc({
     getService: () => tradingService,
+    log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
+  registerAccountIpc({
+    getService: () => accountService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
   })
   void startMt5BridgeFromEnvironment(process.env, (message) => console.info(`[mt5] ${message}`), {

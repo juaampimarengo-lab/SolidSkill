@@ -23,8 +23,8 @@ application data.
 exactly one object, `window.solidSkill`, whose methods each invoke one fixed
 channel. It exposes no generic `send`/`invoke`, no channel names, no
 filesystem, no process, no SQL. The type of the object is
-`SolidSkillApi` in `src/shared/ipc/api.ts` (namespaces `strategies` and
-`trades`), declared globally in `src/preload/index.d.ts`.
+`SolidSkillApi` in `src/shared/ipc/api.ts` (namespaces `strategies`,
+`trades` and `accounts`), declared globally in `src/preload/index.d.ts`.
 
 ## 3. Strategy operations
 
@@ -81,6 +81,19 @@ Model rules:
 - list-vs-detail split: summaries carry counts only, detail is requested per
   opened trade, so the UI never issues a call per row or per execution.
 
+## 3c. Accounts operations (012B-3)
+
+DTOs and channels: `src/shared/ipc/accounts.ts`; handlers
+`src/main/ipc/accountHandlers.ts`; logic `src/main/accounts/accountService.ts`.
+Exactly two channels. Details in `ACTIVE_ACCOUNT.md`.
+
+| Method | Effect |
+|---|---|
+| `list()` | selectable accounts `{id, displayName, currency, timezone}` + the resolved `activeAccountId` (remembered choice, else first account, else null) |
+| `setActive(accountId)` | validates the id (`NOT_FOUND` otherwise), remembers it in a local preference file, returns the same shape. Writes no trading data. |
+
+No source login, server, credentials or broker metadata cross this surface.
+
 ## 4. Error / result shape
 
 ```ts
@@ -122,8 +135,8 @@ surface is the table in §3.
 
 ## 7. Future extension (Accounts, integrations)
 
-`trades` was added in 011B-2 following this pattern. Add further namespaces to
-`SolidSkillApi` (e.g. `accounts`) with their own DTOs, channel constants,
+`trades` (011B-2) and the minimal `accounts` (012B-3) follow this pattern. Add further namespaces to
+`SolidSkillApi` with their own DTOs, channel constants,
 validators, and service, the same way:
 shared DTO + channel names in `src/shared/ipc/`, validation + handlers in
 `src/main/ipc/`, a service over the repositories, one line per method in the

@@ -5,10 +5,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { SolidSkillApi } from '../shared/ipc/api'
 import { STRATEGY_CHANNELS } from '../shared/ipc/strategies'
+import { ACCOUNT_CHANNELS } from '../shared/ipc/accounts'
 import { TRADE_CHANNELS } from '../shared/ipc/trades'
 
 const C = STRATEGY_CHANNELS
 const T = TRADE_CHANNELS
+const A = ACCOUNT_CHANNELS
 
 const api: SolidSkillApi = {
   strategies: {
@@ -30,6 +32,10 @@ const api: SolidSkillApi = {
     updateTradeNote: (request) => ipcRenderer.invoke(T.updateTradeNote, request),
     updateDayNote: (request) => ipcRenderer.invoke(T.updateDayNote, request),
     updateRuleEvaluation: (request) => ipcRenderer.invoke(T.updateRuleEvaluation, request)
+  },
+  accounts: {
+    list: () => ipcRenderer.invoke(A.list),
+    setActive: (accountId) => ipcRenderer.invoke(A.setActive, accountId)
   }
 }
 

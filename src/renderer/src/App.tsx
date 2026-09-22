@@ -12,6 +12,7 @@ import type { NavEntry } from '@renderer/types/navigation'
 import { StrategiesStatus } from '@renderer/components/strategies/StrategiesStatus'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { useStrategies } from '@renderer/hooks/useStrategies'
+import { useAccounts } from '@renderer/hooks/useAccounts'
 import { useTrading, type TradingData } from '@renderer/hooks/useTrading'
 
 function App(): JSX.Element {
@@ -32,7 +33,12 @@ function App(): JSX.Element {
   // Calendar, Journal, Strategies → Trades. Day Review and Trade Review load
   // their own coherent detail views. Same rule: an error is an error, never
   // fixtures.
-  const trading = useTrading()
+  //
+  // The active account (chosen in the Topbar, docs/ACTIVE_ACCOUNT.md) scopes
+  // Dashboard, Calendar, Journal and Day Review. Strategies stay global.
+  const accounts = useAccounts()
+  const activeAccountId = accounts.state.status === 'ready' ? accounts.state.data.activeAccountId : null
+  const trading = useTrading(activeAccountId)
   const strategiesState = strategyData.state
 
   // Day Review / Trade Review are contextual overlays stacked on top of
@@ -54,6 +60,15 @@ function App(): JSX.Element {
     setActive(label)
     setNavStack([])
     // Silent re-read so a Strategy renamed elsewhere shows its new name here.
+    trading.refresh()
+  }
+
+  // An open Day/Trade Review belongs to the previous account, so a switch
+  // returns to the section itself. Trade Review by id never changes the account.
+  function selectAccount(accountId: string): void {
+    if (accountId === activeAccountId) return
+    setNavStack([])
+    accounts.select(accountId)
     trading.refresh()
   }
 
@@ -83,7 +98,10 @@ function App(): JSX.Element {
 
   // Trading surfaces need the persisted Trade universe; show its loading/error
   // state instead of a screen when it isn't ready.
-  function whenTradingReady(render: (data: TradingData) => JSX.Element): JSX.Element {
+  function whenTradingReady(render: (data: TradingData) => JSX.Element, scoped = true): JSX.Element {
+    if (scoped && accounts.state.status !== 'ready') {
+      return <DataStatus what="Accounts" state={accounts.state} onRetry={accounts.retry} />
+    }
     const state = trading.state
     if (state.status !== 'ready') return <DataStatus what="Trades" state={state} onRetry={trading.retry} />
     return render(state.data)
@@ -94,18 +112,19 @@ function App(): JSX.Element {
       active={active}
       pageTitle={pageTitle}
       onSelect={selectSection}
+      accounts={{ ...accounts, select: selectAccount }}
       representation={representation}
       onChangeRepresentation={setRepresentation}
     >
       <div style={{ display: overlay ? 'none' : 'block', height: '100%' }}>
         {active === 'Dashboard' &&
           whenTradingReady((data) => (
-            <Dashboard trading={data} onOpenTradeReview={openTradeReview} onOpenDayReview={openDayReview} />
+            <Dashboard key={data.account?.id ?? 'none'} trading={data} onOpenTradeReview={openTradeReview} onOpenDayReview={openDayReview} />
           ))}
         {active === 'Calendar' &&
-          whenTradingReady((data) => <CalendarWorkspace trading={data} onOpenDayReview={openDayReview} />)}
+          whenTradingReady((data) => <CalendarWorkspace key={data.account?.id ?? 'none'} trading={data} onOpenDayReview={openDayReview} />)}
         {active === 'Journal' &&
-          whenTradingReady((data) => <JournalWorkspace trading={data} onOpenTradeReview={openTradeReview} />)}
+          whenTradingReady((data) => <JournalWorkspace key={data.account?.id ?? 'none'} trading={data} onOpenTradeReview={openTradeReview} />)}
         {active === 'Strategies' &&
           (strategiesState.status !== 'ready' ? (
             <StrategiesStatus state={strategiesState} onRetry={strategyData.reload} />
@@ -119,7 +138,7 @@ function App(): JSX.Element {
                 onDismissError={strategyData.dismissActionError}
                 onOpenTradeReview={openTradeReview}
               />
-            ))
+            ), false)
           ))}
         {active !== 'Dashboard' &&
           active !== 'Calendar' &&
