@@ -25,6 +25,8 @@
   --text-secondary: #a6a9b0;
   --text-muted: #6b6e76;
   --text-disabled: #4a4c52;
+  /* Readable supporting prose (helper lines, empty states) — between secondary and muted. */
+  --text-helper: #8b8e96;
 
   /* Semantic state */
   --positive: #3dd68c;
@@ -36,6 +38,18 @@
   --break-even: #8a8d95;
   --accent-cool: #4c8dff;
   --selection: #22303f;
+
+  /*
+    Violet accent (docs/VISUAL_FOUNDATION.md §2.5). Structural emphasis only:
+    section headings, section icons, progress fills, earned-recognition chips.
+    Never an outcome color (P&L polarity stays positive/negative), never a
+    large fill, never a gradient.
+  */
+  --accent-mid: #968bff;
+  --accent-soft: #c3bdff;
+  --accent-muted: #7c76b3;
+  --accent-subtle: #1b1a29;
+  --accent-border: #3a3566;
 
   /* Geometry */
   --sidebar-width: 232px;

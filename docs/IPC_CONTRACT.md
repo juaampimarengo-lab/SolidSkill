@@ -24,7 +24,7 @@ exactly one object, `window.solidSkill`, whose methods each invoke one fixed
 channel. It exposes no generic `send`/`invoke`, no channel names, no
 filesystem, no process, no SQL. The type of the object is
 `SolidSkillApi` in `src/shared/ipc/api.ts` (namespaces `strategies`,
-`trades` and `accounts`), declared globally in `src/preload/index.d.ts`.
+`trades`, `media`, `reviews`, `accounts` and `settings`), declared globally in `src/preload/index.d.ts`.
 
 ## 3. Strategy operations
 
@@ -120,6 +120,25 @@ the user might cancel. Reading an already-saved image is **not** an IPC
 call: the renderer uses `ssmedia://<mediaId>` (a read-only, scoped custom
 protocol; §12 of `TRADE_MEDIA.md`), so image bytes never round-trip through
 IPC on read, only on the two staging writes above.
+
+## 3e. Weekly Review operations (Checkpoint 015)
+
+DTOs and channels: `src/shared/ipc/reviews.ts`; handlers/registration:
+`src/main/ipc/reviewHandlers.ts` + `registerReviewIpc.ts`; logic:
+`src/main/review/reviewService.ts`. Exactly four channels. Full detail in
+`docs/WEEKLY_REVIEW.md`.
+
+| Method | Effect |
+|---|---|
+| `getWeek({accountId, weekStart})` | the week's facts for one account: `TradeSummaryDto`s with an analytical date in the week, every rule evaluation of those Trades with the wording of the exact evaluated version, the 7 days' Day Note / Day-chart indicators, Day media + featured Trade media (`MediaItemDto`, `ssmedia://` URLs), the authored reflection and the scorecard (every dimension present; unrated = `{ score: null, note: '' }`) |
+| `saveWeek({accountId, weekStart, fields})` | partial upsert of the authored fields only; text stored exactly as sent (≤ 20 000 chars each); unknown field names are `INVALID_INPUT` |
+| `saveScorecard({accountId, weekStart, entries})` | partial upsert of scorecard dimensions (migration 005); per dimension only `score` (integer 1–5, or `null` to clear) and/or `note` (≤ 500 chars, stored exactly as sent). Unknown dimensions / entry fields, out-of-range scores and empty payloads are `INVALID_INPUT`. Never touches the reflection |
+| `listWeeks(accountId)` | week starts with Trades and week starts with any authored text or scorecard entry, newest first |
+
+`weekStart` must be a canonical week start (Sunday, `src/shared/week.ts`), else
+`INVALID_INPUT`. No metric crosses this boundary — the renderer derives them
+(`lib/weeklyReview.ts`) — and nothing on this surface writes a Trade, execution,
+evaluation, note or media row, or touches a broker.
 
 ## 4. Error / result shape
 

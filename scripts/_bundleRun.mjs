@@ -13,6 +13,8 @@ export async function bundleAndRun(entry, name, args = []) {
   await build({
     configFile: false,
     logLevel: 'warn',
+    // Suites that exercise the renderer's pure helpers (e.g. weekly-review) resolve its aliases.
+    resolve: { alias: { '@renderer': resolve('src/renderer/src'), '@shared': resolve('src/shared') } },
     build: {
       ssr: resolve(entry),
       outDir,

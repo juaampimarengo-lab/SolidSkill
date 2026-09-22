@@ -6,11 +6,13 @@ import enShell from './locales/en/shell.json'
 import enStrategy from './locales/en/strategy.json'
 import enAccounts from './locales/en/accounts.json'
 import enJournal from './locales/en/journal.json'
+import enReview from './locales/en/review.json'
 import esCommon from './locales/es/common.json'
 import esShell from './locales/es/shell.json'
 import esStrategy from './locales/es/strategy.json'
 import esAccounts from './locales/es/accounts.json'
 import esJournal from './locales/es/journal.json'
+import esReview from './locales/es/review.json'
 
 /**
  * Solid Skill localization foundation (Checkpoint 012C, docs/LOCALIZATION.md).
@@ -26,12 +28,12 @@ import esJournal from './locales/es/journal.json'
  */
 void i18n.use(initReactI18next).init({
   resources: {
-    en: { common: enCommon, shell: enShell, strategy: enStrategy, accounts: enAccounts, journal: enJournal },
-    es: { common: esCommon, shell: esShell, strategy: esStrategy, accounts: esAccounts, journal: esJournal }
+    en: { common: enCommon, shell: enShell, strategy: enStrategy, accounts: enAccounts, journal: enJournal, review: enReview },
+    es: { common: esCommon, shell: esShell, strategy: esStrategy, accounts: esAccounts, journal: esJournal, review: esReview }
   },
   lng: window.solidSkill?.initialLanguage ?? 'en',
   fallbackLng: 'en',
-  ns: ['common', 'shell', 'strategy', 'accounts', 'journal'],
+  ns: ['common', 'shell', 'strategy', 'accounts', 'journal', 'review'],
   defaultNS: 'common',
   interpolation: { escapeValue: false },
   returnEmptyString: false

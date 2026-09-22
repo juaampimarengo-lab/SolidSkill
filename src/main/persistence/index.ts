@@ -17,3 +17,5 @@ export type {
 export type { NewTrade, NewExecution, TradeFilter } from './repositories/trades'
 export type { NewAccount } from './repositories/accounts'
 export type { NewTradeMedia, NewDayMedia } from './repositories/media'
+export type { AccountRangeEvaluation } from './repositories/evaluations'
+export { WEEKLY_REVIEW_FIELDS } from './repositories/weeklyReviews'

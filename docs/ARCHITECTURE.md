@@ -224,6 +224,28 @@ knowledge. Images are read back by the renderer through a dedicated
 exist in the database), never through a generic filesystem API or IPC
 channel. See `docs/TRADE_MEDIA.md`.
 
+### Weekly Review / Review Engine (Checkpoint 015)
+
+```
+Renderer  WeeklyReviewWorkspace → lib/weeklyReview.ts (pure derivation, shared
+          classification with Calendar / Day Review) + useAutosave
+ ↓ reviews IPC (src/main/ipc/reviewHandlers.ts, registerReviewIpc.ts)
+ReviewService (src/main/review/reviewService.ts)   — no Electron imports
+ ↓
+TradeReadRepository · EvaluationRepository · MediaRepository
+WeeklyReviewRepository · WeeklyScorecardRepository
+ ↓
+SQLite (weekly_reviews, migration 004 · weekly_scorecard_entries, migration 005)
+```
+
+The first concrete slice of the Review Engine (§6). It reads the Trading
+Domain and the Strategy Engine's persisted evaluations (each through the exact
+evaluated Strategy Version) and owns exactly two writes, both authored by the
+trader and keyed by `(account_id, week_start_date)`: the weekly reflection and
+the self-assessment scorecard. Every metric is
+recomputed from facts, never stored. It makes no causal claims and contains no
+Behavior Analytics. See `docs/WEEKLY_REVIEW.md`.
+
 ## Cross-cutting rules
 
 - **Replaceability**: any single layer above should be replaceable (a new

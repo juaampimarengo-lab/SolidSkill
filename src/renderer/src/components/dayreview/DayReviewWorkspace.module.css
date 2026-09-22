@@ -251,3 +251,45 @@
   color: var(--text-muted);
   font-size: var(--text-body-sm-size);
 }
+
+/* ------------------------------------------------------- day note editor */
+
+.noteEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.noteHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.noteHead .noteTitle {
+  margin-bottom: 0;
+}
+
+.noteTextarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 120px;
+  padding: 8px 10px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-lh);
+}
+
+.noteTextarea::placeholder {
+  color: var(--text-disabled);
+}
+
+.noteTextarea:focus {
+  outline: none;
+  border-color: var(--border-strong);
+}

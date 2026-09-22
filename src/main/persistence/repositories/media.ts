@@ -152,6 +152,26 @@ export class MediaRepository {
       .map(toMedia)
   }
 
+  /**
+   * Chart Evidence of one account for an analytical-date range: every Day row
+   * dated in range, plus the featured row of each Trade dated in range. Read
+   * only — the rows (and their files) are reused, never copied.
+   */
+  listForAccountRange(accountId: string, fromDate: string, toDate: string): TradeMedia[] {
+    return this.sql
+      .all(
+        `SELECT m.* FROM trade_media m
+         LEFT JOIN trades t ON t.id = m.trade_id
+         WHERE m.account_id = ?
+           AND ((m.owner_type = 'DAY' AND m.analytical_date >= ? AND m.analytical_date <= ?)
+             OR (m.owner_type = 'TRADE' AND m.is_featured = 1
+                 AND t.analytical_trade_date >= ? AND t.analytical_trade_date <= ?))
+         ORDER BY COALESCE(m.analytical_date, t.analytical_trade_date), m.created_at, m.id`,
+        [accountId, fromDate, toDate, fromDate, toDate]
+      )
+      .map(toMedia)
+  }
+
   /** Deletes the metadata row and returns it (so the caller can remove the managed file), or null if it never existed. */
   delete(id: string): TradeMedia | null {
     const media = this.getById(id)

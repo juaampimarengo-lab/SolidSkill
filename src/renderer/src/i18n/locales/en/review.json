@@ -1,0 +1,218 @@
+{
+  "title": "Weekly Review",
+  "week": {
+    "range": "{{start}} – {{end}}",
+    "previous": "Previous week",
+    "next": "Next week",
+    "thisWeek": "This week",
+    "jumpTo": "Jump to week",
+    "hasTrades": "Trades",
+    "hasReview": "Review written",
+    "convention": "Weeks run Sunday → Saturday by analytical trade date."
+  },
+  "section": {
+    "outcome": "Outcome",
+    "process": "Process",
+    "forecastActual": "Forecast vs Actual",
+    "daily": "Daily breakdown",
+    "rules": "Rule review",
+    "trades": "Trades",
+    "charts": "Chart Evidence",
+    "reflection": "Reflection & next week",
+    "progress": "Progress",
+    "achievements": "Achievements",
+    "scorecard": "Weekly scorecard"
+  },
+  "outcome": {
+    "hint": "Results only. A profitable week is not evidence of good process, and a losing week is not evidence of bad process.",
+    "avgWinner": "Avg winner",
+    "avgLoser": "Avg loser",
+    "daysTraded": "Days traded",
+    "winningDays": "Winning days",
+    "losingDays": "Losing days",
+    "flatDays": "Flat days",
+    "costs": "Costs",
+    "largestGain": "Largest gain",
+    "largestLoss": "Largest loss",
+    "rCoverage": "{{rLabel}} reported on {{count}} of {{total}}",
+    "rMissing": "No {{rLabel}} reported",
+    "avgR": "avg {{value}}",
+    "profitFactorUndefined": "Undefined: no losing Trades this week",
+    "none": "None"
+  },
+  "process": {
+    "hint": "Measured from your Rule evaluations only. P&L is never an input.",
+    "formula": "Compliance = {{pass}} / ({{pass}} + {{fail}}). {{na}} and {{unreviewed}} are excluded; review completeness is shown separately.",
+    "compliance": "Compliance",
+    "reviewCompleteness": "Review completeness",
+    "ruleChecks": "{{reviewed}} of {{total}} rule checks judged",
+    "reviewed": "Reviewed",
+    "unreviewed": "Review incomplete",
+    "noStrategy": "No Strategy",
+    "fullyCompliant": "Fully compliant",
+    "withFail": "With a {{fail}}",
+    "highestCompliance": "Highest compliance",
+    "lowestCompliance": "Lowest compliance",
+    "versions": "Strategy Versions",
+    "emptyNoStrategy": "None of this week's Trades is associated with a Strategy, so nothing has been evaluated. Process metrics appear once Trades are assigned to a Strategy Version.",
+    "emptyUnreviewed": "Rules have not been judged yet for this week's Trades. Compliance stays undefined until at least one rule is marked {{pass}} or {{fail}}.",
+    "excludedNoStrategy_one": "{{count}} Trade without a Strategy is not part of the process metrics.",
+    "excludedNoStrategy_other": "{{count}} Trades without a Strategy are not part of the process metrics."
+  },
+  "progress": {
+    "hint": "How much of the week has been judged and documented. Process only — P&L is never an input.",
+    "compliance": "Process Compliance",
+    "complianceCounts": "{{passCount}} {{pass}} · {{failCount}} {{fail}}",
+    "complianceFormula": "{{pass}} / ({{pass}} + {{fail}}). {{na}} and {{unreviewed}} are excluded.",
+    "complianceEmpty": "No rule judged {{pass}} or {{fail}} yet",
+    "complianceNoStrategy": "No Strategy Trades this week",
+    "review": "Review Completion",
+    "reviewCounts": "{{reviewed}} of {{total}} Trades reviewed",
+    "reviewIncomplete_one": "{{count}} still {{unreviewed}}",
+    "reviewIncomplete_other": "{{count}} still {{unreviewed}}",
+    "reviewNoStrategy_one": "{{count}} without a Strategy",
+    "reviewNoStrategy_other": "{{count}} without a Strategy",
+    "reviewEmpty": "No Trades this week",
+    "reviewFormula": "Trades with every rule judged, out of all Trades of the week. A Trade without a Strategy cannot be reviewed."
+  },
+  "achievements": {
+    "hint": "Recognition for process and review habits — never for P&L.",
+    "earnedCount": "{{earned}} of {{total}}",
+    "earned": "Earned",
+    "notYet": "Not yet",
+    "reviewComplete": {
+      "label": "Review complete",
+      "criteria": "All scorecard dimensions rated, and What went well, What needs improvement and Next week focus written."
+    },
+    "tradesReviewed": {
+      "label": "All Trades reviewed",
+      "criteria": "Every Trade this week has all of its rules judged."
+    },
+    "noRuleFails": {
+      "label": "No {{fail}} recorded",
+      "criteria": "Rules were judged this week and none was recorded as {{fail}}."
+    },
+    "cleanProcess": {
+      "label": "Clean process week",
+      "criteria": "Every Trade has a Strategy and a complete review, with no {{fail}} and at least one {{pass}}."
+    },
+    "forecastCompleted": {
+      "label": "Forecast completed",
+      "criteria": "Both Forecast / Intention and Actual are written."
+    },
+    "consistentReviewer": {
+      "label": "Consistent reviewer",
+      "criteria": "A review written for {{count}} consecutive weeks, including this one."
+    }
+  },
+  "forecast": {
+    "forecast": "Forecast / Intention",
+    "forecastHint": "What you expected or intended before the week. Written by you — Solid Skill never generates forecasts.",
+    "forecastPlaceholder": "Conditions you expect, what you intend to focus on, what you will avoid…",
+    "actual": "Actual",
+    "actualHint": "What actually happened, in your words.",
+    "actualPlaceholder": "How the week actually unfolded compared with the forecast…",
+    "lastEdited": "Forecast last edited {{date}}",
+    "editedDuringWeek": "edited on or after the week started"
+  },
+  "daily": {
+    "weekday": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "noTrades": "No Trades",
+    "dayNote": "Day Note",
+    "dayCharts": "Day charts",
+    "noStrategy": "No Strategy",
+    "open": "Open Day Review for {{date}}"
+  },
+  "rules": {
+    "hint": "Factual counts from your evaluations, each read against the exact Strategy Version the Trade was evaluated with.",
+    "disclaimer": "Outcomes of the Trades where a rule was failed are shown for context only. They do not show that the rule caused the result.",
+    "violations": "Rules failed this week",
+    "noViolations": "No rule was recorded as {{fail}} this week.",
+    "noEvaluations": "No Rule evaluations for this week.",
+    "failedOn_one": "{{fail}} on {{count}} Trade",
+    "failedOn_other": "{{fail}} on {{count}} Trades",
+    "failedOutcomes": "Those Trades: {{positive}} positive · {{negative}} negative · {{flat}} flat",
+    "versionTrades_one": "{{count}} Trade evaluated against this version",
+    "versionTrades_other": "{{count}} Trades evaluated against this version",
+    "rule": "Rule",
+    "group": "Group"
+  },
+  "trades": {
+    "hint": "Click a row to inspect. Double-click or Enter opens the full Trade Review.",
+    "empty": "No Trades recorded for this account this week."
+  },
+  "charts": {
+    "hint": "Day charts and each Trade's featured chart. Shown from the existing files — nothing is copied.",
+    "empty": "No Chart Evidence attached to this week's days or Trades.",
+    "dayOwner": "Day",
+    "tradeOwner": "Trade"
+  },
+  "reflection": {
+    "wentWell": "What went well",
+    "wentWellPlaceholder": "Process you executed well, regardless of outcome…",
+    "needsImprovement": "What needs improvement",
+    "needsImprovementPlaceholder": "Where your process slipped…",
+    "repeatNextWeek": "Repeat next week",
+    "repeatNextWeekPlaceholder": "Behaviours worth keeping…",
+    "avoidNextWeek": "Avoid next week",
+    "avoidNextWeekPlaceholder": "Behaviours to stop…",
+    "nextWeekFocus": "Next week focus",
+    "nextWeekFocusPlaceholder": "One or two concrete process goals…",
+    "notes": "Notes",
+    "notesPlaceholder": "Anything else about this week…"
+  },
+  "scorecard": {
+    "hint": "Your own assessment of how you conducted yourself this week, from 1 (poor) to 5 (excellent). Independent of P&L.",
+    "rated": "{{count}} of {{total}} rated",
+    "scoreAria": "{{dimension}}: {{score}} of 5",
+    "clearHint": "Select the current score again to clear it.",
+    "notePlaceholder": "Short note (optional)",
+    "dimension": {
+      "discipline": {
+        "label": "Discipline",
+        "hint": "Followed your plan and your own rules."
+      },
+      "patience": {
+        "label": "Patience",
+        "hint": "Waited for your conditions instead of forcing Trades."
+      },
+      "risk_management": {
+        "label": "Risk management",
+        "hint": "Sized and protected positions as planned."
+      },
+      "execution_quality": {
+        "label": "Execution quality",
+        "hint": "Entries, management and exits carried out as intended."
+      },
+      "focus": {
+        "label": "Focus",
+        "hint": "Attention stayed on the session and the plan."
+      },
+      "review_quality": {
+        "label": "Review quality",
+        "hint": "Trades, days and the week documented honestly."
+      }
+    }
+  },
+  "save": {
+    "idle": "Saved automatically as you type",
+    "pending": "Unsaved changes",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "error": "Couldn't save — your text is kept here.",
+    "retry": "Retry"
+  },
+  "dayNote": {
+    "placeholder": "Plan / expectation\nWhat happened\nWhat went well\nWhat could improve",
+    "hint": "Your daily reflection for this account and date."
+  },
+  "noAccount": "Select an account to review a week."
+}

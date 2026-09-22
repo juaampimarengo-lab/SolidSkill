@@ -29,11 +29,13 @@ import enShell from '../../../renderer/src/i18n/locales/en/shell.json'
 import enStrategy from '../../../renderer/src/i18n/locales/en/strategy.json'
 import enAccounts from '../../../renderer/src/i18n/locales/en/accounts.json'
 import enJournal from '../../../renderer/src/i18n/locales/en/journal.json'
+import enReview from '../../../renderer/src/i18n/locales/en/review.json'
 import esCommon from '../../../renderer/src/i18n/locales/es/common.json'
 import esShell from '../../../renderer/src/i18n/locales/es/shell.json'
 import esStrategy from '../../../renderer/src/i18n/locales/es/strategy.json'
 import esAccounts from '../../../renderer/src/i18n/locales/es/accounts.json'
 import esJournal from '../../../renderer/src/i18n/locales/es/journal.json'
+import esReview from '../../../renderer/src/i18n/locales/es/review.json'
 
 const outFile = process.env['SMOKE_OUT']
 if (outFile !== undefined) writeFileSync(outFile, '')
@@ -169,7 +171,8 @@ const namespaces: Array<[string, Tree, Tree]> = [
   ['shell', enShell, esShell],
   ['strategy', enStrategy, esStrategy],
   ['accounts', enAccounts, esAccounts],
-  ['journal', enJournal, esJournal]
+  ['journal', enJournal, esJournal],
+  ['review', enReview, esReview]
 ]
 
 for (const [ns, en, es] of namespaces) {
@@ -238,8 +241,8 @@ check('i18next: a missing Spanish key falls back to English, never blank, never 
 check('i18next: canonical trading terminology is passed through unchanged (never routed through t())', () => {
   // Win Rate / P&L / LONG / SHORT / PASS / FAIL / N/A / UNREVIEWED never appear as
   // translation keys — they are literal strings in the components, by design.
-  const flatEn = JSON.stringify([enCommon, enShell, enStrategy, enAccounts])
-  for (const literal of ['Win Rate', 'LONG', 'SHORT', 'UNREVIEWED']) {
+  const flatEn = JSON.stringify([enCommon, enShell, enStrategy, enAccounts, enReview, esReview])
+  for (const literal of ['Win Rate', 'LONG', 'SHORT', 'UNREVIEWED', 'PASS', 'FAIL', 'Profit Factor']) {
     equal(flatEn.includes(literal), false, `"${literal}" must never be a translation resource value`)
   }
 })

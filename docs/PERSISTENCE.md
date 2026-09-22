@@ -141,6 +141,8 @@ state (no fixture fallback). There is no recovery UI yet.
 | `strategyVersions` | Draft lifecycle (create/discard/publish), Groups and Rules (draft only), version definitions |
 | `evaluations` | list a trade's evaluations with frozen rule wording; set a rule's state |
 | `notes` | Trade note and Day note upserts/reads |
+| `media` | Chart Evidence metadata (Checkpoint 014) |
+| `weeklyReviews` | authored Weekly Review reflection, partial upsert by (account, week start) (Checkpoint 015) |
 
 These are small explicit classes over hand-written SQL, not an ORM. SQL does
 not appear outside `src/main/persistence`. Records use Decimal strings for
@@ -264,9 +266,8 @@ shows the strategy's current name with the historical version's rules.)
 
 - `updateTradeNote` / `updateDayNote`: plain text, ≤ 20 000 characters,
   upserted. A Day Note belongs to (account, analytical date) and is the same row
-  shown in Day Review and Trade Review. There is **no editing UI yet** (the
-  approved screens are read-only); the operations exist and are covered by
-  tests and QA.
+  shown in Day Review and Trade Review. Since Checkpoint 015 the Day Note is
+  editable (autosaved) in Day Review; Trade Notes still have no editing UI.
 - `updateRuleEvaluation`: sets PASS / FAIL / N/A / UNREVIEWED for one rule.
   Enforced three ways: the service checks the rule is in the trade's version;
   `EvaluationRepository.setState` requires `evaluation.strategy_version_id =
@@ -366,6 +367,25 @@ relative path. See `docs/TRADE_MEDIA.md` for the full storage architecture,
 migration detail, capture implementation, and security model.
 `smoke:trade-media` covers this layer the same way `smoke:persistence`
 covers the rest.
+
+## Weekly Review (Checkpoint 015)
+
+Migration 004 adds `weekly_reviews` (`DATABASE_SCHEMA.md` §20): the trader's
+authored weekly reflection keyed by `(account_id, week_start_date)`, text stored
+exactly as typed, partial upserts through `WeeklyReviewRepository.save` (one
+transaction). Nothing derived is persisted; `ReviewService`
+(`src/main/review/`) recomputes the week from Trades and evaluations on every
+read and never writes a Trade, execution, evaluation, note or media row.
+Migrations 001–003 are unchanged. `smoke:weekly-review` covers the layer and the
+upgrade of an existing 001–003 database. See `docs/WEEKLY_REVIEW.md`.
+
+Migration 005 adds `weekly_scorecard_entries` (`DATABASE_SCHEMA.md` §21): the
+self-assessment scorecard, one row per `(account_id, week_start_date,
+dimension)`, partial upserts through `WeeklyScorecardRepository.save` (one
+transaction; score and note written independently). Migration 004 is unchanged
+(it had already been applied to development databases, so the scorecard is a
+new migration rather than an edit). `smoke:weekly-review` covers the upgrade of
+an existing 001–004 database with reflection text intact.
 
 ## 11. Backup / export (later)
 

@@ -12,6 +12,8 @@ import { StrategyRepository } from './repositories/strategies'
 import { StrategyVersionRepository } from './repositories/strategyVersions'
 import { TradeReadRepository } from './repositories/tradeReadModel'
 import { TradeRepository } from './repositories/trades'
+import { WeeklyReviewRepository } from './repositories/weeklyReviews'
+import { WeeklyScorecardRepository } from './repositories/weeklyScorecards'
 import { Sql, int } from './sql'
 
 export interface Repositories {
@@ -23,6 +25,8 @@ export interface Repositories {
   evaluations: EvaluationRepository
   notes: NoteRepository
   media: MediaRepository
+  weeklyReviews: WeeklyReviewRepository
+  weeklyScorecards: WeeklyScorecardRepository
 }
 
 export interface DatabaseHealth {
@@ -89,7 +93,9 @@ export class Database {
         strategyVersions: new StrategyVersionRepository(sql, now),
         evaluations: new EvaluationRepository(sql, now),
         notes: new NoteRepository(sql, now),
-        media: new MediaRepository(sql, now)
+        media: new MediaRepository(sql, now),
+        weeklyReviews: new WeeklyReviewRepository(sql, now),
+        weeklyScorecards: new WeeklyScorecardRepository(sql, now)
       }
       return new Database(connection, sql, repositories, {
         path,

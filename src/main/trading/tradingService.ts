@@ -27,7 +27,7 @@ const STATE_FROM_DB: Record<EvaluationState, RuleStateDto> = {
   UNREVIEWED: 'Unreviewed'
 }
 
-function toSummaryDto(record: TradeSummaryRecord): TradeSummaryDto {
+export function toSummaryDto(record: TradeSummaryRecord): TradeSummaryDto {
   const { trade } = record
   return {
     id: trade.id,

@@ -134,6 +134,16 @@ export class TradeReadRepository {
     return this.listSummaries({ tradeId })[0] ?? null
   }
 
+  /** Distinct analytical dates on which this account has Trades, ascending. */
+  listTradeDates(accountId: string): string[] {
+    return this.sql
+      .all(
+        'SELECT DISTINCT analytical_trade_date AS d FROM trades WHERE account_id = ? ORDER BY analytical_trade_date',
+        [accountId]
+      )
+      .map((row) => str(row['d']))
+  }
+
   /** (account, date) pairs whose Day Note is non-empty. */
   listDaysWithNotes(filter: { accountId?: string } = {}): { accountId: string; tradeDate: string }[] {
     const where = filter.accountId === undefined ? '' : 'AND account_id = ?'

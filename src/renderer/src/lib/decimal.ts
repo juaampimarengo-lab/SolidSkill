@@ -59,3 +59,18 @@ export function decimalLessThan(a: Decimal, b: Decimal): boolean {
 export function toNumber(value: Decimal): number {
   return Number(value)
 }
+
+/**
+ * Exact-scale division by a positive integer count (e.g. an average), rounded
+ * half away from zero at the storage scale (8 dp). Presentation-side derived
+ * value; never written back.
+ */
+export function divideDecimal(value: Decimal, count: number): Decimal {
+  if (!Number.isInteger(count) || count <= 0) throw new RangeError(`Invalid divisor: ${count}`)
+  const scaled = toScaled(value)
+  const n = BigInt(count)
+  const negative = scaled < 0n
+  const magnitude = negative ? -scaled : scaled
+  const quotient = (magnitude * 2n + n) / (2n * n)
+  return fromScaled(negative ? -quotient : quotient)
+}

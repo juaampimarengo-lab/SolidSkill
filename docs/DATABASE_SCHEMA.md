@@ -177,8 +177,9 @@ plain-text note per trade (upsert). No rich text.
 ## 11. Day Notes
 
 `day_notes(account_id, trade_date, body, created_at, updated_at)`, primary
-key `(account_id, trade_date)`. Keyed by account and **analytical** date. No
-Weekly Review tables.
+key `(account_id, trade_date)`. Keyed by account and **analytical** date. Since Checkpoint 015 the note is
+editable in Day Review (still one plain-text note; `WEEKLY_REVIEW.md` §10).
+Weekly reflections live in `weekly_reviews` (§20), not here.
 
 ## 12. Stable IDs
 
@@ -272,7 +273,7 @@ is the default `NO ACTION` (**restrict**): **nothing cascades**. Consequences
 
 Expected additions, each as a new numbered migration (never by editing 001):
 Strategy presentation identity, rule conditions/dependencies, asset class
-and planned risk on trades, tags, Analytics/Weekly Review tables, and any
+and planned risk on trades, tags, Analytics tables (Weekly Review shipped as migration 004, §20), and any
 change to executions' immutability needed by reconciliation (which must be a
 deliberate migration with its own justification, not a silent relaxation).
 Renaming/retyping a column follows SQLite's create-copy-swap pattern inside
@@ -297,3 +298,44 @@ chart), so a changed caption is still a delete + re-add, not an in-place
 edit. Image bytes are never a column here; see `docs/TRADE_MEDIA.md` §12b
 for the featured-chart invariant and §3 for the file layout and the
 read/delete path safety guarantees.
+
+## 20. Weekly Reviews (migration 004, Checkpoint 015)
+
+`weekly_reviews`: the trader's **authored** weekly reflection, one row per
+`(account_id, week_start_date)` (primary key; `account_id` → `accounts`).
+Text columns, all `NOT NULL DEFAULT ''`: `forecast`, `actual`, `went_well`,
+`needs_improvement`, `repeat_next_week`, `avoid_next_week`,
+`next_week_focus`, `notes`; plus `forecast_updated_at` (nullable — when the
+forecast text last changed), `created_at`, `updated_at`. `week_start_date` is
+GLOB-checked as a date; the canonical week start (Sunday,
+`src/shared/week.ts`) is enforced by the Review service. Trigger
+`weekly_reviews_identity_fixed` rejects any change to `account_id`,
+`week_start_date` or `created_at`.
+
+**No derived metric is stored** (P&L, Win Rate, counts, compliance, Rule FAILs
+are recomputed from `trades` / `trade_rule_evaluations`), and the table has no
+foreign key to any Trade, version or evaluation — a review can neither alter
+nor freeze a copy of historical facts. Text is stored exactly as written. See
+`docs/WEEKLY_REVIEW.md`.
+
+## 21. Weekly Scorecard (migration 005, Checkpoint 015)
+
+`weekly_scorecard_entries`: the trader's own 1–5 self-assessment of a week,
+one row per `(account_id, week_start_date, dimension)` (primary key;
+`account_id` → `accounts`). Columns: `score` (nullable INTEGER, CHECK
+1–5; NULL = not rated), `note` (`NOT NULL DEFAULT ''`, a short comment,
+stored exactly as typed), `created_at`, `updated_at`. `dimension` is a
+stable lowercase key (CHECK: `[a-z_]`, 1–40 chars); the accepted set
+(`discipline`, `patience`, `risk_management`, `execution_quality`,
+`focus`, `review_quality`) is owned by the Review service
+(`src/shared/ipc/reviews.ts`), so adding a dimension later is new rows, not a
+schema change. These are generic self-assessment dimensions, not
+trading-methodology concepts. Trigger `weekly_scorecard_identity_fixed`
+rejects any change to `account_id`, `week_start_date`, `dimension` or
+`created_at`.
+
+A separate table from `weekly_reviews` on purpose: a scorecard write can
+never overwrite reflection text and vice versa. Like §20 it stores only what
+the trader entered — no derived metric, no foreign key to any Trade, version or
+evaluation. Weekly Review progress bars and achievements are **derived, never
+stored**.

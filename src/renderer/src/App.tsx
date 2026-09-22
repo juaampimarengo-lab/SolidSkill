@@ -9,6 +9,7 @@ import { TradeReviewWorkspace } from '@renderer/components/tradereview/TradeRevi
 import { StrategiesWorkspace } from '@renderer/components/strategies/StrategiesWorkspace'
 import { Placeholder } from '@renderer/components/shell/Placeholder'
 import { SettingsWorkspace } from '@renderer/components/settings/SettingsWorkspace'
+import { WeeklyReviewWorkspace } from '@renderer/components/weeklyreview/WeeklyReviewWorkspace'
 import type { NavEntry } from '@renderer/types/navigation'
 import { StrategiesStatus } from '@renderer/components/strategies/StrategiesStatus'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
@@ -37,7 +38,7 @@ function App(): JSX.Element {
   // fixtures.
   //
   // The active account (chosen in the Topbar, docs/ACTIVE_ACCOUNT.md) scopes
-  // Dashboard, Calendar, Journal and Day Review. Strategies stay global.
+  // Dashboard, Calendar, Journal, Weekly Review and Day Review. Strategies stay global.
   const accounts = useAccounts()
   const language = useLanguage()
   const activeAccountId = accounts.state.status === 'ready' ? accounts.state.data.activeAccountId : null
@@ -51,6 +52,9 @@ function App(): JSX.Element {
   // unmounted) so state like Journal's filters survives Back navigation.
   const [navStack, setNavStack] = useState<NavEntry[]>([])
   const overlay = navStack[navStack.length - 1] ?? null
+  // Bumped whenever an overlay closes, so a section that stays mounted underneath
+  // (Weekly Review) can silently re-read what may have been edited in Day/Trade Review.
+  const [overlayRevision, setOverlayRevision] = useState(0)
 
   // The sidebar highlight always stays on the originating section (`active`),
   // but the topbar title should reflect whatever contextual overlay is on
@@ -97,6 +101,9 @@ function App(): JSX.Element {
 
   function goBack(): void {
     setNavStack((stack) => stack.slice(0, -1))
+    setOverlayRevision((n) => n + 1)
+    // Day Notes / rule states may have changed in the overlay (e.g. Calendar note markers).
+    trading.refresh()
   }
 
   // Trading surfaces need the persisted Trade universe; show its loading/error
@@ -143,11 +150,22 @@ function App(): JSX.Element {
               />
             ), false)
           ))}
+        {active === 'Weekly Review' &&
+          whenTradingReady((data) => (
+            <WeeklyReviewWorkspace
+              key={data.account?.id ?? 'none'}
+              account={data.account}
+              revision={overlayRevision}
+              onOpenDayReview={openDayReview}
+              onOpenTradeReview={openTradeReview}
+            />
+          ))}
         {active === 'Settings' && <SettingsWorkspace language={language} />}
         {active !== 'Dashboard' &&
           active !== 'Calendar' &&
           active !== 'Journal' &&
           active !== 'Strategies' &&
+          active !== 'Weekly Review' &&
           active !== 'Settings' && <Placeholder />}
       </div>
 

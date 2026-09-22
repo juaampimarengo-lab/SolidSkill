@@ -9,6 +9,7 @@ import { DataStatus } from '@renderer/components/shared/DataStatus'
 import { DayCharts } from '@renderer/components/journal/DayCharts'
 import type { DayDto } from '@shared/ipc/trades'
 import { IntradayPnlChart } from './IntradayPnlChart'
+import { DayNoteEditor } from './DayNoteEditor'
 import styles from './DayReviewWorkspace.module.css'
 
 interface DayReviewWorkspaceProps {
@@ -142,8 +143,7 @@ function DayReview({
           </div>
 
           <div className={styles.notesRegion}>
-            <div className={styles.noteTitle}>Day Notes</div>
-            <p className={styles.noteText}>{day.dayNote || 'No day notes recorded.'}</p>
+            <DayNoteEditor key={`${day.accountId}:${day.date}`} accountId={day.accountId} date={day.date} initialBody={day.dayNote} />
           </div>
 
           <div className={styles.notesRegion}>

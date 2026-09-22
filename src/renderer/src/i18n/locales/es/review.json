@@ -1,0 +1,218 @@
+{
+  "title": "Revisión semanal",
+  "week": {
+    "range": "{{start}} – {{end}}",
+    "previous": "Semana anterior",
+    "next": "Semana siguiente",
+    "thisWeek": "Esta semana",
+    "jumpTo": "Ir a la semana",
+    "hasTrades": "Trades",
+    "hasReview": "Revisión escrita",
+    "convention": "Las semanas van de domingo → sábado según la fecha analítica del Trade."
+  },
+  "section": {
+    "outcome": "Resultado",
+    "process": "Proceso",
+    "forecastActual": "Pronóstico vs Real",
+    "daily": "Desglose diario",
+    "rules": "Revisión de reglas",
+    "trades": "Trades",
+    "charts": "Evidencia de gráficos",
+    "reflection": "Reflexión y próxima semana",
+    "progress": "Progreso",
+    "achievements": "Logros",
+    "scorecard": "Evaluación semanal"
+  },
+  "outcome": {
+    "hint": "Solo resultados. Una semana rentable no prueba un buen proceso, y una semana con pérdidas no prueba un mal proceso.",
+    "avgWinner": "Ganador prom.",
+    "avgLoser": "Perdedor prom.",
+    "daysTraded": "Días operados",
+    "winningDays": "Días ganadores",
+    "losingDays": "Días perdedores",
+    "flatDays": "Días neutros",
+    "costs": "Costos",
+    "largestGain": "Mayor ganancia",
+    "largestLoss": "Mayor pérdida",
+    "rCoverage": "{{rLabel}} informado en {{count}} de {{total}}",
+    "rMissing": "Sin {{rLabel}} informado",
+    "avgR": "prom. {{value}}",
+    "profitFactorUndefined": "Indefinido: no hubo Trades perdedores esta semana",
+    "none": "Ninguno"
+  },
+  "process": {
+    "hint": "Se mide solo a partir de tus evaluaciones de reglas. El P&L nunca es un dato de entrada.",
+    "formula": "Cumplimiento = {{pass}} / ({{pass}} + {{fail}}). {{na}} y {{unreviewed}} quedan excluidos; la completitud de la revisión se muestra aparte.",
+    "compliance": "Cumplimiento",
+    "reviewCompleteness": "Completitud de la revisión",
+    "ruleChecks": "{{reviewed}} de {{total}} verificaciones de reglas juzgadas",
+    "reviewed": "Revisados",
+    "unreviewed": "Revisión incompleta",
+    "noStrategy": "Sin Strategy",
+    "fullyCompliant": "Cumplimiento total",
+    "withFail": "Con algún {{fail}}",
+    "highestCompliance": "Mayor cumplimiento",
+    "lowestCompliance": "Menor cumplimiento",
+    "versions": "Versiones de Strategy",
+    "emptyNoStrategy": "Ningún Trade de esta semana está asociado a una Strategy, así que no hay nada evaluado. Las métricas de proceso aparecen cuando los Trades se asignan a una versión de Strategy.",
+    "emptyUnreviewed": "Todavía no se juzgaron las reglas de los Trades de esta semana. El cumplimiento queda indefinido hasta que al menos una regla se marque {{pass}} o {{fail}}.",
+    "excludedNoStrategy_one": "{{count}} Trade sin Strategy no forma parte de las métricas de proceso.",
+    "excludedNoStrategy_other": "{{count}} Trades sin Strategy no forman parte de las métricas de proceso."
+  },
+  "progress": {
+    "hint": "Cuánto de la semana fue juzgado y documentado. Solo proceso: el P&L nunca es un insumo.",
+    "compliance": "Cumplimiento del proceso",
+    "complianceCounts": "{{passCount}} {{pass}} · {{failCount}} {{fail}}",
+    "complianceFormula": "{{pass}} / ({{pass}} + {{fail}}). {{na}} y {{unreviewed}} se excluyen.",
+    "complianceEmpty": "Todavía no hay reglas juzgadas {{pass}} o {{fail}}",
+    "complianceNoStrategy": "No hay Trades con Strategy esta semana",
+    "review": "Revisión completada",
+    "reviewCounts": "{{reviewed}} de {{total}} Trades revisados",
+    "reviewIncomplete_one": "{{count}} aún {{unreviewed}}",
+    "reviewIncomplete_other": "{{count}} aún {{unreviewed}}",
+    "reviewNoStrategy_one": "{{count}} sin Strategy",
+    "reviewNoStrategy_other": "{{count}} sin Strategy",
+    "reviewEmpty": "No hay Trades esta semana",
+    "reviewFormula": "Trades con todas sus reglas juzgadas, sobre todos los Trades de la semana. Un Trade sin Strategy no puede revisarse."
+  },
+  "achievements": {
+    "hint": "Reconocimiento al proceso y al hábito de revisión, nunca al P&L.",
+    "earnedCount": "{{earned}} de {{total}}",
+    "earned": "Obtenido",
+    "notYet": "Aún no",
+    "reviewComplete": {
+      "label": "Revisión completa",
+      "criteria": "Todas las dimensiones de la evaluación calificadas, y escritos Qué salió bien, Qué hay que mejorar y Foco de la próxima semana."
+    },
+    "tradesReviewed": {
+      "label": "Todos los Trades revisados",
+      "criteria": "Cada Trade de esta semana tiene todas sus reglas juzgadas."
+    },
+    "noRuleFails": {
+      "label": "Ningún {{fail}} registrado",
+      "criteria": "Se juzgaron reglas esta semana y ninguna se registró como {{fail}}."
+    },
+    "cleanProcess": {
+      "label": "Semana de proceso limpio",
+      "criteria": "Cada Trade tiene Strategy y revisión completa, sin {{fail}} y con al menos un {{pass}}."
+    },
+    "forecastCompleted": {
+      "label": "Pronóstico completo",
+      "criteria": "Pronóstico / Intención y Real están escritos."
+    },
+    "consistentReviewer": {
+      "label": "Revisión constante",
+      "criteria": "Una revisión escrita durante {{count}} semanas consecutivas, incluida esta."
+    }
+  },
+  "forecast": {
+    "forecast": "Pronóstico / Intención",
+    "forecastHint": "Lo que esperabas o te proponías antes de la semana. Lo escribís vos — Solid Skill nunca genera pronósticos.",
+    "forecastPlaceholder": "Condiciones que esperás, en qué te vas a enfocar, qué vas a evitar…",
+    "actual": "Real",
+    "actualHint": "Lo que realmente pasó, en tus palabras.",
+    "actualPlaceholder": "Cómo se desarrolló la semana en comparación con el pronóstico…",
+    "lastEdited": "Pronóstico editado por última vez el {{date}}",
+    "editedDuringWeek": "editado durante o después del inicio de la semana"
+  },
+  "daily": {
+    "weekday": {
+      "0": "Dom",
+      "1": "Lun",
+      "2": "Mar",
+      "3": "Mié",
+      "4": "Jue",
+      "5": "Vie",
+      "6": "Sáb"
+    },
+    "noTrades": "Sin Trades",
+    "dayNote": "Nota del día",
+    "dayCharts": "Gráficos del día",
+    "noStrategy": "Sin Strategy",
+    "open": "Abrir la revisión del día {{date}}"
+  },
+  "rules": {
+    "hint": "Conteos factuales de tus evaluaciones, cada uno leído contra la versión exacta de la Strategy con la que se evaluó el Trade.",
+    "disclaimer": "Los resultados de los Trades en los que se falló una regla se muestran solo como contexto. No demuestran que la regla haya causado el resultado.",
+    "violations": "Reglas falladas esta semana",
+    "noViolations": "Ninguna regla se registró como {{fail}} esta semana.",
+    "noEvaluations": "No hay evaluaciones de reglas para esta semana.",
+    "failedOn_one": "{{fail}} en {{count}} Trade",
+    "failedOn_other": "{{fail}} en {{count}} Trades",
+    "failedOutcomes": "Esos Trades: {{positive}} positivos · {{negative}} negativos · {{flat}} neutros",
+    "versionTrades_one": "{{count}} Trade evaluado con esta versión",
+    "versionTrades_other": "{{count}} Trades evaluados con esta versión",
+    "rule": "Regla",
+    "group": "Grupo"
+  },
+  "trades": {
+    "hint": "Hacé clic en una fila para inspeccionarla. Doble clic o Enter abre la revisión completa del Trade.",
+    "empty": "No hay Trades registrados para esta cuenta esta semana."
+  },
+  "charts": {
+    "hint": "Gráficos del día y el gráfico destacado de cada Trade. Se muestran desde los archivos existentes — no se copia nada.",
+    "empty": "No hay evidencia de gráficos adjunta a los días ni a los Trades de esta semana.",
+    "dayOwner": "Día",
+    "tradeOwner": "Trade"
+  },
+  "reflection": {
+    "wentWell": "Qué salió bien",
+    "wentWellPlaceholder": "Proceso que ejecutaste bien, más allá del resultado…",
+    "needsImprovement": "Qué hay que mejorar",
+    "needsImprovementPlaceholder": "Dónde se desvió tu proceso…",
+    "repeatNextWeek": "Repetir la próxima semana",
+    "repeatNextWeekPlaceholder": "Conductas que vale la pena mantener…",
+    "avoidNextWeek": "Evitar la próxima semana",
+    "avoidNextWeekPlaceholder": "Conductas a dejar de lado…",
+    "nextWeekFocus": "Foco de la próxima semana",
+    "nextWeekFocusPlaceholder": "Uno o dos objetivos concretos de proceso…",
+    "notes": "Notas",
+    "notesPlaceholder": "Cualquier otra cosa sobre esta semana…"
+  },
+  "scorecard": {
+    "hint": "Tu propia evaluación de cómo te condujiste esta semana, de 1 (bajo) a 5 (excelente). Independiente del P&L.",
+    "rated": "{{count}} de {{total}} calificadas",
+    "scoreAria": "{{dimension}}: {{score}} de 5",
+    "clearHint": "Selecciona de nuevo la puntuación actual para borrarla.",
+    "notePlaceholder": "Nota breve (opcional)",
+    "dimension": {
+      "discipline": {
+        "label": "Disciplina",
+        "hint": "Seguiste tu plan y tus propias reglas."
+      },
+      "patience": {
+        "label": "Paciencia",
+        "hint": "Esperaste tus condiciones en lugar de forzar Trades."
+      },
+      "risk_management": {
+        "label": "Gestión del riesgo",
+        "hint": "Dimensionaste y protegiste las posiciones según lo planeado."
+      },
+      "execution_quality": {
+        "label": "Calidad de ejecución",
+        "hint": "Entradas, gestión y salidas ejecutadas como se pretendía."
+      },
+      "focus": {
+        "label": "Enfoque",
+        "hint": "La atención se mantuvo en la sesión y en el plan."
+      },
+      "review_quality": {
+        "label": "Calidad de revisión",
+        "hint": "Trades, días y la semana documentados con honestidad."
+      }
+    }
+  },
+  "save": {
+    "idle": "Se guarda automáticamente mientras escribís",
+    "pending": "Cambios sin guardar",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "error": "No se pudo guardar — tu texto se conserva acá.",
+    "retry": "Reintentar"
+  },
+  "dayNote": {
+    "placeholder": "Plan / expectativa\nQué pasó\nQué salió bien\nQué se puede mejorar",
+    "hint": "Tu reflexión diaria para esta cuenta y fecha."
+  },
+  "noAccount": "Seleccioná una cuenta para revisar una semana."
+}

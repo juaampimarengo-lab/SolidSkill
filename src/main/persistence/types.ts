@@ -187,3 +187,46 @@ export interface TradeMedia {
   isFeatured: boolean
   createdAt: number
 }
+
+/** The authored Weekly Review fields (migration 004). '' = not written. */
+export interface WeeklyReviewFields {
+  forecast: string
+  actual: string
+  wentWell: string
+  needsImprovement: string
+  repeatNextWeek: string
+  avoidNextWeek: string
+  nextWeekFocus: string
+  notes: string
+}
+
+/**
+ * One self-assessed scorecard dimension of one account's week (migration 005).
+ * `dimension` is a stable key whose accepted set is owned by the Review
+ * service; score null = not rated. Contains no derived metrics.
+ */
+export interface WeeklyScorecardEntry {
+  accountId: string
+  weekStartDate: string
+  dimension: string
+  score: number | null
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
+/** A partial change to one dimension: only the parts present are written. */
+export interface WeeklyScorecardPatch {
+  score?: number | null
+  note?: string
+}
+
+/** One account's authored reflection for one week. Contains no derived metrics. */
+export interface WeeklyReview extends WeeklyReviewFields {
+  accountId: string
+  weekStartDate: string
+  /** When the forecast text last changed; null if it was never written. */
+  forecastUpdatedAt: number | null
+  createdAt: number
+  updatedAt: number
+}

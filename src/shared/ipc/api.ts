@@ -2,6 +2,7 @@ import type { StrategiesApi } from './strategies'
 import type { AccountsApi } from './accounts'
 import type { TradesApi } from './trades'
 import type { MediaApi } from './media'
+import type { ReviewsApi } from './reviews'
 import type { SettingsApi, Language } from './settings'
 
 /** Renderer-visible root object: `window.solidSkill`. Nothing else is exposed. */
@@ -9,6 +10,7 @@ export interface SolidSkillApi {
   strategies: StrategiesApi
   trades: TradesApi
   media: MediaApi
+  reviews: ReviewsApi
   accounts: AccountsApi
   settings: SettingsApi
   /** The language resolved at window creation, read once via a synchronous

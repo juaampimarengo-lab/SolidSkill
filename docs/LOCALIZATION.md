@@ -90,6 +90,11 @@ loaded by namespace:
 - `strategy` — Strategy Builder guidance (the checkpoint's highest-priority
   surface)
 - `accounts` — Active Account narrative states (loading/unavailable/empty)
+- `journal` — Chart Evidence copy (Checkpoint 014)
+- `review` — Weekly Review and the Day Note editor (Checkpoint 015). Canonical
+  terms (Trade, Strategy, P&L, Win Rate, Profit Factor, Long/Short, R, PASS /
+  FAIL / N/A / UNREVIEWED) are injected by interpolation, never stored as
+  resource values (`smoke:i18n` asserts this for the `review` namespace)
 
 Only what's actually used exists today; `journal`, `calendar`, and `review`
 namespaces are not created until a checkpoint actually translates copy in
@@ -191,10 +196,11 @@ never localized.
 ## Known V1 limitations
 
 - Only Strategy Builder guidance, the Settings screen, generic shell
-  states (loading/error/empty), and Active Account narrative states are
-  translated. Journal, Calendar, Dashboard, Analytics, Weekly Review,
-  Accounts, Integrations remain English-only until a later checkpoint
-  translates them.
+  states (loading/error/empty), Active Account narrative states, Chart
+  Evidence and Weekly Review (Checkpoint 015) are translated. Journal,
+  Calendar, Dashboard, Analytics, Accounts, Integrations — and the sidebar
+  section labels / Topbar page titles — remain English-only until a later
+  checkpoint translates them.
 - Strategy Builder table headers/columns (Versions tab, Trades tab) and the
   `publishBlocker` advisory messages from `shared/strategyRules.ts` are not
   yet routed through i18next — lower priority than the guidance prose this

@@ -19,6 +19,8 @@ import { registerAccountIpc } from './ipc/registerAccountIpc'
 import { registerSettingsIpc } from './ipc/registerSettingsIpc'
 import { registerStrategyIpc } from './ipc/registerStrategyIpc'
 import { registerTradeIpc } from './ipc/registerTradeIpc'
+import { registerReviewIpc } from './ipc/registerReviewIpc'
+import { ReviewService } from './review/reviewService'
 import { notifyTradingDataChanged } from './ipc/tradingEvents'
 import { seedDevelopmentStrategies } from './strategies/devSeed'
 import { StrategyService } from './strategies/strategyService'
@@ -40,6 +42,8 @@ let database: Database | null = null
 let strategyService: StrategyService | null = null
 let tradingService: TradingService | null = null
 let accountService: AccountService | null = null
+// Weekly Review (Checkpoint 015): authored reflection + read-only week facts.
+let reviewService: ReviewService | null = null
 // Chart Evidence (Checkpoint 014). mediaStorage owns the userData/media/ file
 // tree and outlives a single persistence open (it is not itself a database
 // resource), so it is created once at startup like settingsService.
@@ -65,6 +69,7 @@ function initializePersistence(): void {
     database = Database.open(path)
     strategyService = new StrategyService(database)
     tradingService = new TradingService(database)
+    reviewService = new ReviewService(database)
     accountService = new AccountService(database, new FileActiveAccountStore(join(app.getPath('userData'), 'preferences.json')))
     mediaStorage = new MediaStorage(join(app.getPath('userData'), 'media'))
     mediaService = new MediaService(database, mediaStorage)
@@ -96,6 +101,7 @@ function initializePersistence(): void {
     database = null
     strategyService = null
     tradingService = null
+    reviewService = null
     accountService = null
     mediaStorage = null
     mediaService = null
@@ -114,6 +120,7 @@ function closePersistence(): void {
   database = null
   strategyService = null
   tradingService = null
+  reviewService = null
   accountService = null
   mediaStorage = null
   mediaService = null
@@ -165,6 +172,10 @@ app.whenReady().then(() => {
   })
   registerTradeIpc({
     getService: () => tradingService,
+    log: (message, error) => console.error(`[ipc] ${message}`, error)
+  })
+  registerReviewIpc({
+    getService: () => reviewService,
     log: (message, error) => console.error(`[ipc] ${message}`, error)
   })
   registerAccountIpc({

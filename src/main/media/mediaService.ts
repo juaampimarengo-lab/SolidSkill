@@ -20,7 +20,7 @@ interface StagedImage {
   timer: NodeJS.Timeout
 }
 
-function toDto(media: TradeMedia): MediaItemDto {
+export function toMediaItemDto(media: TradeMedia): MediaItemDto {
   return {
     id: media.id,
     ownerType: media.ownerType,
@@ -64,11 +64,11 @@ export class MediaService {
   ) {}
 
   listForTrade(tradeId: string): MediaItemDto[] {
-    return this.db.repositories.media.listForTrade(tradeId).map(toDto)
+    return this.db.repositories.media.listForTrade(tradeId).map(toMediaItemDto)
   }
 
   listForDay(accountId: string, date: string): MediaItemDto[] {
-    return this.db.repositories.media.listForDay(accountId, date).map(toDto)
+    return this.db.repositories.media.listForDay(accountId, date).map(toMediaItemDto)
   }
 
   /** Validates arbitrary bytes (a picked file or a captured canvas frame) and stages them for a following Save. */
@@ -102,7 +102,7 @@ export class MediaService {
           caption: caption(request.caption),
           isFeatured
         })
-        return toDto(media)
+        return toMediaItemDto(media)
       } catch (error) {
         this.storage.deleteIfManaged(managedPath)
         throw error
@@ -127,7 +127,7 @@ export class MediaService {
           stage: request.stage,
           caption: caption(request.caption)
         })
-        return toDto(media)
+        return toMediaItemDto(media)
       } catch (error) {
         this.storage.deleteIfManaged(managedPath)
         throw error

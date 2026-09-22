@@ -8,6 +8,7 @@ import { STRATEGY_CHANNELS } from '../shared/ipc/strategies'
 import { ACCOUNT_CHANNELS } from '../shared/ipc/accounts'
 import { TRADE_CHANNELS, TRADE_DATA_CHANGED_CHANNEL, type TradingDataChangedDto } from '../shared/ipc/trades'
 import { MEDIA_CHANNELS } from '../shared/ipc/media'
+import { REVIEW_CHANNELS } from '../shared/ipc/reviews'
 import { SETTINGS_CHANNELS, SETTINGS_LANGUAGE_SYNC_CHANNEL, isLanguage, type Language } from '../shared/ipc/settings'
 
 const C = STRATEGY_CHANNELS
@@ -15,6 +16,7 @@ const T = TRADE_CHANNELS
 const M = MEDIA_CHANNELS
 const A = ACCOUNT_CHANNELS
 const S = SETTINGS_CHANNELS
+const R = REVIEW_CHANNELS
 
 // Read once, synchronously, before any renderer script runs, so i18next can
 // be initialized with the correct language on the very first paint — no
@@ -59,6 +61,12 @@ const api: SolidSkillApi = {
     addDayMedia: (request) => ipcRenderer.invoke(M.addDayMedia, request),
     delete: (mediaId) => ipcRenderer.invoke(M.delete, mediaId),
     setFeaturedTradeMedia: (request) => ipcRenderer.invoke(M.setFeaturedTradeMedia, request)
+  },
+  reviews: {
+    getWeek: (request) => ipcRenderer.invoke(R.getWeek, request),
+    saveWeek: (request) => ipcRenderer.invoke(R.saveWeek, request),
+    saveScorecard: (request) => ipcRenderer.invoke(R.saveScorecard, request),
+    listWeeks: (accountId) => ipcRenderer.invoke(R.listWeeks, accountId)
   },
   accounts: {
     list: () => ipcRenderer.invoke(A.list),

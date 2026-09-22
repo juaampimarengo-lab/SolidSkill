@@ -134,6 +134,7 @@ blue-gray," which is one of the most common tells of a generic AI dashboard.
 | `text-secondary` | `#A6A9B0` | Secondary copy, inactive nav labels, descriptions |
 | `text-muted` | `#6B6E76` | Captions, placeholders, disabled text, timestamps |
 | `text-disabled` | `#4A4C52` | Disabled controls |
+| `text-helper` | `#8B8E96` | Readable supporting prose — helper lines under section headings, empty states, explanatory process text. Sits between secondary and muted so helper copy is legible without competing with data (Checkpoint 015). |
 
 ### 2.3 Semantic state tokens
 
@@ -157,6 +158,24 @@ never become a blue SaaS theme: no blue surfaces, no blue buttons-as-brand,
 no blue used just because a control needs *a* color. When in doubt, prefer
 a neutral token; reach for `accent-cool` only for the specific state
 categories listed above.
+
+### 2.3a Violet accent tokens (Checkpoint 015, approved)
+
+| Token | Value (hex) | Use |
+|---|---|---|
+| `accent-mid` | `#968BFF` | Section-heading icons, primary progress fill, earned-chip icon, the selected score's border |
+| `accent-soft` | `#C3BDFF` | Section-heading text, the selected score's numeral |
+| `accent-muted` | `#7C76B3` | Secondary progress fill, scores below the selected one |
+| `accent-subtle` | `#1B1A29` | Low-emphasis tint behind an earned chip / the chosen score range — small areas only |
+| `accent-border` | `#3A3566` | Border of an earned chip, notice left-rule, score range |
+
+The violet accent marks **structure and process emphasis**: where a section
+starts, how far a review has progressed, what has been earned or chosen. It is
+applied flat — never as a gradient, never as a large background fill, never as
+a surface color. It never colors a P&L value or any outcome polarity (those
+stay `positive` / `negative` / `break-even`), and it does not replace
+`accent-cool` for focus / selection / active-navigation state. First used in
+Weekly Review; other screens adopt it only deliberately.
 
 ### 2.4 Rules
 

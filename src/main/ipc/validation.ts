@@ -10,6 +10,19 @@ import type {
   MediaTimeframeDto,
   SetFeaturedTradeMediaRequest
 } from '../../shared/ipc/media'
+import {
+  SCORECARD_MAX_SCORE,
+  SCORECARD_MIN_SCORE,
+  SCORECARD_NOTE_MAX_LENGTH,
+  WEEKLY_REFLECTION_FIELDS,
+  WEEKLY_SCORECARD_DIMENSIONS
+} from '../../shared/ipc/reviews'
+import type {
+  WeeklyReflectionField,
+  WeeklyReflectionFieldsDto,
+  WeeklyScorecardDimension,
+  WeeklyScorecardEntryPatch
+} from '../../shared/ipc/reviews'
 import { ServiceError } from '../serviceError'
 
 /**
@@ -264,4 +277,80 @@ export function mediaIdInput(payload: unknown): string {
 export function setFeaturedTradeMediaInput(payload: unknown): SetFeaturedTradeMediaRequest {
   const p = record(payload, 'Request')
   return { tradeId: id(p['tradeId'], 'Trade id'), mediaId: id(p['mediaId'], 'Media id') }
+}
+
+// ---- Weekly Review payloads -------------------------------------------------
+
+export function weekInput(payload: unknown): { accountId: string; weekStart: string } {
+  const p = record(payload, 'Request')
+  return { accountId: id(p['accountId'], 'Account id'), weekStart: isoDate(p['weekStart'], 'Week start') }
+}
+
+/**
+ * Authored reflection text is kept EXACTLY as typed (no trim), bounded like
+ * notes. Only the known prompt fields are accepted; anything else is refused
+ * rather than ignored, so a renderer bug can never write an unexpected column.
+ */
+export function saveWeekInput(payload: unknown): {
+  accountId: string
+  weekStart: string
+  fields: Partial<WeeklyReflectionFieldsDto>
+} {
+  const p = record(payload, 'Request')
+  const raw = record(p['fields'], 'Fields')
+  const fields: Partial<WeeklyReflectionFieldsDto> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (!(WEEKLY_REFLECTION_FIELDS as readonly string[]).includes(key)) invalid(`Unknown review field: ${key}`)
+    fields[key as WeeklyReflectionField] = noteBody(value)
+  }
+  if (Object.keys(fields).length === 0) invalid('Nothing to save')
+  return { ...weekInput(p), fields }
+}
+
+/**
+ * Scorecard entries: only the known dimensions; per dimension only `score`
+ * (integer 1–5, or null to clear) and `note` (short text, kept exactly as
+ * typed). Unknown keys are refused rather than ignored.
+ */
+export function saveScorecardInput(payload: unknown): {
+  accountId: string
+  weekStart: string
+  entries: Partial<Record<WeeklyScorecardDimension, WeeklyScorecardEntryPatch>>
+} {
+  const p = record(payload, 'Request')
+  const raw = record(p['entries'], 'Entries')
+  const entries: Partial<Record<WeeklyScorecardDimension, WeeklyScorecardEntryPatch>> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (!(WEEKLY_SCORECARD_DIMENSIONS as readonly string[]).includes(key)) invalid(`Unknown scorecard dimension: ${key}`)
+    const entry = record(value, 'Scorecard entry')
+    const patch: WeeklyScorecardEntryPatch = {}
+    for (const [part, partValue] of Object.entries(entry)) {
+      if (part === 'score') {
+        if (
+          partValue !== null &&
+          (typeof partValue !== 'number' ||
+            !Number.isInteger(partValue) ||
+            partValue < SCORECARD_MIN_SCORE ||
+            partValue > SCORECARD_MAX_SCORE)
+        ) {
+          invalid(`Score must be a whole number from ${SCORECARD_MIN_SCORE} to ${SCORECARD_MAX_SCORE}`)
+        }
+        patch.score = partValue as number | null
+      } else if (part === 'note') {
+        if (typeof partValue !== 'string') invalid('Scorecard note must be text')
+        if (partValue.length > SCORECARD_NOTE_MAX_LENGTH) invalid('Scorecard note is too long')
+        patch.note = partValue
+      } else {
+        invalid(`Unknown scorecard entry field: ${part}`)
+      }
+    }
+    if (Object.keys(patch).length === 0) invalid('Nothing to save')
+    entries[key as WeeklyScorecardDimension] = patch
+  }
+  if (Object.keys(entries).length === 0) invalid('Nothing to save')
+  return { ...weekInput(p), entries }
+}
+
+export function accountIdInput(payload: unknown): string {
+  return id(payload, 'Account id')
 }

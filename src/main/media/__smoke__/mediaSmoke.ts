@@ -111,7 +111,7 @@ check('previous migrations remain intact alongside 003', () => {
   try {
     equal(
       db.listAppliedMigrations().map((m) => m.name),
-      ['initial_core', 'trade_source_identity', 'trade_media']
+      ['initial_core', 'trade_source_identity', 'trade_media', 'weekly_reviews', 'weekly_scorecard']
     )
   } finally {
     db.close()
