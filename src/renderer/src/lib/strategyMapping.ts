@@ -23,6 +23,7 @@ export function strategyFromDto(dto: StrategyDto): Strategy {
     name: dto.name,
     description: dto.description,
     status: dto.status,
+    position: dto.position,
     versions: dto.versions.map((v) =>
       deepFreeze({
         id: v.id,

@@ -24,6 +24,8 @@ export interface StrategyActions {
   discardDraft: (id: string) => Promise<boolean>
   editDraft: (id: string, edit: DraftEdit) => Promise<boolean>
   publishDraft: (id: string) => Promise<boolean>
+  /** Moves a strategy within its own section. List order only — never a Draft or Version. */
+  move: (id: string, toIndex: number) => Promise<boolean>
 }
 
 export interface UseStrategies {
@@ -144,7 +146,12 @@ export function useStrategies(): UseStrategies {
     beginDraft: (id) => withApi((a) => a.beginDraft(id), replace),
     discardDraft: (id) => withApi((a) => a.discardDraft(id), replace),
     editDraft: (strategyId, edit) => withApi((a) => a.editDraft({ strategyId, edit }), replace),
-    publishDraft: (id) => withApi((a) => a.publishDraft(id), replace)
+    publishDraft: (id) => withApi((a) => a.publishDraft(id), replace),
+    move: (strategyId, toIndex) =>
+      withApi(
+        (a) => a.move({ strategyId, toIndex }),
+        (dtos) => setState({ status: 'ready', strategies: dtos.map(strategyFromDto) })
+      )
   }
 
   return { state, actions, actionError, dismissActionError: () => setActionError(null), reload: load }

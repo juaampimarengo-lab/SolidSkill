@@ -51,6 +51,11 @@ export interface StrategyDto {
   name: string
   description: string
   status: StrategyStatusDto
+  /**
+   * Manual list order within its status section (0 = top). Presentation
+   * metadata only: never versioned, never part of a Draft.
+   */
+  position: number
   versions: StrategyVersionDto[]
   draft: StrategyDraftDto | null
 }
@@ -84,6 +89,13 @@ export interface StrategiesApi {
   editDraft(input: { strategyId: string; edit: DraftEdit }): Promise<IpcResult<StrategyDto>>
   /** Validates and publishes the Draft as the next sequential version, transactionally. */
   publishDraft(strategyId: string): Promise<IpcResult<StrategyDto>>
+  /**
+   * Moves a strategy to `toIndex` within its own section (Active or Archived).
+   * List presentation only: never creates a Draft or Version, never touches
+   * rules or trades, never changes Active/Archived. Returns every strategy in
+   * the new order.
+   */
+  move(input: { strategyId: string; toIndex: number }): Promise<IpcResult<StrategyDto[]>>
 }
 
 /** Channel names. Main registers exactly these; preload invokes exactly these. */
@@ -97,7 +109,8 @@ export const STRATEGY_CHANNELS = {
   beginDraft: 'strategies:beginDraft',
   discardDraft: 'strategies:discardDraft',
   editDraft: 'strategies:editDraft',
-  publishDraft: 'strategies:publishDraft'
+  publishDraft: 'strategies:publishDraft',
+  move: 'strategies:move'
 } as const
 
 export type StrategyChannel = (typeof STRATEGY_CHANNELS)[keyof typeof STRATEGY_CHANNELS]

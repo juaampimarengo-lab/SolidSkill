@@ -52,6 +52,9 @@ export interface Strategy {
   name: string
   description: string
   status: StrategyStatus
+  // Manual order within its status section (0 = top). List presentation only:
+  // never versioned, never part of a Draft.
+  position: number
   versions: readonly StrategyVersion[]
   draft: StrategyDraft | null
 }

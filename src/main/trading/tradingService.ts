@@ -180,6 +180,42 @@ export class TradingService {
     })
   }
 
+  /**
+   * One-time V1 assignment (docs/STRATEGY_ASSIGNMENT.md). Attaches the EXACT
+   * published Strategy Version `strategyVersionId` to a Trade that has none,
+   * and creates one UNREVIEWED evaluation per rule of that version — both in
+   * one transaction (TradeRepository.associateStrategyVersion), so a Trade is
+   * never left assigned without its evaluations or vice versa.
+   *
+   * Never resolves "the current version" of anything: the caller names the
+   * version, and a Strategy id, a Draft, or an unknown id is refused. A Trade
+   * that already has a version is refused (no reassignment in V1; a schema
+   * trigger enforces the same). Only trades.strategy_version_id (+ its
+   * updated_at) and new evaluation rows are written; no Trade fact changes.
+   * The version may belong to an archived Strategy: archiving hides a
+   * Strategy from default pickers but never invalidates its published versions.
+   */
+  assignStrategyVersion(tradeId: string, strategyVersionId: string): TradeDetailDto {
+    this.db.transaction(() => {
+      const { trades, strategyVersions } = this.db.repositories
+      const trade = trades.getById(tradeId)
+      if (trade === null) throw new ServiceError('NOT_FOUND', 'Trade not found.')
+      if (trade.strategyVersionId !== null) {
+        throw new ServiceError(
+          'CONFLICT',
+          'This trade is already associated with a strategy version. Reassignment is not supported.'
+        )
+      }
+      const version = strategyVersions.getVersion(strategyVersionId)
+      if (version === null) throw new ServiceError('NOT_FOUND', 'Strategy version not found.')
+      if (version.state !== 'PUBLISHED') {
+        throw new ServiceError('RULE_VIOLATION', 'Only a published strategy version can be assigned to a trade.')
+      }
+      trades.associateStrategyVersion(trade.id, version.id)
+    })
+    return this.getDetail(tradeId)
+  }
+
   // ---- internals ---------------------------------------------------------
 
   /** The saved version and the trade's rule results, grouped as the version defined them. */

@@ -320,7 +320,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
+  gap: 10px;
+  min-height: 32px;
+  padding: 4px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -329,8 +331,40 @@
 }
 
 .ruleName {
+  min-width: 0;
   font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-lh);
   color: var(--text-primary);
+}
+
+/* Restrained entry point for the one-time Strategy assignment. */
+.assignButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--button-height-sm);
+  padding: 0 10px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+
+.assignButton:hover {
+  background: var(--selection);
+}
+
+.saveError {
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  background: var(--negative-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+  color: var(--negative);
 }
 
 .ruleState {

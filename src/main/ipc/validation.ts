@@ -92,6 +92,15 @@ export function updateDetailsInput(payload: unknown): { strategyId: string; name
   }
 }
 
+export function moveStrategyInput(payload: unknown): { strategyId: string; toIndex: number } {
+  const p = record(payload, 'Request')
+  const toIndex = p['toIndex']
+  if (typeof toIndex !== 'number' || !Number.isInteger(toIndex) || toIndex < 0 || toIndex > 10_000) {
+    invalid('Target position is invalid')
+  }
+  return { strategyId: id(p['strategyId'], 'Strategy id'), toIndex }
+}
+
 export function editDraftInput(payload: unknown): { strategyId: string; edit: DraftEdit } {
   const p = record(payload, 'Request')
   const e = record(p['edit'], 'Edit')
@@ -201,6 +210,11 @@ export function tradeNoteInput(payload: unknown): { tradeId: string; body: strin
 export function dayNoteInput(payload: unknown): { accountId: string; date: string; body: string } {
   const p = record(payload, 'Request')
   return { accountId: id(p['accountId'], 'Account id'), date: isoDate(p['date'], 'Date'), body: noteBody(p['body']) }
+}
+
+export function assignStrategyVersionInput(payload: unknown): { tradeId: string; strategyVersionId: string } {
+  const p = record(payload, 'Request')
+  return { tradeId: id(p['tradeId'], 'Trade id'), strategyVersionId: id(p['strategyVersionId'], 'Strategy version id') }
 }
 
 export function ruleEvaluationInput(payload: unknown): { tradeId: string; ruleId: string; state: RuleStateDto } {

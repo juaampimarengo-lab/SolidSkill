@@ -1,5 +1,5 @@
-import { useState, type JSX } from 'react'
-import { Plus } from 'lucide-react'
+import { useEffect, useRef, useState, type JSX } from 'react'
+import { GripVertical, MoreHorizontal, Plus } from 'lucide-react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { Strategy } from '@renderer/types/strategy'
 import type { TradeSummary } from '@renderer/types/journal'
@@ -43,8 +43,10 @@ export function StrategiesWorkspace({
   const { t } = useTranslation('strategy')
   const { t: tCommon } = useTranslation('common')
   const selected = strategies.find((s) => s.id === selectedId) ?? strategies[0] ?? null
-  const active = strategies.filter((s) => s.status === 'Active')
-  const archived = strategies.filter((s) => s.status === 'Archived')
+  // Each section in its manual display order (presentation metadata only).
+  const byPosition = (a: Strategy, b: Strategy): number => a.position - b.position
+  const active = strategies.filter((s) => s.status === 'Active').sort(byPosition)
+  const archived = strategies.filter((s) => s.status === 'Archived').sort(byPosition)
 
   return (
     <div className={styles.workspace}>
@@ -72,14 +74,24 @@ export function StrategiesWorkspace({
         )}
 
         <div className={styles.listScroll}>
-          <div className={styles.listSection}>Active · {active.length}</div>
-          {active.map((s) => (
-            <StrategyRow key={s.id} strategy={s} trades={trades} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
-          ))}
-          {archived.length > 0 && <div className={styles.listSection}>Archived · {archived.length}</div>}
-          {archived.map((s) => (
-            <StrategyRow key={s.id} strategy={s} trades={trades} selected={s.id === selected?.id} onSelect={() => setSelectedId(s.id)} />
-          ))}
+          <div className={styles.listSection}>{t('list.activeSection', { count: active.length })}</div>
+          <StrategySection
+            items={active}
+            trades={trades}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
+            onMove={(id, toIndex) => void actions.move(id, toIndex)}
+          />
+          {archived.length > 0 && (
+            <div className={styles.listSection}>{t('list.archivedSection', { count: archived.length })}</div>
+          )}
+          <StrategySection
+            items={archived}
+            trades={trades}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
+            onMove={(id, toIndex) => void actions.move(id, toIndex)}
+          />
         </div>
       </aside>
 
@@ -108,37 +120,245 @@ export function StrategiesWorkspace({
   )
 }
 
+// One lifecycle section (Active or Archived) of the list. Reordering happens
+// only inside a section: dragging never archives or restores, and the order is
+// list presentation metadata — it never creates a Draft or a Version.
+function StrategySection({
+  items,
+  trades,
+  selectedId,
+  onSelect,
+  onMove
+}: {
+  items: Strategy[]
+  trades: readonly TradeSummary[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onMove: (id: string, toIndex: number) => void
+}): JSX.Element {
+  // Drag state is per section, so a row from the other section is never a
+  // valid drop. Refs decide (synchronously, independent of render timing);
+  // state only drives the visuals.
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dropAt, setDropAt] = useState<{ id: string; after: boolean } | null>(null)
+  const dragRef = useRef<string | null>(null)
+  const dropRef = useRef<{ id: string; after: boolean } | null>(null)
+
+  function reset(): void {
+    dragRef.current = null
+    dropRef.current = null
+    setDragId(null)
+    setDropAt(null)
+  }
+
+  function drop(): void {
+    const dragged = dragRef.current
+    const target = dropRef.current
+    if (dragged !== null && target !== null) {
+      const from = items.findIndex((s) => s.id === dragged)
+      const over = items.findIndex((s) => s.id === target.id)
+      if (from >= 0 && over >= 0) {
+        let to = over + (target.after ? 1 : 0)
+        if (from < to) to -= 1
+        if (to !== from) onMove(dragged, to)
+      }
+    }
+    reset()
+  }
+
+  return (
+    <>
+      {items.map((s, index) => (
+        <StrategyRow
+          key={s.id}
+          strategy={s}
+          trades={trades}
+          selected={s.id === selectedId}
+          onSelect={() => onSelect(s.id)}
+          canMoveUp={index > 0}
+          canMoveDown={index < items.length - 1}
+          onMoveUp={() => onMove(s.id, index - 1)}
+          onMoveDown={() => onMove(s.id, index + 1)}
+          dragging={dragId === s.id}
+          dropIndicator={dropAt?.id === s.id && dragId !== s.id ? (dropAt.after ? 'after' : 'before') : null}
+          onDragStart={() => {
+            dragRef.current = s.id
+            setDragId(s.id)
+          }}
+          onDragOver={(after) => {
+            if (dragRef.current === null) return false
+            dropRef.current = { id: s.id, after }
+            setDropAt((current) => (current?.id === s.id && current.after === after ? current : { id: s.id, after }))
+            return true
+          }}
+          onDrop={drop}
+          onDragEnd={reset}
+        />
+      ))}
+    </>
+  )
+}
+
 function StrategyRow({
   strategy,
   trades,
   selected,
-  onSelect
+  onSelect,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+  dragging,
+  dropIndicator,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd
 }: {
   strategy: Strategy
   trades: readonly TradeSummary[]
   selected: boolean
   onSelect: () => void
+  canMoveUp: boolean
+  canMoveDown: boolean
+  onMoveUp: () => void
+  onMoveDown: () => void
+  dragging: boolean
+  dropIndicator: 'before' | 'after' | null
+  onDragStart: () => void
+  /** Returns whether this row accepts the current drag (same section only). */
+  onDragOver: (after: boolean) => boolean
+  onDrop: () => void
+  onDragEnd: () => void
 }): JSX.Element {
+  const { t } = useTranslation('strategy')
   const version = currentVersion(strategy)
   const agg = aggregateStrategyTrades(tradesForStrategy(strategy.id, trades))
+  const wrapClass = [
+    styles.listRowWrap,
+    dragging ? styles.listRowDragging : '',
+    dropIndicator === 'before' ? styles.dropBefore : '',
+    dropIndicator === 'after' ? styles.dropAfter : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <button
-      type="button"
-      className={selected ? `${styles.listRow} ${styles.listRowActive}` : styles.listRow}
-      onClick={onSelect}
+    <div
+      className={wrapClass}
+      draggable
+      data-strategy-id={strategy.id}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', strategy.id)
+        onDragStart()
+      }}
+      onDragOver={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        if (onDragOver(e.clientY > rect.top + rect.height / 2)) {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        onDrop()
+      }}
+      onDragEnd={onDragEnd}
     >
-      <span className={styles.listRowTop}>
-        <span className={strategy.status === 'Archived' ? styles.listNameMuted : styles.listName}>{strategy.name}</span>
-        <span className={`num ${styles.listVersion}`}>{version ? `v${version.number}` : '—'}</span>
+      <span className={styles.dragHandle} aria-hidden="true" title={t('list.dragToReorder')}>
+        <GripVertical size={12} strokeWidth={1.75} />
       </span>
-      <span className={styles.listRowSub}>
-        <span>
-          {agg.tradeCount} {agg.tradeCount === 1 ? 'trade' : 'trades'}
-          {agg.tradeCount > 0 && <> · <CompactCompliance summary={agg.pooled} /></>}
+      <button
+        type="button"
+        className={selected ? `${styles.listRow} ${styles.listRowActive}` : styles.listRow}
+        onClick={onSelect}
+      >
+        <span className={styles.listRowTop}>
+          <span className={strategy.status === 'Archived' ? styles.listNameMuted : styles.listName}>{strategy.name}</span>
+          <span className={`num ${styles.listVersion}`}>{version ? `v${version.number}` : '—'}</span>
         </span>
-        {strategy.draft && <span className={styles.draftTag}>{version ? 'Draft' : 'Draft · unpublished'}</span>}
-      </span>
-    </button>
+        <span className={styles.listRowSub}>
+          <span>
+            {agg.tradeCount} {agg.tradeCount === 1 ? 'trade' : 'trades'}
+            {agg.tradeCount > 0 && <> · <CompactCompliance summary={agg.pooled} /></>}
+          </span>
+          {strategy.draft && <span className={styles.draftTag}>{version ? 'Draft' : 'Draft · unpublished'}</span>}
+        </span>
+      </button>
+      <RowMenu
+        name={strategy.name}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+      />
+    </div>
+  )
+}
+
+// Restrained, keyboard-reachable alternative to drag/drop.
+function RowMenu({
+  name,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown
+}: {
+  name: string
+  canMoveUp: boolean
+  canMoveDown: boolean
+  onMoveUp: () => void
+  onMoveDown: () => void
+}): JSX.Element {
+  const { t } = useTranslation('strategy')
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const pick = (fn: () => void) => (): void => {
+    setOpen(false)
+    fn()
+  }
+
+  return (
+    <div ref={ref} className={open ? `${styles.rowMenu} ${styles.rowMenuOpen}` : styles.rowMenu}>
+      <button
+        type="button"
+        className={styles.rowMenuButton}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('list.rowActions', { name })}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <MoreHorizontal size={13} strokeWidth={1.75} />
+      </button>
+      {open && (
+        <div className={styles.rowMenuList} role="menu">
+          <button type="button" role="menuitem" className={styles.rowMenuItem} disabled={!canMoveUp} onClick={pick(onMoveUp)}>
+            {t('list.moveUp')}
+          </button>
+          <button type="button" role="menuitem" className={styles.rowMenuItem} disabled={!canMoveDown} onClick={pick(onMoveDown)}>
+            {t('list.moveDown')}
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

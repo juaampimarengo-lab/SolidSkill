@@ -89,6 +89,12 @@ not keys, and are not unique. Presentation identity (icon/colour) arrives in
 a later migration. Editing metadata never creates a version
 (`STRATEGY_ENGINE.md`, presentation vs. logic).
 
+`display_position` (migration 006, Checkpoint 015B): manual list order, dense
+`0..n-1` within each `status` section, `UNIQUE (status, display_position)`,
+`CHECK >= 0`. Presentation metadata only — not versioned, never read by
+evaluation. Create → end of Active; archive/restore → end of the target
+section, source section compacted. See §22 and `STRATEGY_ASSIGNMENT.md` §8.
+
 ## 6. Strategy Versions / Draft model
 
 One table, `strategy_versions`, holds both states:
@@ -257,8 +263,10 @@ is the default `NO ACTION` (**restrict**): **nothing cascades**. Consequences
 ## 17. Historical integrity rules
 
 1. A Trade references one exact **published** Strategy Version. It may start
-   unassigned; the first assignment (null → version) is explicit, and once
-   set it is never re-pointed or cleared (trigger + repository).
+   unassigned; the first assignment (null → version) is explicit — since
+   Checkpoint 015B available to the user from Trade Review — and once set it
+   is never re-pointed or cleared (trigger + repository + service). The
+   association and its UNREVIEWED evaluations are written in one transaction.
 2. Evaluations are bound to that version and to rules of that version by
    composite FKs; they can change state but not coordinates.
 3. Published versions and their groups/rules are immutable (repository +
@@ -339,3 +347,24 @@ never overwrite reflection text and vice versa. Like §20 it stores only what
 the trader entered — no derived metric, no foreign key to any Trade, version or
 evaluation. Weekly Review progress bars and achievements are **derived, never
 stored**.
+
+## 22. Strategy list order (migration 006, Checkpoint 015B)
+
+`ALTER TABLE strategies ADD COLUMN display_position INTEGER NOT NULL DEFAULT 0
+CHECK (display_position >= 0)`, backfilled per `status` section in the
+previous effective order (`created_at, id`) as dense `0..n-1`, then
+`CREATE UNIQUE INDEX strategies_display_position ON strategies (status,
+display_position)`. No other table, trigger or row is touched.
+
+It is list **presentation metadata** on the Strategy identity: not versioned,
+never part of a Draft, never read by evaluation, and changing it does not bump
+`updated_at`. `StrategyRepository` keeps each section dense inside one
+transaction on create (end of Active), archive / restore (end of the target
+section; the source section is compacted), never-published delete, and `move`
+(within the section only). Rewrites are two-phase (park above an offset, then
+set) because SQLite checks the unique index row by row. See
+`STRATEGY_ASSIGNMENT.md` §8.
+
+Strategy assignment (Checkpoint 015B) needed **no** schema change: it uses
+migration 001's `trades.strategy_version_id`, the composite evaluation foreign
+keys and the `trades_version_association_fixed` trigger (§17.1).

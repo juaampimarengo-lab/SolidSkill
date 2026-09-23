@@ -89,9 +89,14 @@ export function useTrading(activeAccountId: string | null): UseTrading {
 }
 
 /** Full persisted detail of one Trade (executions, exact strategy version, notes, siblings). */
-export function useTradeDetail(tradeId: string): { state: Loadable<TradeDetailDto>; retry: () => void } {
-  const { state, retry } = useTradesQuery<TradeDetailDto>((api) => api.getDetail(tradeId), `trade:${tradeId}`)
-  return { state, retry }
+export function useTradeDetail(tradeId: string): {
+  state: Loadable<TradeDetailDto>
+  retry: () => void
+  /** Silent re-read after a write (strategy assignment, rule evaluation) — keeps showing current data meanwhile. */
+  refresh: () => void
+} {
+  const { state, retry, refresh } = useTradesQuery<TradeDetailDto>((api) => api.getDetail(tradeId), `trade:${tradeId}`)
+  return { state, retry, refresh }
 }
 
 /** One analytical day of one account. */

@@ -35,6 +35,69 @@
   color: var(--text-secondary);
 }
 
+/* Segmented evaluation control. Unselected segments are neutral; the selected
+   one borrows the tag classes above (.pass / .fail / .na / .unreviewed). */
+.control {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 5px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover), border-color var(--motion-hover);
+}
+
+.segment:hover:not(:disabled):not([aria-checked='true']) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.segment[aria-checked='true'] {
+  border-color: transparent;
+  cursor: default;
+}
+
+/* Compound selectors: .segment is declared after the tag classes, so the
+   selected state must out-rank it to take the tag's colours. */
+.segment.pass {
+  background: var(--positive-subtle);
+  color: var(--positive);
+}
+
+.segment.fail {
+  background: var(--negative-subtle);
+  color: var(--negative);
+}
+
+.segment.na {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.segment.unreviewed[aria-checked='true'] {
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+}
+
+.segment:disabled {
+  cursor: progress;
+}
+
 .readout {
   display: inline-flex;
   align-items: baseline;

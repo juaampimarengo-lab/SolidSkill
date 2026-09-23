@@ -172,6 +172,16 @@ export interface TradesApi {
     state: RuleStateDto
   }): Promise<IpcResult<RuleEvaluationResultDto>>
   /**
+   * One-time V1 assignment of an EXACT published Strategy Version to a Trade
+   * that has none. Atomically sets the association and creates one UNREVIEWED
+   * evaluation per rule of that version. Refused for a Trade that already has
+   * a version (no reassignment in V1), for a Draft, and for any id that is not
+   * a published version id (a Strategy id alone is not enough). Changes no
+   * Trade fact (direction, prices, P&L, costs, executions, notes, media).
+   * Returns the Trade's refreshed detail.
+   */
+  assignStrategyVersion(request: { tradeId: string; strategyVersionId: string }): Promise<IpcResult<TradeDetailDto>>
+  /**
    * Subscribes to `TradingDataChangedDto` pushes (e.g. automatic MT5
    * reconciliation). Returns an unsubscribe function. Not a request/response
    * call, and not one of `TRADE_CHANNELS` (main never `ipcMain.handle`s it).
@@ -185,7 +195,8 @@ export const TRADE_CHANNELS = {
   getDay: 'trades:getDay',
   updateTradeNote: 'trades:updateTradeNote',
   updateDayNote: 'trades:updateDayNote',
-  updateRuleEvaluation: 'trades:updateRuleEvaluation'
+  updateRuleEvaluation: 'trades:updateRuleEvaluation',
+  assignStrategyVersion: 'trades:assignStrategyVersion'
 } as const
 
 /** Push-only channel (main -> renderer). Deliberately not part of `TRADE_CHANNELS`: never `ipcMain.handle`d. */

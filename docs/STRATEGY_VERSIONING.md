@@ -168,6 +168,8 @@ do or how any trade is evaluated:
   reference, `STRATEGY_BUILDER_SPEC.md` §2).
 - Strategy lifecycle state (active/archived — §10; this changes
   visibility/workflow status, not evaluation logic).
+- Strategy list order (Checkpoint 015B, `STRATEGY_ASSIGNMENT.md` §8) — where
+  the Strategy appears in the Strategies list. Never a Draft, never a Version.
 
 These live on the Strategy identity (`STRATEGY_BUILDER_SPEC.md` §4), not on
 any individual Version, which is precisely why they can change freely:
@@ -237,7 +239,12 @@ produces.
 
 - **Archiving a Strategy** — removes it from active workflows (e.g., "pick
   a strategy for this trade" pickers, `STRATEGY_BUILDER_SPEC.md` §13
-  Strategy List) but changes nothing about its historical data. All past
+  Strategy List) but changes nothing about its historical data. Checkpoint
+  015B refinement: the Trade Review assignment picker hides archived
+  Strategies by default but keeps their published versions reachable behind
+  an explicit "Show archived Strategies" toggle, because a late-reviewed
+  Trade may genuinely have followed a since-retired methodology
+  (`STRATEGY_ASSIGNMENT.md` §5). All past
   trades that reference any of its Versions continue to display exactly as
   before. Archiving is reversible (unarchive) and is a presentation-layer
   change (§7), not a logic change.

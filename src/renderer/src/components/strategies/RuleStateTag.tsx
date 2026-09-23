@@ -32,6 +32,55 @@ export function RuleStateTag({ state }: { state: RuleState }): JSX.Element {
   )
 }
 
+// Compact PASS / FAIL / N/A / UNREVIEWED selector for one rule of one Trade.
+// The selected segment uses the same visual language as RuleStateTag (dashed
+// for UNREVIEWED, never a positive/negative hue). State labels are canonical
+// terms and are not translated (docs/LOCALIZATION.md).
+const controlOrder: RuleState[] = ['Pass', 'Fail', 'N/A', 'Unreviewed']
+
+export function RuleStateControl({
+  state,
+  label,
+  unreviewedLabel,
+  disabled = false,
+  onChange
+}: {
+  state: RuleState
+  /** Accessible name of the whole control (e.g. "Evaluation of <rule>"). */
+  label: string
+  /** Accessible name of the reset-to-UNREVIEWED segment. */
+  unreviewedLabel: string
+  disabled?: boolean
+  onChange: (next: RuleState) => void
+}): JSX.Element {
+  return (
+    <span className={styles.control} role="radiogroup" aria-label={label}>
+      {controlOrder.map((s) => {
+        const c = config[s]
+        const selected = s === state
+        return (
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={s === 'Unreviewed' ? unreviewedLabel : c.label}
+            title={s === 'Unreviewed' ? unreviewedLabel : c.title}
+            data-state={s}
+            disabled={disabled}
+            className={selected ? `${styles.segment} ${c.className}` : styles.segment}
+            onClick={() => {
+              if (!selected) onChange(s)
+            }}
+          >
+            {s === 'Unreviewed' ? <Glyph state={s} /> : c.label}
+          </button>
+        )
+      })}
+    </span>
+  )
+}
+
 // Compliance % and review completeness are always shown as two separate
 // facts so a partially-reviewed trade never reads as a complete verdict.
 export function ComplianceReadout({

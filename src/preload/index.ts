@@ -36,7 +36,8 @@ const api: SolidSkillApi = {
     beginDraft: (strategyId) => ipcRenderer.invoke(C.beginDraft, strategyId),
     discardDraft: (strategyId) => ipcRenderer.invoke(C.discardDraft, strategyId),
     editDraft: (input) => ipcRenderer.invoke(C.editDraft, input),
-    publishDraft: (strategyId) => ipcRenderer.invoke(C.publishDraft, strategyId)
+    publishDraft: (strategyId) => ipcRenderer.invoke(C.publishDraft, strategyId),
+    move: (input) => ipcRenderer.invoke(C.move, input)
   },
   trades: {
     list: (request) => ipcRenderer.invoke(T.list, request),
@@ -45,6 +46,7 @@ const api: SolidSkillApi = {
     updateTradeNote: (request) => ipcRenderer.invoke(T.updateTradeNote, request),
     updateDayNote: (request) => ipcRenderer.invoke(T.updateDayNote, request),
     updateRuleEvaluation: (request) => ipcRenderer.invoke(T.updateRuleEvaluation, request),
+    assignStrategyVersion: (request) => ipcRenderer.invoke(T.assignStrategyVersion, request),
     onDataChanged: (listener) => {
       const handler = (_event: IpcRendererEvent, payload: TradingDataChangedDto): void => listener(payload)
       ipcRenderer.on(TRADE_DATA_CHANGED_CHANNEL, handler)

@@ -496,9 +496,10 @@ export function runTradingSmoke(h: SmokeHelpers): void {
     equal(result.error.code, code)
   }
 
-  check('IPC: exactly the six named Trading channels, nothing generic', () => {
+  check('IPC: exactly the seven named Trading channels, nothing generic', () => {
     equal(Object.keys(handlers).sort(), Object.values(TRADE_CHANNELS).sort())
-    equal(Object.keys(handlers).length, 6)
+    equal(Object.keys(handlers).length, 7)
+    equal(Object.keys(handlers).includes('trades:assignStrategyVersion'), true, 'Checkpoint 015B one-time assignment')
   })
   check('IPC: list/getDetail/getDay return plain serializable data (no BigInt)', () => {
     const l = okData<TradeListDto>(call(TRADE_CHANNELS.list))

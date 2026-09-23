@@ -3,7 +3,7 @@ import { STRATEGY_CHANNELS } from '../../shared/ipc/strategies'
 import type { StrategyChannel } from '../../shared/ipc/strategies'
 import { ServiceError } from '../strategies/strategyService'
 import type { StrategyService } from '../strategies/strategyService'
-import { createInput, editDraftInput, strategyId, updateDetailsInput } from './validation'
+import { createInput, editDraftInput, moveStrategyInput, strategyId, updateDetailsInput } from './validation'
 
 export type StrategyHandler = (payload: unknown) => IpcResult<unknown>
 
@@ -58,6 +58,7 @@ export function createStrategyHandlers(deps: HandlerDeps): Record<StrategyChanne
         const input = editDraftInput(p)
         return s.editDraft(input.strategyId, input.edit)
       }),
-    [C.publishDraft]: (p) => run((s) => s.publishDraft(strategyId(p)))
+    [C.publishDraft]: (p) => run((s) => s.publishDraft(strategyId(p))),
+    [C.move]: (p) => run((s) => s.move(moveStrategyInput(p)))
   }
 }

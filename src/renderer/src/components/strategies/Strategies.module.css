@@ -112,6 +112,133 @@
   color: var(--warning);
 }
 
+/* ---------------------------------------------------- list reordering */
+
+/* The row button stays the click target; handle and menu sit on top of it. */
+.listRowWrap {
+  position: relative;
+}
+
+.listRowWrap .listRow {
+  padding-right: 32px;
+}
+
+.dragHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 12px;
+  justify-content: center;
+  color: var(--text-disabled);
+  opacity: 0;
+  cursor: grab;
+  pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+
+.listRowWrap:hover .dragHandle {
+  opacity: 1;
+}
+
+.listRowDragging {
+  opacity: 0.45;
+}
+
+/* Insertion line: where the dragged strategy will land. */
+.dropBefore::before,
+.dropAfter::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 2px;
+  background: var(--accent-cool);
+  pointer-events: none;
+}
+
+.dropBefore::before {
+  top: -1px;
+}
+
+.dropAfter::after {
+  bottom: -1px;
+}
+
+.rowMenu {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  z-index: 3;
+}
+
+.rowMenuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--motion-hover), background var(--motion-hover), color var(--motion-hover);
+}
+
+.listRowWrap:hover .rowMenuButton,
+.rowMenuButton:focus-visible,
+.rowMenuOpen .rowMenuButton {
+  opacity: 1;
+}
+
+.rowMenuButton:hover,
+.rowMenuOpen .rowMenuButton {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+.rowMenuList {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 128px;
+  padding: 4px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-dropdown);
+}
+
+.rowMenuItem {
+  height: 26px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rowMenuItem:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.rowMenuItem:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
 .createForm {
   flex: 0 0 auto;
   display: flex;

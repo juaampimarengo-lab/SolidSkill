@@ -36,6 +36,8 @@ export interface Strategy {
   description: string
   status: LifecycleStatus
   archivedAt: number | null
+  /** Manual list order within its lifecycle section (migration 006). Presentation only; never versioned. */
+  displayPosition: number
   createdAt: number
   updatedAt: number
 }

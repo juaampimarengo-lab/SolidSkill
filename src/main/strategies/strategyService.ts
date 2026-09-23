@@ -92,6 +92,25 @@ export class StrategyService {
     })
   }
 
+  /**
+   * List order is presentation metadata: it is written only to the Strategy
+   * identity row, inside the strategy's own section. No Draft, Version, Rule,
+   * Trade or evaluation is read for meaning or written.
+   */
+  move(input: { strategyId: string; toIndex: number }): StrategyDto[] {
+    return this.db.transaction(() => {
+      const strategy = this.require(input.strategyId)
+      const section = this.db.repositories.strategies
+        .list({ includeArchived: true })
+        .filter((s) => s.status === strategy.status)
+      if (input.toIndex < 0 || input.toIndex >= section.length) {
+        throw new ServiceError('RULE_VIOLATION', 'The strategy cannot move beyond the ends of its list')
+      }
+      this.db.repositories.strategies.move(strategy.id, input.toIndex)
+      return this.list()
+    })
+  }
+
   restore(strategyId: string): StrategyDto {
     return this.db.transaction(() => {
       const strategy = this.require(strategyId)
@@ -293,6 +312,7 @@ export class StrategyService {
       name: fresh.name,
       description: fresh.description,
       status: fresh.status === 'ARCHIVED' ? 'Archived' : 'Active',
+      position: fresh.displayPosition,
       versions,
       draft
     }

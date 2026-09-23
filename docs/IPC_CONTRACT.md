@@ -42,6 +42,7 @@ aggregate so the renderer reconciles with what was actually persisted.
 | `discardDraft(id)` | removes only the Draft; requires a published version to return to |
 | `editDraft({strategyId, edit})` | one intent-level edit: `addGroup`, `renameGroup`, `deleteGroup`, `moveGroup`, `addRule`, `updateRule`, `deleteRule`, `moveRule` |
 | `publishDraft(id)` | validates, then makes the next sequential immutable version, in one transaction |
+| `move({strategyId, toIndex})` | (015B) list order only: moves the strategy within its own section (Active / Archived) and returns every strategy. Never creates a Draft/Version, never touches rules/trades, never archives/restores. Out-of-range index → `RULE_VIOLATION`. See `STRATEGY_ASSIGNMENT.md` §8 |
 
 Rules enforced in main regardless of what the UI does: archived strategies are
 read-only; group/rule ids are honoured only if they belong to *this*
@@ -54,7 +55,7 @@ versions stay immutable at the repository *and* schema level.
 
 DTOs and channel names: `src/shared/ipc/trades.ts`. Handlers and validation:
 `src/main/ipc/tradeHandlers.ts` + `validation.ts`; logic:
-`src/main/trading/tradingService.ts`. Exactly six channels; nothing generic.
+`src/main/trading/tradingService.ts`. Exactly seven channels; nothing generic.
 
 | Method | Effect |
 |---|---|
@@ -64,6 +65,7 @@ DTOs and channel names: `src/shared/ipc/trades.ts`. Handlers and validation:
 | `updateTradeNote({tradeId, body})` | plain-text upsert (≤ 20 000 chars) |
 | `updateDayNote({accountId, date, body})` | plain-text upsert for (account, date) |
 | `updateRuleEvaluation({tradeId, ruleId, state})` | `Pass` / `Fail` / `N/A` / `Unreviewed` for one rule of **the trade's own strategy version**; any other rule → `RULE_VIOLATION`. Returns the new rule-state counts. |
+| `assignStrategyVersion({tradeId, strategyVersionId})` | (015B) one-time V1 assignment of an **exact published version** to a trade that has none, plus one UNREVIEWED evaluation per rule of that version, in one transaction. Already assigned → `CONFLICT`; strategy id / unknown id → `NOT_FOUND`; Draft → `RULE_VIOLATION`. Writes no trade fact. Returns the refreshed `TradeDetailDto`. See `STRATEGY_ASSIGNMENT.md` |
 
 Model rules:
 
@@ -76,7 +78,9 @@ Model rules:
 - compliance is derived from the four rule-state counts by
   `src/shared/compliance.ts` (PASS / (PASS + FAIL); N/A and UNREVIEWED excluded;
   UNREVIEWED ⇒ Incomplete) — there are no categorical compliance states;
-- trades and executions are not writable through IPC; nothing touches a broker;
+- trades and executions are not writable through IPC (the one-time strategy
+  version assignment writes only the association + evaluation rows); nothing
+  touches a broker;
 - an unavailable database yields `PERSISTENCE_UNAVAILABLE` on every channel;
 - list-vs-detail split: summaries carry counts only, detail is requested per
   opened trade, so the UI never issues a call per row or per execution.

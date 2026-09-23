@@ -176,6 +176,12 @@ display name is shown (names are user data, not versioned), with the historical
 version number and wording. Trades without a Strategy show "No Strategy"; no
 evaluation is fabricated.
 
+Since Checkpoint 015B a Trade can be assigned an exact published version from
+Trade Review (`STRATEGY_ASSIGNMENT.md`). That writes only the association and
+UNREVIEWED evaluation rows; Weekly Review picks them up on its next read (the
+overlay's Back bumps its revision) through exactly the same read model — there
+is no Weekly-Review-specific write, metric copy or achievement path.
+
 ## 9. Forecast vs Actual
 
 Two authored text areas side by side. The forecast is the trader's own

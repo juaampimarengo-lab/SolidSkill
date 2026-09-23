@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState, type JSX } from 'react'
-import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
 import type { MediaItemDto } from '@shared/ipc/media'
 import { useTradeDetail } from '@renderer/hooks/useTrading'
@@ -7,7 +6,6 @@ import { useTradeMedia } from '@renderer/hooks/useMedia'
 import { aggregateDay } from '@renderer/lib/dayAggregate'
 import { fromScaled, toScaled } from '@renderer/lib/decimal'
 import { formatR, formatUsd } from '@renderer/lib/format'
-import { stageI18nKey, timeframeLabel } from '@renderer/lib/media'
 import {
   closeTimeLabel,
   dateLabel,
@@ -25,6 +23,7 @@ import { ChartLightbox } from '@renderer/components/journal/ChartLightbox'
 import detailStyles from '@renderer/components/journal/TradeReview.module.css'
 import type { TradeDetail } from '@renderer/types/journal'
 import { TradeChart } from './TradeChart'
+import { ChartEvidenceViewer } from './ChartEvidenceViewer'
 import styles from './TradeReviewWorkspace.module.css'
 
 type DetailTab = 'Overview' | 'Executions' | 'Strategy' | 'Charts'
@@ -40,7 +39,7 @@ export function TradeReviewWorkspace({ tradeId, onBack, onSwitchTrade }: TradeRe
   // Canonical Trade Review is driven by the persisted Trade identity: one
   // detail read returns the trade, its executions, the exact strategy version,
   // both notes and the same-day sibling trades.
-  const { state, retry } = useTradeDetail(tradeId)
+  const { state, retry, refresh } = useTradeDetail(tradeId)
 
   // While a sibling loads, keep showing the previous trade instead of
   // collapsing the page to a loading screen for a moment.
@@ -65,21 +64,25 @@ export function TradeReviewWorkspace({ tradeId, onBack, onSwitchTrade }: TradeRe
     )
   }
 
-  return <TradeReview detail={detail} activeTradeId={tradeId} onBack={onBack} onSwitchTrade={onSwitchTrade} />
+  return (
+    <TradeReview detail={detail} activeTradeId={tradeId} onBack={onBack} onSwitchTrade={onSwitchTrade} onChanged={refresh} />
+  )
 }
 
 function TradeReview({
   detail,
   activeTradeId,
   onBack,
-  onSwitchTrade
+  onSwitchTrade,
+  onChanged
 }: {
   detail: TradeDetail
   activeTradeId: string
   onBack: () => void
   onSwitchTrade: (tradeId: string) => void
+  /** Re-reads the persisted detail after a Strategy assignment or rule evaluation. */
+  onChanged: () => void
 }): JSX.Element {
-  const { t } = useTranslation('journal')
   const [tab, setTab] = useState<DetailTab>('Overview')
   const { trade, siblings } = detail
   const outcome = tradeOutcome(trade)
@@ -197,7 +200,7 @@ function TradeReview({
           <div className={detailStyles.content}>
             {tab === 'Overview' && <OverviewTab trade={trade} />}
             {tab === 'Executions' && <ExecutionsTab detail={detail} />}
-            {tab === 'Strategy' && <StrategyTab detail={detail} />}
+            {tab === 'Strategy' && <StrategyTab detail={detail} onChanged={onChanged} />}
             {tab === 'Charts' && (
               <>
                 <ChartGallery
@@ -223,40 +226,12 @@ function TradeReview({
         <div className={styles.analysisRegion}>
           <div className={styles.analysisBlock}>
             {displayed !== null ? (
-              <>
-                <div className={styles.chartEvidenceMeta}>
-                  <div className={`${styles.blockTitle} ${styles.chartEvidenceTitle}`}>{t('chartEvidence')}</div>
-                  <span className={styles.chartEvidenceLabel}>
-                    {timeframeLabel(displayed.timeframe) || t('timeframe.other')} · {t(stageI18nKey(displayed.stage))}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className={styles.chartEvidenceImageButton}
-                  onClick={() => setMediaPreview(displayed)}
-                >
-                  <img className={styles.chartEvidenceImage} src={displayed.url} alt="" />
-                </button>
-                {tradeMedia.length > 1 && (
-                  <div className={styles.chartEvidenceThumbs}>
-                    {tradeMedia.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={
-                          item.id === displayed.id
-                            ? `${styles.chartEvidenceThumb} ${styles.chartEvidenceThumbActive}`
-                            : styles.chartEvidenceThumb
-                        }
-                        onClick={() => setActiveMediaId(item.id)}
-                        aria-label={`${timeframeLabel(item.timeframe) || t('timeframe.other')} · ${t(stageI18nKey(item.stage))}`}
-                      >
-                        <img className={styles.chartEvidenceThumbImg} src={item.url} alt="" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
+              <ChartEvidenceViewer
+                items={tradeMedia}
+                selected={displayed}
+                onSelect={setActiveMediaId}
+                onOpen={setMediaPreview}
+              />
             ) : (
               <>
                 <div className={styles.blockTitle}>Execution Visualization</div>

@@ -73,5 +73,13 @@
     "pnlDisclaimer": "Shown for context only. P&L is not an input to compliance and does not indicate process quality.",
     "exampleTitle": "Evaluation example — illustrative, not a real trade",
     "complianceLabel": "Compliance:"
+  },
+  "list": {
+    "activeSection": "Active · {{count}}",
+    "archivedSection": "Archived · {{count}}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "rowActions": "Actions for {{name}}",
+    "dragToReorder": "Drag to reorder"
   }
 }

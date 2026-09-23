@@ -1,0 +1,255 @@
+/* Same modal frame as AddChartModal; dense option rows, no hero treatment. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 7, 8, 0.72);
+  padding: 24px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: 92vw;
+  max-height: 84vh;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-modal);
+  overflow: hidden;
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 14px 12px;
+}
+
+.fieldLabel {
+  margin: 6px 0 6px;
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fieldLabel + .options {
+  margin-bottom: 6px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.option:hover {
+  background: var(--surface-hover);
+}
+
+.optionSelected,
+.optionSelected:hover {
+  background: var(--selection);
+  border-left-color: var(--accent-cool);
+}
+
+.optionName,
+.optionNameMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--text-body-sm-size);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.optionNameMuted {
+  color: var(--text-secondary);
+}
+
+.optionMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+}
+
+.currentTag,
+.historicalTag,
+.archivedTag {
+  font-size: var(--text-micro-size);
+  font-weight: 500;
+  letter-spacing: var(--text-micro-ls);
+}
+
+.currentTag {
+  color: var(--text-secondary);
+}
+
+.historicalTag,
+.archivedTag {
+  color: var(--text-muted);
+}
+
+.linkButton {
+  margin: 0 0 4px;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  font-size: var(--text-caption-size);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  color: var(--text-primary);
+}
+
+.muted {
+  margin-top: 6px;
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-lh);
+  color: var(--text-helper);
+}
+
+.errorText {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: var(--negative-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+  color: var(--negative);
+}
+
+.confirm {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-secondary);
+}
+
+.confirmLine {
+  font-size: var(--text-body-sm-size);
+  color: var(--text-secondary);
+}
+
+.exact {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.buttonPrimary,
+.buttonSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--button-height-sm);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption-size);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.buttonPrimary {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--selection);
+}
+
+.buttonSecondary {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.buttonPrimary:disabled,
+.buttonSecondary:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}

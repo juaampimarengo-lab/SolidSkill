@@ -1,6 +1,7 @@
-import { useState, type JSX, type ReactNode } from 'react'
-import { X, Maximize2 } from 'lucide-react'
-import type { TradeDetail, TradeSummary } from '@renderer/types/journal'
+import { useEffect, useState, type JSX, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, Maximize2, Plus } from 'lucide-react'
+import type { RuleState, TradeDetail, TradeSummary } from '@renderer/types/journal'
 import { formatPrice, formatR, formatUsd } from '@renderer/lib/format'
 import { summarizeCounts } from '@shared/compliance'
 import { sumDecimalsOrNull } from '@renderer/lib/decimal'
@@ -22,7 +23,8 @@ import {
 import { useTradeDetail, type Loadable } from '@renderer/hooks/useTrading'
 import { CompactCompliance } from '@renderer/components/shared/CompactCompliance'
 import { DataStatus } from '@renderer/components/shared/DataStatus'
-import { ComplianceReadout, ReviewTag, RuleStateTag } from '@renderer/components/strategies/RuleStateTag'
+import { ComplianceReadout, ReviewTag, RuleStateControl, RuleStateTag } from '@renderer/components/strategies/RuleStateTag'
+import { AssignStrategyModal } from './AssignStrategyModal'
 import { TradeCharts } from './TradeCharts'
 import styles from './TradeReview.module.css'
 
@@ -241,11 +243,67 @@ export function ExecutionsTab({ detail }: { detail: TradeDetail }): JSX.Element 
 // wording and grouping are those of the exact published version the trade was
 // evaluated against — not the live Strategy, and not affected by a rename or a
 // newer published version.
-export function StrategyTab({ detail }: { detail: TradeDetail }): JSX.Element {
+//
+// With `onChanged` (canonical Trade Review) the tab is interactive: an
+// unassigned Trade offers the one-time Assign Strategy action, and each rule
+// can be judged through the existing updateRuleEvaluation path. Every write is
+// followed by a re-read of the persisted detail — nothing is computed locally.
+// Without it (Journal quick preview) the tab stays read-only.
+export function StrategyTab({ detail, onChanged }: { detail: TradeDetail; onChanged?: () => void }): JSX.Element {
+  const { t } = useTranslation('journal')
   const { trade, strategy } = detail
+  const [assigning, setAssigning] = useState(false)
+  // Rule states the main process has CONFIRMED saved, shown until the re-read detail arrives.
+  const [saved, setSaved] = useState<Record<string, RuleState>>({})
+  const [savingRule, setSavingRule] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  useEffect(() => setSaved({}), [detail])
+
   if (strategy === null) {
-    return <div className={styles.versionNote}>This trade is not associated with a strategy.</div>
+    return (
+      <div>
+        <div className={styles.versionNote}>{t('assign.notAssociated')}</div>
+        {onChanged ? (
+          <button type="button" className={styles.assignButton} onClick={() => setAssigning(true)}>
+            <Plus size={12} strokeWidth={1.75} />
+            {t('assign.action')}
+          </button>
+        ) : (
+          <div className={styles.versionNote}>{t('assign.openFullToAssign')}</div>
+        )}
+        {assigning && onChanged && (
+          <AssignStrategyModal
+            tradeId={trade.id}
+            onClose={() => setAssigning(false)}
+            onAssigned={() => {
+              setAssigning(false)
+              onChanged()
+            }}
+          />
+        )}
+      </div>
+    )
   }
+
+  async function setRuleState(ruleId: string, state: RuleState): Promise<void> {
+    const api = window.solidSkill?.trades
+    if (!api || !onChanged) return
+    setSavingRule(ruleId)
+    setSaveError(null)
+    try {
+      const result = await api.updateRuleEvaluation({ tradeId: trade.id, ruleId, state })
+      if (result.ok) {
+        setSaved((s) => ({ ...s, [ruleId]: result.data.state }))
+        onChanged()
+      } else {
+        setSaveError(result.error.message)
+      }
+    } catch {
+      setSaveError(t('evaluation.saveFailed'))
+    }
+    setSavingRule(null)
+  }
+
   const summary = summarizeCounts(trade.compliance)
 
   return (
@@ -271,14 +329,26 @@ export function StrategyTab({ detail }: { detail: TradeDetail }): JSX.Element {
         </span>
       </div>
 
+      {saveError && <div className={styles.saveError}>{saveError}</div>}
+
       {strategy.groups.map((group) => (
         <div key={group.groupId} className={styles.ruleGroup}>
           <div className={styles.ruleGroupTitle}>{group.name}</div>
           <div className={styles.ruleList}>
             {group.rules.map((rule) => (
-              <div key={rule.ruleId} className={styles.ruleRow}>
+              <div key={rule.ruleId} className={styles.ruleRow} data-rule-id={rule.ruleId}>
                 <span className={styles.ruleName}>{rule.name}</span>
-                <RuleStateTag state={rule.state} />
+                {onChanged ? (
+                  <RuleStateControl
+                    state={saved[rule.ruleId] ?? rule.state}
+                    label={t('evaluation.controlLabel', { rule: rule.name })}
+                    unreviewedLabel={t('evaluation.setUnreviewed')}
+                    disabled={savingRule !== null}
+                    onChange={(next) => void setRuleState(rule.ruleId, next)}
+                  />
+                ) : (
+                  <RuleStateTag state={rule.state} />
+                )}
               </div>
             ))}
           </div>

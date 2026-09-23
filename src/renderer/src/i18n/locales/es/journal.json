@@ -39,5 +39,36 @@
   "chartUnavailable": "No se pudo cargar esta imagen.",
   "capturePermissionHint": "Si no aparece nada, otorga permiso de grabación de pantalla a Solid Skill en la configuración del sistema e intenta de nuevo.",
   "showInOverview": "Mostrar en Resumen",
-  "featuredChart": "Gráfico destacado"
+  "featuredChart": "Gráfico destacado",
+  "assign": {
+    "notAssociated": "Este Trade no está asociado a una Strategy.",
+    "openFullToAssign": "Abre la revisión completa del Trade para asignar una.",
+    "action": "Asignar Strategy",
+    "title": "Asignar Strategy",
+    "strategyLabel": "Strategy",
+    "versionLabel": "Versión de la Strategy",
+    "current": "Actual",
+    "historical": "Histórica",
+    "archived": "Archivada",
+    "showArchived": "Mostrar Strategies archivadas",
+    "hideArchived": "Ocultar Strategies archivadas",
+    "noPublished": "Todavía no existe ninguna versión publicada. Publica una Strategy en Strategies primero.",
+    "versionMeta_one": "{{count}} regla · publicada {{date}}",
+    "versionMeta_other": "{{count}} reglas · publicada {{date}}",
+    "historicalNote": "Existe una versión más reciente (v{{current}}). Elige la versión que este Trade realmente siguió.",
+    "confirm": "¿Asignar <0>{{strategy}} · v{{version}}</0> a este Trade?",
+    "confirmDetail_one": "Esto crea {{count}} evaluación UNREVIEWED para la regla de v{{version}}. La asignación no se puede cambiar después.",
+    "confirmDetail_other": "Esto crea {{count}} evaluaciones UNREVIEWED para las reglas de v{{version}}. La asignación no se puede cambiar después.",
+    "submit": "Asignar",
+    "assigning": "Asignando…",
+    "loading": "Cargando Strategies…",
+    "loadFailed": "No se pudieron cargar las Strategies.",
+    "failed": "No se pudo asignar la Strategy.",
+    "close": "Cerrar"
+  },
+  "evaluation": {
+    "controlLabel": "Evaluación de {{rule}}",
+    "setUnreviewed": "Volver a UNREVIEWED",
+    "saveFailed": "No se pudo guardar el estado de la regla."
+  }
 }

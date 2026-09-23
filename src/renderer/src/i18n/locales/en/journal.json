@@ -39,5 +39,36 @@
   "chartUnavailable": "This image could not be loaded.",
   "capturePermissionHint": "If nothing appears, grant Solid Skill screen-recording permission in your OS settings and try again.",
   "showInOverview": "Show in Overview",
-  "featuredChart": "Featured chart"
+  "featuredChart": "Featured chart",
+  "assign": {
+    "notAssociated": "This Trade is not associated with a Strategy.",
+    "openFullToAssign": "Open the full Trade Review to assign one.",
+    "action": "Assign Strategy",
+    "title": "Assign Strategy",
+    "strategyLabel": "Strategy",
+    "versionLabel": "Strategy Version",
+    "current": "Current",
+    "historical": "Historical",
+    "archived": "Archived",
+    "showArchived": "Show archived Strategies",
+    "hideArchived": "Hide archived Strategies",
+    "noPublished": "No published Strategy Version exists yet. Publish a Strategy in Strategies first.",
+    "versionMeta_one": "{{count}} rule · published {{date}}",
+    "versionMeta_other": "{{count}} rules · published {{date}}",
+    "historicalNote": "A newer version (v{{current}}) exists. Choose the version this Trade actually followed.",
+    "confirm": "Assign <0>{{strategy}} · v{{version}}</0> to this Trade?",
+    "confirmDetail_one": "This creates {{count}} UNREVIEWED evaluation for the rule in v{{version}}. The assignment cannot be changed later.",
+    "confirmDetail_other": "This creates {{count}} UNREVIEWED evaluations for the rules in v{{version}}. The assignment cannot be changed later.",
+    "submit": "Assign",
+    "assigning": "Assigning…",
+    "loading": "Loading Strategies…",
+    "loadFailed": "Strategies could not be loaded.",
+    "failed": "The Strategy could not be assigned.",
+    "close": "Close"
+  },
+  "evaluation": {
+    "controlLabel": "Evaluation of {{rule}}",
+    "setUnreviewed": "Reset to UNREVIEWED",
+    "saveFailed": "The rule state could not be saved."
+  }
 }

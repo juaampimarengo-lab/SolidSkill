@@ -138,8 +138,8 @@ const firstPath = newDbPath()
 {
   const db = Database.open(firstPath)
   check('A first start: migration 001 applied, foreign keys on, WAL on', () => {
-    equal(db.health.migrationsAppliedThisOpen, [1, 2, 3, 4, 5], 'applied this open')
-    equal(db.health.schemaVersion, 5, 'schema version')
+    equal(db.health.migrationsAppliedThisOpen, [1, 2, 3, 4, 5, 6], 'applied this open')
+    equal(db.health.schemaVersion, 6, 'schema version')
     equal(db.health.foreignKeys, true, 'foreign keys')
     equal(db.health.journalMode, 'wal', 'journal mode')
     equal(db.listAppliedMigrations(), [
@@ -147,7 +147,8 @@ const firstPath = newDbPath()
       { version: 2, name: 'trade_source_identity' },
       { version: 3, name: 'trade_media' },
       { version: 4, name: 'weekly_reviews' },
-      { version: 5, name: 'weekly_scorecard' }
+      { version: 5, name: 'weekly_scorecard' },
+      { version: 6, name: 'strategy_display_order' }
     ])
   })
   db.close()
@@ -198,7 +199,8 @@ check('A foreign keys are actually enforced', () => {
       { version: 2, name: 'trade_source_identity' },
       { version: 3, name: 'trade_media' },
       { version: 4, name: 'weekly_reviews' },
-      { version: 5, name: 'weekly_scorecard' }
+      { version: 5, name: 'weekly_scorecard' },
+      { version: 6, name: 'strategy_display_order' }
     ])
     equal(second.repositories.accounts.list().map((a) => a.id), [account.id])
   })
@@ -212,26 +214,26 @@ check('A foreign keys are actually enforced', () => {
 check('migrations: a second migration applies once, in order, on a later start', () => {
   const path = newDbPath()
   const m2: Migration = {
-    version: 6,
+    version: 7,
     name: 'future_change',
     sql: 'CREATE TABLE future_thing (id TEXT PRIMARY KEY) STRICT;'
   }
   const a = Database.open(path, { migrations: [...MIGRATIONS] })
-  equal(a.health.migrationsAppliedThisOpen, [1, 2, 3, 4, 5])
+  equal(a.health.migrationsAppliedThisOpen, [1, 2, 3, 4, 5, 6])
   a.close()
   const b = Database.open(path, { migrations: [...MIGRATIONS, m2] })
-  equal(b.health.migrationsAppliedThisOpen, [6])
+  equal(b.health.migrationsAppliedThisOpen, [7])
   b.close()
   const c = Database.open(path, { migrations: [...MIGRATIONS, m2] })
   equal(c.health.migrationsAppliedThisOpen, [])
-  equal(c.listAppliedMigrations().map((m) => m.version), [1, 2, 3, 4, 5, 6])
+  equal(c.listAppliedMigrations().map((m) => m.version), [1, 2, 3, 4, 5, 6, 7])
   c.close()
 })
 
 check('migrations: a failing migration rolls back completely and is not recorded', () => {
   const path = newDbPath()
   const bad: Migration = {
-    version: 6,
+    version: 7,
     name: 'broken',
     sql: 'CREATE TABLE half_done (id TEXT) STRICT; INSERT INTO no_such_table VALUES (1);'
   }
@@ -239,7 +241,7 @@ check('migrations: a failing migration rolls back completely and is not recorded
   a.close()
   throws(() => Database.open(path, { migrations: [...MIGRATIONS, bad] }), /no_such_table/)
   const b = Database.open(path)
-  equal(b.health.schemaVersion, 5)
+  equal(b.health.schemaVersion, 6)
   b.close()
   equal(listTables(path).includes('half_done'), false, 'half_done leaked')
 })

@@ -21,6 +21,7 @@
     "smoke:trade-media": "node scripts/trade-media-smoke.mjs",
     "smoke:journal-row-activation": "node scripts/journal-row-activation-smoke.mjs",
     "smoke:weekly-review": "node scripts/weekly-review-smoke.mjs",
+    "smoke:strategy-assignment": "node scripts/strategy-assignment-smoke.mjs",
     "qa:trade-media": "node scripts/trade-media-qa.mjs",
     "qa:mt5-snapshot": "node scripts/mt5-snapshot-report.mjs",
     "qa:mt5-import": "node scripts/mt5-import-qa.mjs --dry-run",
@@ -30,7 +31,8 @@
     "qa:trading-restart": "node scripts/trading-restart-qa.mjs",
     "qa:active-account": "node scripts/active-account-qa.mjs",
     "qa:i18n": "node scripts/i18n-qa.mjs",
-    "qa:weekly-review": "node scripts/weekly-review-qa.mjs"
+    "qa:weekly-review": "node scripts/weekly-review-qa.mjs",
+    "qa:strategy-assignment": "node scripts/strategy-assignment-qa.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

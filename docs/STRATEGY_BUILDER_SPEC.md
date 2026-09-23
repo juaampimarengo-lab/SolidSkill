@@ -434,6 +434,9 @@ TradeZella's Strategies concept (§2), at a high level, not pixel-level:
 - Active strategies
 - Archived strategies (§14)
 - Create strategy
+- Manual order within each section (drag handle + Move up / Move down) —
+  presentation metadata, never a new version (Checkpoint 015B,
+  `STRATEGY_ASSIGNMENT.md` §8)
 
 **Strategy Detail**
 - Overview — name, description, visual identity, current published
@@ -496,6 +499,12 @@ elements this checkpoint introduces.
 A future editing workflow may allow marking/reviewing rules directly from
 Trade Review rather than requiring a separate Strategy Builder visit — not
 designed or implemented in this checkpoint.
+
+**Checkpoint 015B:** implemented. Canonical Trade Review's Strategy tab lets
+the trader (a) assign an exact published Strategy Version to an unassigned
+Trade, one time, creating UNREVIEWED evaluations for that version's rules, and
+(b) set PASS / FAIL / N/A / UNREVIEWED per rule through the existing
+evaluation path. See `STRATEGY_ASSIGNMENT.md`.
 
 ## 15. Manual / system / hybrid evaluation
 

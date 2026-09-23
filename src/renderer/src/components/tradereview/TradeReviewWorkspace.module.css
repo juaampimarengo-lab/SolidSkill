@@ -231,6 +231,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -238,29 +239,72 @@
   margin-bottom: 0;
 }
 
+.chartEvidenceMetaRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .chartEvidenceLabel {
   font-family: var(--font-mono);
   font-size: var(--text-caption-size);
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.chartEvidenceImageButton {
+.chartEvidenceExpand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+
+.chartEvidenceExpand:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+/*
+  The frame is sized to the selected image (--chart-ratio = naturalWidth /
+  naturalHeight, set inline by ChartEvidenceViewer), not to a fixed box: full
+  column width, height derived from the ratio. The height is capped so the
+  whole chart plus its thumbnail strip stays on screen next to the Strategy
+  panel; when the cap is hit (portrait / near-square captures) the WIDTH
+  shrinks by the same ratio and the frame centers, so it never letterboxes,
+  crops or stretches. object-fit: contain is only a guard for the moment
+  before the real ratio is known.
+*/
+.chartEvidenceFrame {
+  --chart-max-h: clamp(220px, calc(100vh - 300px), 1100px);
   display: block;
-  width: 100%;
+  width: min(100%, calc(var(--chart-max-h) * var(--chart-ratio)));
+  aspect-ratio: var(--chart-ratio);
+  margin: 0 auto;
   padding: 0;
   background: #000;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  cursor: pointer;
+  cursor: zoom-in;
   overflow: hidden;
 }
 
 .chartEvidenceImage {
   display: block;
   width: 100%;
-  max-height: 320px;
+  height: 100%;
   object-fit: contain;
-  background: #000;
 }
 
 .chartEvidenceThumbs {
@@ -271,31 +315,54 @@
 }
 
 .chartEvidenceThumb {
-  width: 44px;
-  height: 28px;
+  display: flex;
+  flex-direction: column;
+  width: 84px;
   padding: 0;
+  background: var(--surface-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
-  opacity: 0.6;
-  transition: opacity var(--motion-hover), border-color var(--motion-hover);
+  color: var(--text-muted);
+  transition: border-color var(--motion-hover), color var(--motion-hover);
 }
 
 .chartEvidenceThumb:hover {
-  opacity: 0.85;
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
 }
 
-.chartEvidenceThumbActive {
-  opacity: 1;
-  border-color: var(--border-strong);
+.chartEvidenceThumbActive,
+.chartEvidenceThumbActive:hover {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 1px var(--accent-mid);
+  color: var(--text-primary);
 }
 
 .chartEvidenceThumbImg {
   display: block;
   width: 100%;
-  height: 100%;
+  height: 46px;
   object-fit: cover;
+  background: #000;
+  opacity: 0.65;
+  transition: opacity var(--motion-hover);
+}
+
+.chartEvidenceThumb:hover .chartEvidenceThumbImg,
+.chartEvidenceThumbActive .chartEvidenceThumbImg {
+  opacity: 1;
+}
+
+.chartEvidenceThumbLabel {
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro-size);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ----------------------------------------------------------- running p&l */

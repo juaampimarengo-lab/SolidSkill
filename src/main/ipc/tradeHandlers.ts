@@ -4,6 +4,7 @@ import type { TradeChannel } from '../../shared/ipc/trades'
 import { ServiceError } from '../serviceError'
 import type { TradingService } from '../trading/tradingService'
 import {
+  assignStrategyVersionInput,
   dayInput,
   dayNoteInput,
   ruleEvaluationInput,
@@ -69,6 +70,11 @@ export function createTradeHandlers(deps: TradeHandlerDeps): Record<TradeChannel
       run((s) => {
         const input = ruleEvaluationInput(p)
         return s.updateRuleEvaluation(input.tradeId, input.ruleId, input.state)
+      }),
+    [C.assignStrategyVersion]: (p) =>
+      run((s) => {
+        const input = assignStrategyVersionInput(p)
+        return s.assignStrategyVersion(input.tradeId, input.strategyVersionId)
       })
   }
 }

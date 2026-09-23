@@ -137,7 +137,7 @@ state (no fixture fallback). There is no recovery UI yet.
 |---|---|
 | `accounts` | create, get, find by source id, list, edit metadata, archive |
 | `trades` | create a Trade with its Executions atomically; get/list; list executions; associate a strategy version |
-| `strategies` | Strategy identity/metadata, archive |
+| `strategies` | Strategy identity/metadata, archive, list order (`display_position`, migration 006) |
 | `strategyVersions` | Draft lifecycle (create/discard/publish), Groups and Rules (draft only), version definitions |
 | `evaluations` | list a trade's evaluations with frozen rule wording; set a rule's state |
 | `notes` | Trade note and Day note upserts/reads |
@@ -273,8 +273,12 @@ shows the strategy's current name with the historical version's rules.)
   `EvaluationRepository.setState` requires `evaluation.strategy_version_id =
   trade.strategy_version_id AND rule.strategy_version_id =
   trade.strategy_version_id`; and the schema's composite foreign keys make any
-  other combination unrepresentable. Also UI-less for now (the Trade Review
-  rule list is read-only).
+  other combination unrepresentable. Since Checkpoint 015B it has a UI: a
+  compact PASS / FAIL / N/A / UNREVIEWED control per rule in canonical Trade
+  Review's Strategy tab (the Journal quick preview stays read-only).
+- `assignStrategyVersion` (015B): one-time assignment of an exact published
+  version to an unassigned trade + one UNREVIEWED evaluation per rule, one
+  transaction (`associateStrategyVersion`). See `STRATEGY_ASSIGNMENT.md`.
 - Trades and Executions are immutable through this API (executions are also
   trigger-protected). Nothing writes to a broker.
 
@@ -386,6 +390,17 @@ transaction; score and note written independently). Migration 004 is unchanged
 (it had already been applied to development databases, so the scorecard is a
 new migration rather than an edit). `smoke:weekly-review` covers the upgrade of
 an existing 001–004 database with reflection text intact.
+
+## Strategy assignment and list order (Checkpoint 015B)
+
+Migration 006 adds `strategies.display_position` (`DATABASE_SCHEMA.md` §22):
+list presentation metadata, dense and unique per lifecycle section, maintained
+transactionally by `StrategyRepository` (create / archive / restore / delete /
+`move`). Migrations 001–005 are unchanged. Assignment reuses the migration-001
+`trades.strategy_version_id` and `associateStrategyVersion`; no schema change
+was needed for it. `smoke:strategy-assignment` covers both and the upgrade of
+an existing 001–005 database; `qa:strategy-assignment` drives the real app on
+a copy of the dev database. See `STRATEGY_ASSIGNMENT.md`.
 
 ## 11. Backup / export (later)
 

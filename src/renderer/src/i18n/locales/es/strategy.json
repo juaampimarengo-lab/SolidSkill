@@ -73,5 +73,13 @@
     "pnlDisclaimer": "Se muestra solo como contexto. El P&L no es un insumo del cumplimiento y no indica calidad del proceso.",
     "exampleTitle": "Ejemplo de evaluación — ilustrativo, no es un Trade real",
     "complianceLabel": "Cumplimiento:"
+  },
+  "list": {
+    "activeSection": "Activas · {{count}}",
+    "archivedSection": "Archivadas · {{count}}",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "rowActions": "Acciones de {{name}}",
+    "dragToReorder": "Arrastra para reordenar"
   }
 }

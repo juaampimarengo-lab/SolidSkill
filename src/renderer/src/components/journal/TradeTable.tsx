@@ -80,6 +80,7 @@ export function TradeTable({ trades, selectedId, onSelect, onOpenFull }: TradeTa
             {trades.map((trade) => (
               <tr
                 key={trade.id}
+                data-trade-id={trade.id}
                 className={
                   trade.id === selectedId ? `${styles.row} ${styles.rowSelected}` : styles.row
                 }

@@ -177,8 +177,8 @@ check('week: isWeekStart and invalid dates', () => {
 check('migrations 004 + 005 apply on a fresh database (weekly_reviews, weekly_scorecard_entries)', () => {
   const db = Database.open(newDbPath())
   try {
-    equal(db.health.schemaVersion, 5)
-    equal(db.listAppliedMigrations().map((m) => m.name), ['initial_core', 'trade_source_identity', 'trade_media', 'weekly_reviews', 'weekly_scorecard'])
+    equal(db.health.schemaVersion, 6)
+    equal(db.listAppliedMigrations().map((m) => m.name), ['initial_core', 'trade_source_identity', 'trade_media', 'weekly_reviews', 'weekly_scorecard', 'strategy_display_order'])
   } finally {
     db.close()
   }
@@ -192,7 +192,7 @@ check('migration 004 upgrades an existing 001–003 database without touching pr
   const before = factsDigest(path)
   const upgraded = Database.open(path)
   try {
-    equal(upgraded.health.migrationsAppliedThisOpen, [4, 5])
+    equal(upgraded.health.migrationsAppliedThisOpen, [4, 5, 6])
     equal(upgraded.repositories.accounts.list().map((a) => a.displayName), ['Before 004'])
   } finally {
     upgraded.close()
@@ -212,7 +212,7 @@ check('migration 005 upgrades an existing 001–004 database without touching pr
   const before = factsDigest(path)
   const upgraded = Database.open(path)
   try {
-    equal(upgraded.health.migrationsAppliedThisOpen, [5])
+    equal(upgraded.health.migrationsAppliedThisOpen, [5, 6])
     const got = new ReviewService(upgraded).getWeek(account.id, '2026-09-13')
     equal(got.reflection.forecast, 'kept exactly ')
     equal(WEEKLY_SCORECARD_DIMENSIONS.every((d) => got.scorecard[d].score === null && got.scorecard[d].note === ''), true, 'no invented scores')
